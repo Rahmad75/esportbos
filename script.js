@@ -1,11 +1,11 @@
 // ===== ESPORTBOS - COMPLETE SCRIPT =====
 
-// 1. Inisialisasi Supabase Client
+// 1. Inisialisasi Supabase Client (pakai nama beda biar gak bentrok)
 const SUPABASE_URL = 'https://wfmwwbvckeeptkswtohi.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmbXd3YnZja2VlcHRrc3d0b2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MDYxMjMsImV4cCI6MjEwMzk4MjEyM30.1DpjbWHXAOYQ-VtLYBGzcWOnCIrOimDZo_NKKcVHkNk';
 
-// Membuat instance client Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// PAKAI NAMA "sb" BIAR GAK BENTROK DENGAN LIBRARY
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🎮 EsportBos Loaded!');
@@ -13,18 +13,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 2. TES KONEKSI SUPABASE
     try {
         console.log('🔄 Mencoba koneksi ke Supabase...');
-        // Kita coba ambil data dari tabel 'test_connection' (nanti kita bikin di Supabase)
-        // Kalau tabel belum ada, ini akan error, tapi itu wajar untuk tes awal
-        const { data, error } = await supabase.from('test_connection').select('*');
+        const { data, error } = await sb.from('test_connection').select('*');
         
         if (error) {
-            console.log('⚠️ Tabel belum ada atau belum ada data, tapi koneksi Supabase BERHASIL dibuat!');
-            console.log('Detail error (normal jika tabel belum dibuat):', error.message);
+            console.log('⚠️ Ada error query:', error.message);
         } else {
             console.log('✅ Koneksi Supabase BERHASIL! Data:', data);
         }
     } catch (err) {
-        console.error('❌ Gagal koneksi ke Supabase:', err);
+        console.error(' Gagal koneksi ke Supabase:', err);
     }
 
     // ===== LANDING PAGE FUNCTIONS =====
