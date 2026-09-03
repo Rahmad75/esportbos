@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Roster Pemain</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- ===== NAVBAR ATAS ===== -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Pendapatan (1671)</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge task">✅ Tugas (2)</div>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- ===== SIDEBAR KIRI ===== -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+                <div class="team-stats">
+                    <div class="stat-row">💎 Plat: 2.64</div>
+                    <div class="stat-row">🥇 Emas: 12.87</div>
+                    <div class="stat-row">🇮🇹 ITA: 100.58</div>
+                </div>
+                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item active">👥 Pemain</a>
+                <a href="#" class="menu-item">🧠 Taktik</a>
+                <a href="#" class="menu-item">⚔️ Pertandingan</a>
+                <a href="#" class="menu-item">🏋️ Latihan</a>
+                <a href="#" class="menu-item"> Transfer</a>
+                <a href="#" class="menu-item">🎓 Akademi Muda</a>
+                <a href="#" class="menu-item">🏢 Kantor</a>
+                <a href="#" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="#" class="menu-item">🏟️ Stadion</a>
+            </nav>
+
+            <div class="social-icons">
+                <a href="#">📘</a>
+                <a href="#">💬</a>
+                <a href="#"></a>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            
+            <div class="info-bar">
+                <span>👥 Manajemen Roster</span>
+                <span>Tim: <strong>RRQ Hoshi</strong> | Total Pemain: <strong id="totalPlayers">5</strong></span>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="action-bar">
+                <button class="btn-futuristic btn-small" onclick="tambahPemain()">➕ Rekrut Pemain Baru</button>
+                <button class="btn-futuristic btn-small btn-secondary" onclick="simulasiLatihan()">🏋️ Latih Tim</button>
+                <button class="btn-futuristic btn-small btn-secondary" onclick="pilihKapten()">⭐ Pilih Kapten</button>
+            </div>
+
+            <!-- Daftar Pemain -->
+            <div class="roster-grid" id="rosterGrid">
+                <!-- Pemain akan di-generate oleh JavaScript -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Detail Pemain -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="auth-simple.js"></script>
+    <script src="pemain.js"></script>
+</body>
+</html>
