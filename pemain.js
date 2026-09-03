@@ -85,10 +85,9 @@ function savePlayers(players) {
 }
 
 function getAvatarUrl(seed) {
-    // Pakai nama pemain sebagai seed yang unik
-    // Tambahin angka random biar lebih variatif
-    const uniqueSeed = seed + Math.abs(seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
-    return `https://randomuser.me/api/portraits/men/${parseInt(uniqueSeed) % 100}.jpg`;
+    // Pakai DiceBear dengan seed dari nama pemain
+    // Ini pasti jalan dan konsisten
+    return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=00d4ff,764ba2,667eea&color=ffffff&fontSize=35&fontWeight=bold`;
 }
 
 // Render roster
