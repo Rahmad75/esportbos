@@ -1,11 +1,33 @@
 // ===== ESPORTBOS - COMPLETE SCRIPT =====
 
-document.addEventListener('DOMContentLoaded', function() {
+// 1. Inisialisasi Supabase Client
+const SUPABASE_URL = 'https://wfmwwbvckeeptkswtohi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmbXd3YnZja2VlcHRrc3d0b2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MDYxMjMsImV4cCI6MjEwMzk4MjEyM30.1DpjbWHXAOYQ-VtLYBGzcWOnCIrOimDZo_NKKcVHkNk';
+
+// Membuat instance client Supabase
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('🎮 EsportBos Loaded!');
 
+    // 2. TES KONEKSI SUPABASE
+    try {
+        console.log('🔄 Mencoba koneksi ke Supabase...');
+        // Kita coba ambil data dari tabel 'test_connection' (nanti kita bikin di Supabase)
+        // Kalau tabel belum ada, ini akan error, tapi itu wajar untuk tes awal
+        const { data, error } = await supabase.from('test_connection').select('*');
+        
+        if (error) {
+            console.log('⚠️ Tabel belum ada atau belum ada data, tapi koneksi Supabase BERHASIL dibuat!');
+            console.log('Detail error (normal jika tabel belum dibuat):', error.message);
+        } else {
+            console.log('✅ Koneksi Supabase BERHASIL! Data:', data);
+        }
+    } catch (err) {
+        console.error('❌ Gagal koneksi ke Supabase:', err);
+    }
+
     // ===== LANDING PAGE FUNCTIONS =====
-    
-    // Smooth scroll untuk anchor links
     const anchorLinks = document.querySelectorAll('a[href^="#"]');
     anchorLinks.forEach(link => {
         link.addEventListener('click', function(e) {
@@ -14,16 +36,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const target = document.querySelector(href);
                 if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }
         });
     });
 
-    // Form handling - prevent default submit
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -32,17 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Button register click
-    const registerBtn = document.querySelector('.btn-register');
-    if (registerBtn) {
-        registerBtn.addEventListener('click', function() {
-            alert('Fitur registrasi akan segera hadir! ');
-        });
-    }
-
     // ===== DASHBOARD FUNCTIONS =====
-    
-    // Tab switching (hanya kalau ada tab)
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -51,11 +59,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Menu active state (hanya kalau ada sidebar menu)
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach(item => {
         item.addEventListener('click', function(e) {
-            // Jangan prevent default kalau ada href yang valid
             const href = this.getAttribute('href');
             if (!href || href === '#') {
                 e.preventDefault();
@@ -65,57 +71,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Button click effects (semua tombol)
     const buttons = document.querySelectorAll('.btn-futuristic, .btn-pendanaan, .btn-ayo');
     buttons.forEach(btn => {
         btn.addEventListener('click', function() {
-            // Efek scale
             this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 150);
-
-            // Efek glow tambahan
+            setTimeout(() => { this.style.transform = ''; }, 150);
             this.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.8)';
-            setTimeout(() => {
-                this.style.boxShadow = '';
-            }, 300);
+            setTimeout(() => { this.style.boxShadow = ''; }, 300);
         });
     });
-
-    // Hover effect untuk table rows (optional enhancement)
-    const tableRows = document.querySelectorAll('.table-row');
-    tableRows.forEach(row => {
-        row.addEventListener('mouseenter', function() {
-            this.style.background = '#f0f8ff';
-            this.style.cursor = 'pointer';
-        });
-        row.addEventListener('mouseleave', function() {
-            this.style.background = '';
-        });
-    });
-
-    // Auto-update waktu (untuk match countdown)
-    function updateCountdowns() {
-        const countdownElements = document.querySelectorAll('[data-countdown]');
-        countdownElements.forEach(el => {
-            // Nanti kita tambahin logic countdown real-time
-            console.log('Countdown updated');
-        });
-    }
-    
-    // Update countdown setiap detik
-    setInterval(updateCountdowns, 1000);
-
-    // Notifikasi (dummy function untuk nanti)
-    function showNotification(message, type = 'info') {
-        // Nanti kita bikin notification system
-        console.log(`Notification: ${message} (${type})`);
-    }
-
-    // Expose functions ke window untuk dipake di HTML kalau perlu
-    window.EsportBos = {
-        showNotification: showNotification,
-        updateCountdowns: updateCountdowns
-    };
 });
