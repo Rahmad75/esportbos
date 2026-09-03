@@ -85,9 +85,22 @@ function savePlayers(players) {
 }
 
 function getAvatarUrl(seed) {
-    // Pakai DiceBear dengan seed dari nama pemain
-    // Ini pasti jalan dan konsisten
-    return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=00d4ff,764ba2,667eea&color=ffffff&fontSize=35&fontWeight=bold`;
+    try {
+        // Generate angka dari nama pemain
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        
+        // Pastikan angka positif dan antara 0-99
+        const photoNum = Math.abs(hash) % 100;
+        
+        return `https://randomuser.me/api/portraits/men/${photoNum}.jpg`;
+    } catch (error) {
+        // Fallback ke initials kalau error
+        return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=00d4ff`;
+    }
 }
 
 // Render roster
