@@ -105,9 +105,10 @@ function savePlayers(players) {
     localStorage.setItem('esportbos_players', JSON.stringify(players));
 }
 
-// Generate URL Avatar AI
 function getAvatarUrl(seed) {
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    // Pakai ID pemain sebagai seed untuk konsistensi
+    const id = seed.replace(/\D/g, '') || '1';
+    return `https://randomuser.me/api/portraits/men/${parseInt(id) % 100}.jpg`;
 }
 
 // Render roster
