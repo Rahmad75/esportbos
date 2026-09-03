@@ -1,80 +1,121 @@
-/* ===== ESPORTBOS - SCRIPT.JS ===== */
-/* Sistem Blok: JavaScript untuk Landing Page */
+// ===== ESPORTBOS - COMPLETE SCRIPT =====
 
-// ===== 1. SMOOTH SCROLL UNTUK NAVIGASI =====
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎮 EsportBos Loaded!');
 
-// ===== 2. ANIMASI SAAT SCROLL (FADE IN) =====
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-        }
-    });
-}, observerOptions);
-
-// Terapkan ke semua section
-document.querySelectorAll('section').forEach(section => {
-    section.style.opacity = '0';
-    section.style.transform = 'translateY(30px)';
-    section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-    observer.observe(section);
-});
-
-// ===== 3. FORM HANDLING (SIAP UNTUK LOGIN/REGISTER) =====
-const loginForm = document.querySelector('.login-panel form');
-if (loginForm) {
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = this.querySelector('input[type="email"]').value;
-        const password = this.querySelector('input[type="password"]').value;
-        
-        // Nanti di sini kita sambung ke Supabase
-        console.log('Login attempt:', email);
-        alert('Fitur login akan segera hadir! Sistem sedang dalam pengembangan.');
-    });
-}
-
-const registerBtn = document.querySelector('.btn-register');
-if (registerBtn) {
-    registerBtn.addEventListener('click', function() {
-        alert('Fitur registrasi akan segera hadir! Sistem sedang dalam pengembangan.');
-    });
-}
-
-// ===== 4. NAVBAR EFFECT SAAT SCROLL =====
-const navbar = document.querySelector('.navbar');
-let lastScroll = 0;
-
-window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
+    // ===== LANDING PAGE FUNCTIONS =====
     
-    if (currentScroll > 100) {
-        navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
-    } else {
-        navbar.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1), 0 -2px 4px rgba(255,255,255,0.8)';
+    // Smooth scroll untuk anchor links
+    const anchorLinks = document.querySelectorAll('a[href^="#"]');
+    anchorLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href !== '#') {
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+
+    // Form handling - prevent default submit
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Fitur login/register akan segera hadir! 🔜');
+        });
+    });
+
+    // Button register click
+    const registerBtn = document.querySelector('.btn-register');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function() {
+            alert('Fitur registrasi akan segera hadir! ');
+        });
+    }
+
+    // ===== DASHBOARD FUNCTIONS =====
+    
+    // Tab switching (hanya kalau ada tab)
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Menu active state (hanya kalau ada sidebar menu)
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Jangan prevent default kalau ada href yang valid
+            const href = this.getAttribute('href');
+            if (!href || href === '#') {
+                e.preventDefault();
+            }
+            menuItems.forEach(m => m.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Button click effects (semua tombol)
+    const buttons = document.querySelectorAll('.btn-futuristic, .btn-pendanaan, .btn-ayo');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Efek scale
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+
+            // Efek glow tambahan
+            this.style.boxShadow = '0 0 30px rgba(0, 212, 255, 0.8)';
+            setTimeout(() => {
+                this.style.boxShadow = '';
+            }, 300);
+        });
+    });
+
+    // Hover effect untuk table rows (optional enhancement)
+    const tableRows = document.querySelectorAll('.table-row');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.background = '#f0f8ff';
+            this.style.cursor = 'pointer';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.background = '';
+        });
+    });
+
+    // Auto-update waktu (untuk match countdown)
+    function updateCountdowns() {
+        const countdownElements = document.querySelectorAll('[data-countdown]');
+        countdownElements.forEach(el => {
+            // Nanti kita tambahin logic countdown real-time
+            console.log('Countdown updated');
+        });
     }
     
-    lastScroll = currentScroll;
-});
+    // Update countdown setiap detik
+    setInterval(updateCountdowns, 1000);
 
-// ===== 5. CONSOLE WELCOME MESSAGE =====
-console.log('%c🎮 EsportBos - Jadilah Bos Esports Terkenal Dunia!', 'color: #00d4ff; font-size: 20px; font-weight: bold;');
-console.log('%cSistem sedang dalam pengembangan. Stay tuned!', 'color: #ff6b6b; font-size: 14px;');
+    // Notifikasi (dummy function untuk nanti)
+    function showNotification(message, type = 'info') {
+        // Nanti kita bikin notification system
+        console.log(`Notification: ${message} (${type})`);
+    }
+
+    // Expose functions ke window untuk dipake di HTML kalau perlu
+    window.EsportBos = {
+        showNotification: showNotification,
+        updateCountdowns: updateCountdowns
+    };
+});
