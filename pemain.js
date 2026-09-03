@@ -11,13 +11,9 @@ const defaultPlayers = [
         negara: "🇰🇷 Korea",
         kontrak: "2027",
         gaji: 15000,
-        stats: {
-            mechanics: 92,
-            gameSense: 88,
-            teamwork: 85,
-            stamina: 95
-        },
-        avatar: "FakerJr"
+        stats: { mechanics: 92, gameSense: 88, teamwork: 85, stamina: 95 },
+        avatar: "FakerJr",
+        avatarIndex: 12  // Tambahin ini
     },
     {
         id: 2,
@@ -28,13 +24,9 @@ const defaultPlayers = [
         negara: "🇮🇩 Indonesia",
         kontrak: "2026",
         gaji: 12000,
-        stats: {
-            mechanics: 85,
-            gameSense: 90,
-            teamwork: 88,
-            stamina: 92
-        },
-        avatar: "JungleKing"
+        stats: { mechanics: 85, gameSense: 90, teamwork: 88, stamina: 92 },
+        avatar: "JungleKing",
+        avatarIndex: 34  // Tambahin ini
     },
     {
         id: 3,
@@ -42,16 +34,12 @@ const defaultPlayers = [
         posisi: "Top Laner",
         role: "Tank",
         umur: 24,
-        negara: "🇧🇷 Brazil",
+        negara: "🇷 Brazil",
         kontrak: "2026",
         gaji: 11000,
-        stats: {
-            mechanics: 82,
-            gameSense: 80,
-            teamwork: 90,
-            stamina: 88
-        },
-        avatar: "TopLaner99"
+        stats: { mechanics: 82, gameSense: 80, teamwork: 90, stamina: 88 },
+        avatar: "TopLaner99",
+        avatarIndex: 67  // Tambahin ini
     },
     {
         id: 4,
@@ -62,13 +50,9 @@ const defaultPlayers = [
         negara: "🇨🇳 China",
         kontrak: "2028",
         gaji: 18000,
-        stats: {
-            mechanics: 95,
-            gameSense: 82,
-            teamwork: 78,
-            stamina: 90
-        },
-        avatar: "ADCarry"
+        stats: { mechanics: 95, gameSense: 82, teamwork: 78, stamina: 90 },
+        avatar: "ADCarry",
+        avatarIndex: 45  // Tambahin ini
     },
     {
         id: 5,
@@ -76,19 +60,14 @@ const defaultPlayers = [
         posisi: "Support",
         role: "Support",
         umur: 25,
-        negara: "🇺 Europe",
+        negara: "🇪🇺 Europe",
         kontrak: "2025",
         gaji: 9000,
-        stats: {
-            mechanics: 78,
-            gameSense: 92,
-            teamwork: 95,
-            stamina: 85
-        },
-        avatar: "SupportPro"
+        stats: { mechanics: 78, gameSense: 92, teamwork: 95, stamina: 85 },
+        avatar: "SupportPro",
+        avatarIndex: 89  // Tambahin ini
     }
 ];
-
 // Load pemain dari localStorage atau pakai default
 function loadPlayers() {
     const saved = localStorage.getItem('esportbos_players');
@@ -106,9 +85,10 @@ function savePlayers(players) {
 }
 
 function getAvatarUrl(seed) {
-    // Pakai ID pemain sebagai seed untuk konsistensi
-    const id = seed.replace(/\D/g, '') || '1';
-    return `https://randomuser.me/api/portraits/men/${parseInt(id) % 100}.jpg`;
+    // Pakai nama pemain sebagai seed yang unik
+    // Tambahin angka random biar lebih variatif
+    const uniqueSeed = seed + Math.abs(seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
+    return `https://randomuser.me/api/portraits/men/${parseInt(uniqueSeed) % 100}.jpg`;
 }
 
 // Render roster
