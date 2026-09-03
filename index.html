@@ -4,445 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Jadilah Bos Esports Terkenal Dunia!</title>
-    <style>
-        /* ===== BASE RESET ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #f5f5f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-width: 1200px;
-            color: #333;
-        }
-
-        /* ===== NAVBAR ===== */
-        .navbar {
-            background: #ffffff;
-            height: 100px;
-            box-shadow: 
-                0 4px 8px rgba(0,0,0,0.1),
-                0 -2px 4px rgba(255,255,255,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 50px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            height: 80px;
-            width: auto;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 30px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            font-weight: 600;
-            font-size: 16px;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: #00d4ff;
-        }
-
-        /* ===== HERO SECTION ===== */
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 80px 50px;
-            text-align: center;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            font-size: 52px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            font-weight: 800;
-        }
-
-        .hero p {
-            font-size: 22px;
-            margin-bottom: 40px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        }
-
-        /* ===== LOGIN FORM (Panel Timbul) ===== */
-        .login-panel {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 
-                8px 8px 16px #b8b9be,
-                -8px -8px 16px #ffffff;
-            padding: 40px;
-            max-width: 450px;
-            margin: -60px auto 60px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .login-panel h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #333;
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            background: #f0f0f0;
-            box-shadow: 
-                inset 3px 3px 6px #d1d3d8,
-                inset -3px -3px 6px #ffffff;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            background: #ffffff;
-            box-shadow: 
-                inset 4px 4px 8px #d1d3d8,
-                inset -4px -4px 8px #ffffff;
-        }
-
-        /* ===== TOMBOL FUTURISTIK ===== */
-        .btn-futuristic {
-            background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 
-                0 0 20px rgba(0, 212, 255, 0.5),
-                0 0 40px rgba(0, 153, 255, 0.3);
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .btn-futuristic:hover {
-            box-shadow: 
-                0 0 30px rgba(0, 212, 255, 0.7),
-                0 0 60px rgba(0, 153, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .btn-futuristic:active {
-            transform: translateY(2px);
-            box-shadow: 
-                0 0 10px rgba(0, 212, 255, 0.5),
-                0 0 20px rgba(0, 153, 255, 0.3);
-        }
-
-        .btn-register {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            box-shadow: 
-                0 0 20px rgba(255, 107, 107, 0.5),
-                0 0 40px rgba(238, 90, 111, 0.3);
-        }
-
-        .btn-register:hover {
-            box-shadow: 
-                0 0 30px rgba(255, 107, 107, 0.7),
-                0 0 60px rgba(238, 90, 111, 0.5);
-        }
-
-        .login-divider {
-            text-align: center;
-            margin: 20px 0;
-            color: #999;
-            font-size: 14px;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .login-link a {
-            color: #00d4ff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        /* ===== SCREENSHOTS SECTION ===== */
-        .screenshots {
-            padding: 60px 50px;
-            text-align: center;
-        }
-
-        .screenshots h2 {
-            font-size: 36px;
-            margin-bottom: 40px;
-            color: #333;
-        }
-
-        .screenshots-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .screenshot-box {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 
-                8px 8px 16px #b8b9be,
-                -8px -8px 16px #ffffff;
-            padding: 20px;
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #999;
-        }
-
-        /* ===== TESTIMONIALS ===== */
-        .testimonials {
-            padding: 60px 50px;
-            background: #f5f5f5;
-        }
-
-        .testimonials h2 {
-            text-align: center;
-            font-size: 36px;
-            margin-bottom: 40px;
-            color: #333;
-        }
-
-        .testimonials-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .testimonial-box {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 
-                8px 8px 16px #b8b9be,
-                -8px -8px 16px #ffffff;
-            padding: 30px;
-            border-left: 4px solid #00d4ff;
-        }
-
-        .testimonial-box p {
-            font-style: italic;
-            margin-bottom: 15px;
-            color: #555;
-            line-height: 1.6;
-        }
-
-        .testimonial-author {
-            font-weight: bold;
-            color: #00d4ff;
-            text-align: right;
-        }
-
-        .stars {
-            color: #ffd700;
-            margin-bottom: 10px;
-            font-size: 20px;
-        }
-
-        /* ===== FITUR UNGGULAN (Papan Jati) ===== */
-        .features {
-            padding: 60px 50px;
-            text-align: center;
-        }
-
-        .features h2 {
-            font-size: 36px;
-            margin-bottom: 40px;
-            color: #333;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        /* BOX PAPAN JATI */
-        .feature-box {
-            background: #8B4513;
-            background-image: 
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 
-                0 0 20px rgba(0, 212, 255, 0.3),
-                8px 8px 16px rgba(0,0,0,0.2);
-            border: 2px solid #00d4ff;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 50px,
-                    rgba(255,255,255,0.05) 50px,
-                    rgba(255,255,255,0.05) 51px
-                );
-            pointer-events: none;
-        }
-
-        .feature-box h3 {
-            color: #ffffff;
-            font-size: 22px;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-box p {
-            color: #ffffff;
-            font-size: 16px;
-            line-height: 1.6;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ===== FOOTER ===== */
-        .footer {
-            background: #2c3e50;
-            color: white;
-            padding: 40px 50px;
-            text-align: center;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 20px;
-            list-style: none;
-        }
-
-        .footer-links a {
-            color: white;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: #00d4ff;
-        }
-
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .social-links a {
-            width: 40px;
-            height: 40px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 20px;
-            box-shadow: 
-                4px 4px 8px rgba(0,0,0,0.3),
-                -4px -4px 8px rgba(255,255,255,0.1);
-            transition: all 0.3s;
-        }
-
-        .social-links a:hover {
-            transform: translateY(-3px);
-            box-shadow: 
-                0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        .copyright {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #95a5a6;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- NAVBAR -->
     <nav class="navbar">
-        <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="logo">
+        <img src="logo-esportbos-banner.png" alt="EsportBos" class="logo">
         <ul class="nav-links">
             <li><a href="#home">Beranda</a></li>
             <li><a href="#features">Fitur</a></li>
@@ -482,18 +50,18 @@
     <section class="screenshots">
         <h2>Lihat Gameplay EsportBos</h2>
         <div class="screenshots-grid">
-            <div class="screenshot-box">📊 Dashboard Manager</div>
-            <div class="screenshot-box"> Manajemen Roster</div>
+            <div class="screenshot-box"> Dashboard Manager</div>
+            <div class="screenshot-box">⚙️ Manajemen Roster</div>
             <div class="screenshot-box">🧠 Taktik & Draft</div>
             <div class="screenshot-box">💰 Transfer Market</div>
-            <div class="screenshot-box"> Turnamen Live</div>
+            <div class="screenshot-box">🏆 Turnamen Live</div>
             <div class="screenshot-box">📈 Statistik Tim</div>
         </div>
     </section>
 
     <!-- TESTIMONIALS -->
     <section class="testimonials" id="testimonials">
-        <h2> Kata Para Bos Esports</h2>
+        <h2>💬 Kata Para Bos Esports</h2>
         <div class="testimonials-grid">
             <div class="testimonial-box">
                 <div class="stars">⭐⭐⭐⭐⭐</div>
@@ -533,17 +101,17 @@
                 <p>Atur strategi setiap match, pilih hero/agent, ban musuh, dan kalahkan lawan dengan taktik cerdas</p>
             </div>
             <div class="feature-box">
-                <div class="feature-icon">💼</div>
+                <div class="feature-icon"></div>
                 <h3>Bisnis Esports</h3>
                 <p>Cari sponsor, upgrade gaming house, kelola gaji pemain, dan bangun kerajaan esports-mu</p>
             </div>
             <div class="feature-box">
-                <div class="feature-icon">🏆</div>
+                <div class="feature-icon"></div>
                 <h3>Turnamen Global</h3>
                 <p>Bertanding di liga lokal hingga turnamen internasional. Raih hadiah jutaan dollar!</p>
             </div>
             <div class="feature-box">
-                <div class="feature-icon">📈</div>
+                <div class="feature-icon"></div>
                 <h3>Transfer Market</h3>
                 <p>Jual beli pemain dengan sistem bidding. Temukan hidden gem dari seluruh dunia!</p>
             </div>
