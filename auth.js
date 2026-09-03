@@ -1,107 +1,67 @@
-// ===== ESPORTBOS AUTH SYSTEM =====
 
-// Supabase Config
-const SUPABASE_URL = 'https://wfmwwbvckeeptkswtohi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmbXd3YnZja2VlcHRrc3d0b2hpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MDYxMjMsImV4cCI6MjEwMzk4MjEyM30.1DpjbWHXAOYQ-VtLYBGzcWOnCIrOimDZo_NKKcVHkNk';
+// ===== ESPORTBOS - SIMPLE AUTH (LOCALSTORAGE) =====
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// Global user state
+// Simpan user yang udah login
 let currentUser = null;
 
-// ===== FUNGSI UTAMA =====
-
-// Register User
-async function registerUser(username, email, password) {
-    try {
-        console.log(' Registering user...');
-        
-        // Sign up dengan Supabase Auth
-        const { data, error } = await sb.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    username: username,
-                    full_name: username
-                }
-            }
-        });
-
-        if (error) throw error;
-
-        console.log('✅ Registrasi berhasil!', data);
-        alert('Registrasi berhasil! Silakan cek email untuk verifikasi (jika diperlukan) atau langsung login.');
-        showLogin();
-        return data;
-    } catch (error) {
-        console.error('❌ Error registrasi:', error.message);
-        alert('Error: ' + error.message);
-        return null;
+// Register
+function register(username, email, password) {
+    // Cek apakah user udah ada
+    const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
+    
+    if (users.find(u => u.email === email)) {
+        alert('Email sudah terdaftar!');
+        return false;
     }
+    
+    // Simpan user baru
+    users.push({ username, email, password });
+    localStorage.setItem('esportbos_users', JSON.stringify(users));
+    
+    alert('Registrasi berhasil! Silakan login.');
+    showLogin();
+    return true;
 }
 
-// Login User
-async function loginUser(email, password) {
-    try {
-        console.log(' Logging in...');
-        
-        const { data, error } = await sb.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) throw error;
-
-        console.log('✅ Login berhasil!', data);
-        currentUser = data.user;
-        
-        // Simpan session
-        localStorage.setItem('esportbos_user', JSON.stringify({
-            id: data.user.id,
-            email: data.user.email,
-            username: data.user.user_metadata?.username || email
-        }));
-
-        // Redirect ke dashboard
-        alert('Login berhasil! Selamat datang, ' + (data.user.user_metadata?.username || 'Manager') + '!');
-        window.location.href = 'dashboard.html';
-        
-        return data;
-    } catch (error) {
-        console.error('❌ Error login:', error.message);
-        alert('Login gagal: ' + error.message);
-        return null;
+// Login
+function login(email, password) {
+    const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (!user) {
+        alert('Email atau password salah!');
+        return false;
     }
+    
+    // Simpan session
+    currentUser = user;
+    localStorage.setItem('esportbos_current_user', JSON.stringify(user));
+    
+    alert('Login berhasil! Selamat datang, ' + user.username + '!');
+    window.location.href = 'dashboard.html';
+    return true;
 }
 
-// Logout User
-async function logoutUser() {
-    try {
-        await sb.auth.signOut();
-        localStorage.removeItem('esportbos_user');
-        currentUser = null;
-        console.log('👋 Logout berhasil');
-        window.location.href = 'index.html';
-    } catch (error) {
-        console.error('❌ Error logout:', error);
-    }
+// Logout
+function logout() {
+    localStorage.removeItem('esportbos_current_user');
+    currentUser = null;
+    window.location.href = 'index.html';
 }
 
-// Cek apakah user sudah login
-async function checkAuth() {
-    const { data } = await sb.auth.getSession();
-    if (data.session) {
-        currentUser = data.session.user;
+// Cek apakah sudah login
+function checkAuth() {
+    const savedUser = localStorage.getItem('esportbos_current_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
         return true;
     }
     return false;
 }
 
-// Protect halaman (cek auth)
-async function requireAuth() {
-    const isLoggedIn = await checkAuth();
-    if (!isLoggedIn) {
+// Protect halaman
+function requireAuth() {
+    if (!checkAuth()) {
         alert('Silakan login terlebih dahulu!');
         window.location.href = 'index.html';
         return false;
@@ -109,8 +69,7 @@ async function requireAuth() {
     return true;
 }
 
-// ===== FUNGSI UI =====
-
+// Show/Hide forms
 function showRegister() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('register').style.display = 'block';
@@ -121,45 +80,51 @@ function showLogin() {
     document.getElementById('login').style.display = 'block';
 }
 
-// ===== EVENT LISTENERS =====
-
+// Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Form Login
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
+        loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            await loginUser(email, password);
+            login(email, password);
         });
     }
 
     // Form Register
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-        registerForm.addEventListener('submit', async function(e) {
+        registerForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = document.getElementById('registerUsername').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
-            await registerUser(username, email, password);
+            register(username, email, password);
         });
     }
 
-    // Auto-hide forms kalau di dashboard
+    // Auto-check auth di dashboard
     const dashboardBody = document.querySelector('.dashboard-body');
     if (dashboardBody) {
-        // Kita di dashboard, cek auth
         requireAuth();
+        
+        // Tampilkan nama user
+        if (currentUser) {
+            const userNameSpan = document.getElementById('userName');
+            if (userNameSpan) {
+                userNameSpan.textContent = currentUser.username;
+            }
+        }
     }
 });
 
-// Expose functions ke window
+// Expose ke window
 window.EsportBosAuth = {
-    registerUser,
-    loginUser,
-    logoutUser,
+    register,
+    login,
+    logout,
     checkAuth,
     requireAuth,
     showRegister,
