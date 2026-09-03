@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Dashboard Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- ===== NAVBAR ATAS ===== -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Pendapatan (1671)</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge task">✅ Tugas (2)</div>
+            <div class="stat-badge message">️ Pesan (0)</div>
+            <div class="user-profile">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
+                <span>BosKu_75</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- ===== SIDEBAR KIRI ===== -->
+        <aside class="sidebar">
+            <!-- Info Tim -->
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <div class="pop-bar">
+                        <div class="pop-fill" style="width: 76%;"></div>
+                    </div>
+                    <span>Popularitas Klub: 76%</span>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar">
+                        <div class="moral-fill" style="width: 78%;"></div>
+                    </div>
+                </div>
+                <div class="team-stats">
+                    <div class="stat-row">💎 Plat: 2.64</div>
+                    <div class="stat-row">🥇 Emas: 12.87</div>
+                    <div class="stat-row">🇮🇹 ITA: 100.58</div>
+                </div>
+                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+            </div>
+
+            <!-- Menu Navigasi -->
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active">👥 Pemain</a>
+                <a href="#" class="menu-item">🧠 Taktik</a>
+                <a href="#" class="menu-item">⚔️ Pertandingan</a>
+                <a href="#" class="menu-item">️ Latihan</a>
+                <a href="#" class="menu-item">💰 Transfer</a>
+                <a href="#" class="menu-item"> Akademi Muda</a>
+                <a href="#" class="menu-item">🏢 Kantor</a>
+                <a href="#" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="#" class="menu-item">🏟️ Stadion</a>
+            </nav>
+
+            <!-- Social Icons -->
+            <div class="social-icons">
+                <a href="#">📘</a>
+                <a href="#">💬</a>
+                <a href="#">📷</a>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+
+            <!-- Info Bar -->
+            <div class="info-bar">
+                <span>Musim 28 / Hari 3</span>
+                <span> Pertandingan selanjutnya: Inter FC (K) dalam 12 Jam</span>
+            </div>
+
+            <!-- Top Panels: Last Match, Next Match, Competition -->
+            <div class="top-panels">
+                <div class="panel raised">
+                    <h4>⏮ Pertandingan Terakhir</h4>
+                    <div class="match-result">
+                        <span class="team">Modena</span>
+                        <span class="score">8-1</span>
+                        <span class="team">Metaverse FC</span>
+                    </div>
+                    <div class="match-info">Liga Nasional - 11 Jam lalu</div>
+                </div>
+
+                <div class="panel raised">
+                    <h4>⏭ Pertandingan Selanjutnya</h4>
+                    <div class="match-result">
+                        <span class="team">Metaverse FC</span>
+                        <span class="score">VS</span>
+                        <span class="team">Inter FC</span>
+                    </div>
+                    <div class="match-info">Liga Nasional - dalam 12 Jam</div>
+                </div>
+
+                <div class="panel raised">
+                    <h4>🏆 Kompetisi</h4>
+                    <div class="competition-info">
+                        <div>C.4 <span class="badge">16th</span> (0 pts)</div>
+                        <div class="progress">1/642</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active">Terbaru</button>
+                <button class="tab-btn">Kalender</button>
+            </div>
+
+            <!-- Jadwal Match + Forum -->
+            <div class="content-grid">
+                <div class="panel raised">
+                    <h3>📅 Pertandingan Terbesar yang Akan Datang</h3>
+                    <div class="match-table">
+                        <div class="table-header">
+                            <span>Kandang</span>
+                            <span>Tandang</span>
+                            <span>Waktu</span>
+                        </div>
+                        <div class="table-row"><span>🇳🇱 Fc Dordrecht</span><span>🇵🇹 Palense</span><span>dalam 14 Jam</span></div>
+                        <div class="table-row"><span>󠁧󠁢󠁮󠁧 Plymouth</span><span>🏴󠁢󠁥󠁧󠁿 Liverpool F.C.</span><span>dalam 15 Jam</span></div>
+                        <div class="table-row"><span>🇪🇸 Atlético Peligro</span><span>🇮🇹 FC U GARDIDD</span><span>dalam 13 Jam</span></div>
+                        <div class="table-row"><span>🇸 Alcorcón</span><span>🇪🇸 U.D. Salamanca</span><span>dalam 14 Jam</span></div>
+                        <div class="table-row"><span>🇦🇷 Apuestes.arg</span><span>🇳🇱 Dutch Lions</span><span>dalam 17 Jam</span></div>
+                        <div class="table-row"><span>🇪🇸 FCB-Spain</span><span> Apuestes.com</span><span>dalam 14 Jam</span></div>
+                        <div class="table-row"><span>🇳 Orange Lions</span><span>🇳 Amstelveen</span><span>dalam 14 Jam</span></div>
+                        <div class="table-row"><span>🇪🇸 F.C.S.B</span><span>🌐 Respect</span><span>dalam 13 Jam</span></div>
+                        <div class="table-row"><span>🇸🇦 ALAHLY</span><span>🇸🇦 AlNasry Any Way</span><span>dalam 13 Jam</span></div>
+                        <div class="table-row"><span>🇪 Racing de Santander</span><span>🇫🇷 Stade Malherbe de Caen</span><span>dalam 14 Jam</span></div>
+                    </div>
+                </div>
+
+                <div class="panel raised">
+                    <h3>💬 Postingan Forum Terbaru</h3>
+                    <div class="forum-list">
+                        <div class="forum-item">
+                            <span class="forum-topic">🔥 Milli Takım Son Dünya Kupasını Gerçekten Kaçırdı mı?</span>
+                            <span class="forum-time">10 Jam lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Juan Cruz Cáceres</span>
+                            <span class="forum-time">11 Jam lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">2 team rules</span>
+                            <span class="forum-time">2 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Experience Help</span>
+                            <span class="forum-time">2 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Young 2 star players on market</span>
+                            <span class="forum-time">2 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">RANGINGS TOP Players invest/withdraw money in the game!</span>
+                            <span class="forum-time">3 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Don't forget to backing up managers for sVCT coins</span>
+                            <span class="forum-time">3 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Suggestions for Future Game Improvements</span>
+                            <span class="forum-time">5 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">Transfer listing - Proportional fee</span>
+                            <span class="forum-time">5 Hari lalu</span>
+                        </div>
+                        <div class="forum-item">
+                            <span class="forum-topic">🇮🇹 Grazie do reprezentacji</span>
+                            <span class="forum-time">6 Hari lalu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfer Tables -->
+            <div class="transfer-grid">
+                <div class="panel raised">
+                    <h3>💸 Transfer Pemain Terbaru</h3>
+                    <div class="transfer-table">
+                        <div class="table-header">
+                            <span>Pos</span>
+                            <span>Dari</span>
+                            <span>Ke</span>
+                            <span>Nilai Bid</span>
+                        </div>
+                        <div class="table-row"><span class="pos gt">GT</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid"> 0.95</span></div>
+                        <div class="table-row"><span class="pos p">P</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid">💰 0.30</span></div>
+                        <div class="table-row"><span class="pos p">P</span><span>Liège</span><span>Sir Alex XI</span><span class="bid">💰 0.02</span></div>
+                        <div class="table-row"><span class="pos bka">BKa</span><span>FC Karaczany</span><span>Sir Alex XI</span><span class="bid">💰 1.35</span></div>
+                        <div class="table-row"><span class="pos bt">BT</span><span>Mineros FC</span><span>Pringy Fc</span><span class="bid">💰 0.38</span></div>
+                        <div class="table-row"><span class="pos gka">GKa</span><span>Bebas Transfer</span><span>ANTV</span><span class="bid">💰 0.05</span></div>
+                        <div class="table-row"><span class="pos bt">BT</span><span>Palmeiras</span><span>Fener</span><span class="bid">💰 2.02</span></div>
+                        <div class="table-row"><span class="pos k">K</span><span>Bebas Transfer</span><span>Macan FC</span><span class="bid"> 5.12</span></div>
+                        <div class="table-row"><span class="pos bki">BKi</span><span>EL VALHALLA FC</span><span>Pumas</span><span class="bid">💰 0.85</span></div>
+                        <div class="table-row"><span class="pos p">P</span><span>AZ Diamond</span><span>Dangerous B</span><span class="bid">💰 0.90</span></div>
+                    </div>
+                </div>
+
+                <div class="panel raised">
+                    <h3> Bid Transfer Terbaru</h3>
+                    <div class="transfer-table">
+                        <div class="table-header">
+                            <span>Pos</span>
+                            <span>Oleh Tim</span>
+                            <span>Nilai Bid</span>
+                            <span>Waktu Lalu</span>
+                        </div>
+                        <div class="table-row"><span class="pos bt">BT</span><span>Wimbledon</span><span class="bid">💰 0.90</span><span>9 Menit</span></div>
+                        <div class="table-row"><span class="pos gki">GKi</span><span>Sir Alex XI</span><span class="bid">💰 0.40</span><span>22 Menit</span></div>
+                        <div class="table-row"><span class="pos bki">BKi</span><span>Gilroyd</span><span class="bid">💰 0.09</span><span>25 Menit</span></div>
+                        <div class="table-row"><span class="pos p">P</span><span>Gilroyd</span><span class="bid">💰 0.24</span><span>26 Menit</span></div>
+                        <div class="table-row"><span class="pos gtka">GTKa</span><span>Gilroyd</span><span class="bid">💰 0.52</span><span>26 Menit</span></div>
+                        <div class="table-row"><span class="pos gtka">GTKa</span><span>Fi.Lan.Ti. Pesaro</span><span class="bid">💰 0.57</span><span>26 Menit</span></div>
+                        <div class="table-row"><span class="pos gki">GKi</span><span>Gilroyd</span><span class="bid">💰 0.41</span><span>28 Menit</span></div>
+                        <div class="table-row"><span class="pos gt">GT</span><span>Sir Alex XI</span><span class="bid">💰 0.95</span><span>31 Menit</span></div>
+                        <div class="table-row"><span class="pos gt">GT</span><span>FC Internazionale</span><span class="bid">💰 0.90</span><span>32 Menit</span></div>
+                        <div class="table-row"><span class="pos bka">BKa</span><span>Sir Alex XI</span><span class="bid">💰 1.35</span><span>35 Menit</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penawaran Section (Papan Jati) -->
+            <div class="panel wood-panel">
+                <h3> Penawaran</h3>
+                <p>Tidak punya cukup dana untuk membeli pemain baru? Danai klubmu dengan menyelesaikan tugas, survei, dan lainnya! Lihat berapa banyak yang telah didapat manager lain di bawah ini.</p>
+                <div class="penawaran-stats">
+                    <div>Selesai: <strong>17,870</strong> Penawaran</div>
+                    <div>Total Terbayar: <strong>4,170.16</strong> Platinum</div>
+                </div>
+                <button class="btn-futuristic btn-ayo">Ayo</button>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
