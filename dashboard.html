@@ -256,6 +256,31 @@
     </div>
 <!-- Tambahkan ini di dalam <head> atau sebelum penutup </body> -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Auth Script -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+
+<script>
+// Cek auth sebelum dashboard load
+window.addEventListener('DOMContentLoaded', async function() {
+    const isLoggedIn = await window.EsportBosAuth.checkAuth();
+    if (!isLoggedIn) {
+        alert('Silakan login terlebih dahulu!');
+        window.location.href = 'index.html';
+    } else {
+        // Tampilkan nama user di navbar
+        const user = JSON.parse(localStorage.getItem('esportbos_user'));
+        if (user) {
+            const userProfileName = document.querySelector('.user-profile span');
+            if (userProfileName) {
+                userProfileName.textContent = user.username || user.email;
+            }
+        }
+    }
+});
+</script>
+
+<script src="script.js"></script>
 <script src="script.js"></script>
     <script src="script.js"></script>
 </body>
