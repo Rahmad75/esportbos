@@ -27,24 +27,44 @@
         </div>
     </section>
 
-    <!-- LOGIN FORM -->
-    <div class="login-panel" id="login">
-        <h2>Masuk ke EsportBos</h2>
-        <form>
-            <div class="form-group">
-                <input type="email" placeholder="Email" required>
-            </div>
-            <div class="form-group">
-                <input type="password" placeholder="Password" required>
-            </div>
-            <button type="submit" class="btn-futuristic">Login</button>
-            <div class="login-divider">atau</div>
-            <button type="button" class="btn-futuristic btn-register">Daftar Sekarang - GRATIS!</button>
-        </form>
-        <div class="login-link">
-            Belum punya akun? <a href="#">Register di sini</a>
+   <!-- LOGIN FORM (FUNGSIONAL) -->
+<div class="login-panel" id="login">
+    <h2>Masuk ke EsportBos</h2>
+    <form id="loginForm">
+        <div class="form-group">
+            <input type="email" id="loginEmail" placeholder="Email" required>
         </div>
+        <div class="form-group">
+            <input type="password" id="loginPassword" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn-futuristic">Login</button>
+        <div class="login-divider">atau</div>
+        <button type="button" class="btn-futuristic btn-register" onclick="showRegister()">Daftar Sekarang - GRATIS!</button>
+    </form>
+    <div class="login-link">
+        Belum punya akun? <a href="#" onclick="showRegister()">Register di sini</a>
     </div>
+</div>
+
+<!-- REGISTER FORM (SEMBUNYI DULU) -->
+<div class="login-panel" id="register" style="display: none;">
+    <h2>Daftar EsportBos</h2>
+    <form id="registerForm">
+        <div class="form-group">
+            <input type="text" id="registerUsername" placeholder="Username" required>
+        </div>
+        <div class="form-group">
+            <input type="email" id="registerEmail" placeholder="Email" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="registerPassword" placeholder="Password (min 6 karakter)" required minlength="6">
+        </div>
+        <button type="submit" class="btn-futuristic btn-register">Buat Akun</button>
+        <div class="login-link">
+            Sudah punya akun? <a href="#" onclick="showLogin()">Login di sini</a>
+        </div>
+    </form>
+</div>
 
     <!-- SCREENSHOTS -->
     <section class="screenshots">
