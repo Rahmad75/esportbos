@@ -46,9 +46,9 @@ let mapResults = [];
 let myMapWins = 0;
 let enemyMapWins = 0;
 
-const MAX_MAP_TIME = 2100; // 35 menit dalam detik
-const SIMULATION_SPEED = 50; // Update setiap 50ms
-const TIME_MULTIPLIER = 10; // 1 detik real = 10 detik game
+const MAX_MAP_TIME = 2100;
+const SIMULATION_SPEED = 150; // Update setiap 150ms
+const TIME_MULTIPLIER = 3; // 1 detik real = 3 detik game
 
 // Event templates untuk commentary
 const eventTemplates = {
