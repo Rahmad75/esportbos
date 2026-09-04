@@ -33,7 +33,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="team-info-panel">
-                <div class="team-logo"></div>
+                <div class="team-logo">🏆</div>
                 <h3 class="team-name">RRQ Hoshi</h3>
                 <div class="team-rank">16th in C.4 🇮</div>
                 <div class="team-popularity">
@@ -48,8 +48,8 @@
 
             <nav class="sidebar-menu">
                 <a href="pemain.html" class="menu-item">👥 Pemain</a>
-                <a href="#" class="menu-item">🧠 Taktik</a>
-                <a href="pertandingan.html" class="menu-item active">️ Pertandingan</a>
+                <a href="#" class="menu-item"> Taktik</a>
+                <a href="pertandingan.html" class="menu-item active">⚔️ Pertandingan</a>
                 <a href="#" class="menu-item">🏋️ Latihan</a>
                 <a href="#" class="menu-item">💰 Transfer</a>
             </nav>
@@ -59,7 +59,7 @@
         <main class="main-content">
 
             <div class="info-bar">
-                <span>⚔️ Pusat Pertandingan</span>
+                <span>️ Pusat Pertandingan</span>
                 <span>Musim 28 / Hari 3</span>
             </div>
 
@@ -84,7 +84,7 @@
                         <div class="vs-center">
                             <div class="vs-text">VS</div>
                             <div class="match-timer" id="matchTimer">12:00:00</div>
-                            <button class="btn-futuristic" id="btnMainMatch" onclick="mulaiMatch()">⚔️ MAINKAN MATCH</button>
+                            <button class="btn-futuristic" id="btnMainMatch" onclick="startLiveMatch()">️ MAINKAN MATCH</button>
                         </div>
                         <div class="team-side">
                             <div class="team-logo-big">⚽</div>
@@ -95,7 +95,7 @@
                     </div>
 
                     <!-- Taktik Sebelum Match -->
-                    <div class="tactic-setup wood-panel">
+                    <div class="tactic-setup wood-panel" id="tacticSetup">
                         <h3>🧠 Atur Strategi Match</h3>
                         <div class="tactic-grid">
                             <div class="tactic-option">
@@ -110,7 +110,7 @@
                                 <label>🎯 Fokus Objective</label>
                                 <select id="objective">
                                     <option value="early">⏰ Early Game (First Blood)</option>
-                                    <option value="objective" selected>🐉 Dragon/Baron</option>
+                                    <option value="objective" selected> Dragon/Baron</option>
                                     <option value="teamfight">⚔️ Team Fight</option>
                                 </select>
                             </div>
@@ -119,19 +119,37 @@
                                 <select id="target">
                                     <option value="carry">⭐ Protect Carry</option>
                                     <option value="jungle">🌲 Jungle Control</option>
-                                    <option value="mid">🎯 Mid Lane Dominance</option>
+                                    <option value="mid"> Mid Lane Dominance</option>
                                 </select>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- LIVE MATCH UI (Hidden by default) -->
+                    <div id="liveMatchUI" style="display:none;">
+                        <div class="live-match-header">
+                            <div class="map-indicator" id="mapIndicator">Map 1/3</div>
+                            <div class="map-score" id="mapScore">0 - 0</div>
+                        </div>
+                        
+                        <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
+                        
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="matchProgress"></div>
+                        </div>
+                        
+                        <div class="live-score" id="liveScore"></div>
+                        
+                        <div class="live-stats" id="liveStats"></div>
+                        
+                        <div class="live-commentary" id="liveCommentary"></div>
                     </div>
                 </div>
 
                 <!-- Jadwal Minggu Ini -->
                 <div class="panel raised">
                     <h3>📅 Jadwal Minggu Ini</h3>
-                    <div class="schedule-list" id="scheduleList">
-                        <!-- Diisi oleh JS -->
-                    </div>
+                    <div class="schedule-list" id="scheduleList"></div>
                 </div>
             </div>
 
@@ -160,14 +178,19 @@
                                 <th>Poin</th>
                             </tr>
                         </thead>
-                        <tbody id="standingsBody">
-                            <!-- Diisi oleh JS -->
-                        </tbody>
+                        <tbody id="standingsBody"></tbody>
                     </table>
                 </div>
             </div>
 
         </main>
+    </div>
+
+    <!-- MODAL MAP RESULT -->
+    <div class="modal" id="mapResultModal">
+        <div class="modal-content">
+            <div id="mapResultBody"></div>
+        </div>
     </div>
 
     <!-- MODAL MATCH RESULT -->
