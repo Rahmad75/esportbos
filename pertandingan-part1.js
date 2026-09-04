@@ -227,15 +227,27 @@ function updateLiveDisplay() {
         `;
     }
     
-    if (commentaryList) {
-        commentaryList.innerHTML = commentary.slice(-8).map(c => `
-            <div class="commentary-item ${c.type}">
-                <span class="commentary-time">[${formatTime(Math.floor(c.time / 10))}]</span>
-                <span class="commentary-text">${c.text}</span>
-            </div>
-        `).join('');
-        commentaryList.scrollTop = commentaryList.scrollHeight;
+   if (commentaryList) {
+    // Simpan scroll position
+    const wasAtBottom = commentaryList.scrollHeight - commentaryList.scrollTop === commentaryList.clientHeight;
+    
+    // Update content
+    const newHTML = commentary.slice(-8).map(c => `
+        <div class="commentary-item ${c.type}">
+            <span class="commentary-time">[${formatTime(Math.floor(c.time / 10))}]</span>
+            <span class="commentary-text">${c.text}</span>
+        </div>
+    `).join('');
+    
+    // Hanya update jika ada perubahan
+    if (commentaryList.innerHTML !== newHTML) {
+        commentaryList.innerHTML = newHTML;
+        
+        if (wasAtBottom) {
+            commentaryList.scrollTop = commentaryList.scrollHeight;
+        }
     }
+}
     
     if (progressBar) {
         const progress = (matchTime / MAX_MAP_TIME) * 100;
