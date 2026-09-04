@@ -46,6 +46,11 @@ let mapResults = [];
 let myMapWins = 0;
 let enemyMapWins = 0;
 
+// Graph & Mini Map variables
+let goldHistory = [];
+let playerPositions = {};
+let performanceData = {};
+
 const MAX_MAP_TIME = 2100; // 35 menit dalam detik
 const SIMULATION_SPEED = 500; // Update setiap 500ms (setengah detik)
 const TIME_MULTIPLIER = 1; // 1 detik real = 1 detik game (REAL TIME!)
