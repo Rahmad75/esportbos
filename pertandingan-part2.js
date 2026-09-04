@@ -236,24 +236,91 @@ function initMiniMap() {
 }
 
 function updateMiniMap() {
-    const container = document.getElementById('miniMapPlayers');
-    if (!container) return;
+    const heroesContainer = document.getElementById('mapHeroes');
+    const turretsContainer = document.getElementById('mapTurrets');
+    if (!heroesContainer) return;
+
+    // 1. Generate Turrets (Hanya sekali di awal)
+    if (turretsContainer.children.length === 0) {
+        const lanes = ['top', 'mid', 'bot'];
+        lanes.forEach(lane => {
+            // 3 Turret Ally
+            for(let i=1; i<=3; i++) {
+                let pos = getLanePosition(lane, 20 + (i*15)); // 20%, 35%, 50%
+                let t = document.createElement('div');
+                t.className = 'turret';
+                t.style.left = pos.x + '%';
+                t.style.top = pos.y + '%';
+                turretsContainer.appendChild(t);
+            }
+            // 3 Turret Enemy
+            for(let i=1; i<=3; i++) {
+                let pos = getLanePosition(lane, 80 - (i*15)); // 80%, 65%, 50%
+                let t = document.createElement('div');
+                t.className = 'turret enemy';
+                t.style.left = pos.x + '%';
+                t.style.top = pos.y + '%';
+                turretsContainer.appendChild(t);
+            }
+        });
+    }
+
+    // 2. Update Hero Positions
+    const players = JSON.parse(localStorage.getItem('esportbos_players') || '[]');
+    const roles = ['top', 'mid', 'bot', 'bot', 'mid']; // Distribusi lane
+    const roleIcons = ['️', '⚔️', '', '🔮', '']; // Icon sesuai role
     
-    container.innerHTML = '';
-    
-    Object.keys(playerPositions).forEach(playerName => {
-        const data = playerPositions[playerName];
-        const dot = document.createElement('div');
-        dot.className = `map-player ${data.team}-team ${data.position}`;
-        dot.title = playerName;
+    // Clear heroes lama
+    heroesContainer.innerHTML = '';
+
+    // Render Ally Heroes
+    players.forEach((player, index) => {
+        let lane = roles[index] || 'mid';
+        // Simulasi progress jalan (0% sampai 100% lalu balik)
+        let cycle = (matchTime % 600) / 600; 
+        let progress = cycle < 0.5 ? cycle * 2 : (1 - cycle) * 2; // Bolak-balik
         
-        // Random movement
-        const randomX = (Math.random() - 0.5) * 10;
-        const randomY = (Math.random() - 0.5) * 10;
-        dot.style.transform = `translate(${randomX}px, ${randomY}px)`;
+        let pos = getLanePosition(lane, 10 + (progress * 70)); // Jalan dari 10% ke 80%
         
-        container.appendChild(dot);
+        let hero = document.createElement('div');
+        hero.className = 'hero-marker hero-ally';
+        hero.style.left = `calc(${pos.x}% - 11px)`;
+        hero.style.top = `calc(${pos.y}% - 11px)`;
+        hero.innerHTML = roleIcons[index] || '⚔️';
+        hero.title = player.nama;
+        heroesContainer.appendChild(hero);
     });
+
+    // Render Enemy Heroes (Dummy)
+    const enemyNames = ['E-Top', 'E-Jgl', 'E-Mid', 'E-ADC', 'E-Sup'];
+    enemyNames.forEach((name, index) => {
+        let lane = roles[index] || 'mid';
+        let cycle = (matchTime % 600) / 600;
+        let progress = cycle < 0.5 ? cycle * 2 : (1 - cycle) * 2;
+        
+        // Enemy jalan dari arah berlawanan
+        let pos = getLanePosition(lane, 90 - (progress * 70));
+        
+        let hero = document.createElement('div');
+        hero.className = 'hero-marker hero-enemy';
+        hero.style.left = `calc(${pos.x}% - 11px)`;
+        hero.style.top = `calc(${pos.y}% - 11px)`;
+        hero.innerHTML = '💀';
+        hero.title = name;
+        heroesContainer.appendChild(hero);
+    });
+}
+
+// Helper function untuk hitung posisi X,Y berdasarkan Lane dan Progress
+function getLanePosition(lane, progressPercent) {
+    let p = progressPercent / 100;
+    if (lane === 'top') {
+        return { x: 10 + (p * 80), y: 20 };
+    } else if (lane === 'bot') {
+        return { x: 10 + (p * 80), y: 80 };
+    } else { // Mid (Diagonal)
+        return { x: 10 + (p * 80), y: 90 - (p * 80) };
+    }
 }
 
 // ===== GOLD GRAPH FUNCTIONS =====
