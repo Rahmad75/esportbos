@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Pertandingan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Pendapatan (1671)</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge task">✅ Tugas (2)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo"></div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="#" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item active">️ Pertandingan</a>
+                <a href="#" class="menu-item">🏋️ Latihan</a>
+                <a href="#" class="menu-item">💰 Transfer</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>⚔️ Pusat Pertandingan</span>
+                <span>Musim 28 / Hari 3</span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('jadwal')">📅 Jadwal</button>
+                <button class="tab-btn" onclick="switchTab('hasil')">📊 Hasil</button>
+                <button class="tab-btn" onclick="switchTab('klasemen')">🏆 Klasemen</button>
+            </div>
+
+            <!-- TAB: JADWAL -->
+            <div id="tab-jadwal" class="tab-content">
+                <div class="match-preview panel raised">
+                    <h3>🎯 Pertandingan Selanjutnya</h3>
+                    <div class="match-vs">
+                        <div class="team-side">
+                            <div class="team-logo-big">🏆</div>
+                            <h2>RRQ Hoshi</h2>
+                            <p>Rank: #16</p>
+                            <p>Power: <strong id="myPower">0</strong></p>
+                        </div>
+                        <div class="vs-center">
+                            <div class="vs-text">VS</div>
+                            <div class="match-timer" id="matchTimer">12:00:00</div>
+                            <button class="btn-futuristic" id="btnMainMatch" onclick="mulaiMatch()">⚔️ MAINKAN MATCH</button>
+                        </div>
+                        <div class="team-side">
+                            <div class="team-logo-big">⚽</div>
+                            <h2>Inter FC</h2>
+                            <p>Rank: #14</p>
+                            <p>Power: <strong>2450</strong></p>
+                        </div>
+                    </div>
+
+                    <!-- Taktik Sebelum Match -->
+                    <div class="tactic-setup wood-panel">
+                        <h3>🧠 Atur Strategi Match</h3>
+                        <div class="tactic-grid">
+                            <div class="tactic-option">
+                                <label>🎯 Gaya Bermain</label>
+                                <select id="strategi">
+                                    <option value="aggressive">⚡ Aggressive (Attack Early)</option>
+                                    <option value="balanced" selected>⚖️ Balanced</option>
+                                    <option value="defensive">🛡️ Defensive (Late Game)</option>
+                                </select>
+                            </div>
+                            <div class="tactic-option">
+                                <label>🎯 Fokus Objective</label>
+                                <select id="objective">
+                                    <option value="early">⏰ Early Game (First Blood)</option>
+                                    <option value="objective" selected>🐉 Dragon/Baron</option>
+                                    <option value="teamfight">⚔️ Team Fight</option>
+                                </select>
+                            </div>
+                            <div class="tactic-option">
+                                <label>🎯 Target Pemain</label>
+                                <select id="target">
+                                    <option value="carry">⭐ Protect Carry</option>
+                                    <option value="jungle">🌲 Jungle Control</option>
+                                    <option value="mid">🎯 Mid Lane Dominance</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jadwal Minggu Ini -->
+                <div class="panel raised">
+                    <h3>📅 Jadwal Minggu Ini</h3>
+                    <div class="schedule-list" id="scheduleList">
+                        <!-- Diisi oleh JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: HASIL -->
+            <div id="tab-hasil" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>📊 Hasil Pertandingan Terakhir</h3>
+                    <div id="matchHistory">
+                        <p style="text-align:center; color:#999;">Belum ada pertandingan yang dimainkan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: KLASEMEN -->
+            <div id="tab-klasemen" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🏆 Klasemen Liga C.4</h3>
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tim</th>
+                                <th>Main</th>
+                                <th>Menang</th>
+                                <th>Kalah</th>
+                                <th>Poin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standingsBody">
+                            <!-- Diisi oleh JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL MATCH RESULT -->
+    <div class="modal" id="matchModal">
+        <div class="modal-content match-result-modal">
+            <span class="modal-close" onclick="closeMatchModal()">&times;</span>
+            <div id="matchResultBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="pertandingan.js"></script>
+</body>
+</html>
