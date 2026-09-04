@@ -265,6 +265,12 @@ function updateStandings(menang) {
 function saveMatchHistory(match) {
     const history = JSON.parse(localStorage.getItem('esportbos_match_history') || '[]');
     history.unshift(match);
+    
+    // BATASI CUMA 10 MATCH TERAKHIR
+    if (history.length > 10) {
+        history.length = 10;
+    }
+    
     localStorage.setItem('esportbos_match_history', JSON.stringify(history));
 }
 
