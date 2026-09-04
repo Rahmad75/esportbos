@@ -126,11 +126,50 @@
                     </div>
 
                     <!-- LIVE MATCH UI (Hidden by default) -->
-                    <div id="liveMatchUI" style="display:none;">
-                        <div class="live-match-header">
-                            <div class="map-indicator" id="mapIndicator">Map 1/3</div>
-                            <div class="map-score" id="mapScore">0 - 0</div>
-                        </div>
+                    <!-- LIVE MATCH UI (Hidden by default) -->
+<div id="liveMatchUI" style="display:none;">
+    <div class="live-match-header">
+        <div class="map-indicator" id="mapIndicator">Map 1/3</div>
+        <div class="map-score" id="mapScore">0 - 0</div>
+    </div>
+    
+    <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
+    
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="matchProgress"></div>
+    </div>
+    
+    <div class="live-score" id="liveScore"></div>
+    
+    <div class="live-stats" id="liveStats"></div>
+    
+    <!-- MINI MAP & GRAPH -->
+    <div class="live-features">
+        <div class="mini-map-container">
+            <h4>📺 Mini Map</h4>
+            <div class="mini-map" id="miniMap">
+                <div class="mini-map-bg"></div>
+                <div class="mini-map-players" id="miniMapPlayers"></div>
+            </div>
+        </div>
+        
+        <div class="gold-graph-container">
+            <h4> Gold Difference</h4>
+            <canvas id="goldGraph" width="400" height="150"></canvas>
+        </div>
+    </div>
+    
+    <!-- PLAYER PERFORMANCE POPUP -->
+    <div class="player-performance" id="playerPerformance">
+        <div class="performance-header">
+            <h4>⭐ Player Performance</h4>
+            <span class="performance-close" onclick="closePerformancePopup()">&times;</span>
+        </div>
+        <div class="performance-content" id="performanceContent"></div>
+    </div>
+    
+    <div class="live-commentary" id="liveCommentary"></div>
+</div>
                         
                         <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
                         
