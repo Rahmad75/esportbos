@@ -147,10 +147,22 @@
     <div class="live-features">
         <div class="mini-map-container">
             <h4>📺 Mini Map</h4>
-            <div class="mini-map" id="miniMap">
-                <div class="mini-map-bg"></div>
-                <div class="mini-map-players" id="miniMapPlayers"></div>
-            </div>
+            <div class="mlbb-minimap">
+    <!-- Background Lanes -->
+    <div class="lane lane-top"></div>
+    <div class="lane lane-mid"></div>
+    <div class="lane lane-bot"></div>
+    
+    <!-- Bases -->
+    <div class="base base-ally"></div>
+    <div class="base base-enemy">🏰</div>
+    
+    <!-- Turrets (Akan di-generate JS) -->
+    <div class="turrets-layer" id="mapTurrets"></div>
+    
+    <!-- Heroes (Akan di-generate JS) -->
+    <div class="heroes-layer" id="mapHeroes"></div>
+</div>
         </div>
         
         <div class="gold-graph-container">
