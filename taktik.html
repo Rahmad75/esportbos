@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Taktik & Strategi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge"> Pendapatan (1671)</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge task">✅ Tugas (2)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 </div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item active">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="#" class="menu-item">🏋️ Latihan</a>
+                <a href="#" class="menu-item">💰 Transfer</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>🧠 Pusat Taktik & Strategi</span>
+                <span>Tim: <strong>RRQ Hoshi</strong></span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTacticTab('formasi')">📋 Formasi</button>
+                <button class="tab-btn" onclick="switchTacticTab('gaya')"> Gaya Bermain</button>
+                <button class="tab-btn" onclick="switchTacticTab('instruksi')">👤 Instruksi Pemain</button>
+                <button class="tab-btn" onclick="switchTacticTab('preset')"> Preset Taktik</button>
+            </div>
+
+            <!-- TAB: FORMASI -->
+            <div id="tab-formasi" class="tab-content">
+                <div class="panel raised">
+                    <h3>📋 Atur Formasi Tim</h3>
+                    <p class="info-text">Klik posisi di lapangan, lalu pilih pemain untuk menempati posisi tersebut.</p>
+                    
+                    <div class="formation-container">
+                        <div class="formation-field">
+                            <div class="field-base"></div>
+                            <div class="field-lines">
+                                <div class="line-mid"></div>
+                                <div class="line-top"></div>
+                                <div class="line-bot"></div>
+                            </div>
+                            
+                            <!-- Posisi yang bisa diklik -->
+                            <div class="position-slot" data-pos="top" onclick="openPositionPicker('top')">
+                                <div class="slot-circle" id="slot-top">
+                                    <span class="slot-icon">❓</span>
+                                </div>
+                                <span class="slot-label">TOP</span>
+                            </div>
+                            
+                            <div class="position-slot" data-pos="jungle" onclick="openPositionPicker('jungle')">
+                                <div class="slot-circle" id="slot-jungle">
+                                    <span class="slot-icon">❓</span>
+                                </div>
+                                <span class="slot-label">JUNGLE</span>
+                            </div>
+                            
+                            <div class="position-slot" data-pos="mid" onclick="openPositionPicker('mid')">
+                                <div class="slot-circle" id="slot-mid">
+                                    <span class="slot-icon">❓</span>
+                                </div>
+                                <span class="slot-label">MID</span>
+                            </div>
+                            
+                            <div class="position-slot" data-pos="adc" onclick="openPositionPicker('adc')">
+                                <div class="slot-circle" id="slot-adc">
+                                    <span class="slot-icon">❓</span>
+                                </div>
+                                <span class="slot-label">ADC</span>
+                            </div>
+                            
+                            <div class="position-slot" data-pos="support" onclick="openPositionPicker('support')">
+                                <div class="slot-circle" id="slot-support">
+                                    <span class="slot-icon">❓</span>
+                                </div>
+                                <span class="slot-label">SUPPORT</span>
+                            </div>
+                        </div>
+                        
+                        <div class="formation-info">
+                            <h4>Formasi Aktif: <span id="formationName">1-3-1 Standard</span></h4>
+                            <div id="formationRoster"></div>
+                            <button class="btn-futuristic btn-small" onclick="resetFormation()">🔄 Reset Formasi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: GAYA BERMAIN -->
+            <div id="tab-gaya" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🎯 Gaya Bermain Tim</h3>
+                    
+                    <div class="slider-group">
+                        <label>⚡ Tempo Game</label>
+                        <div class="slider-container">
+                            <span>Early</span>
+                            <input type="range" id="tempoSlider" min="0" max="100" value="50" oninput="updateSlider('tempo')">
+                            <span>Late</span>
+                        </div>
+                        <div class="slider-value" id="tempoValue">Balanced (50)</div>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <label>⚔️ Agresivitas</label>
+                        <div class="slider-container">
+                            <span>Defensive</span>
+                            <input type="range" id="aggressionSlider" min="0" max="100" value="50" oninput="updateSlider('aggression')">
+                            <span>Aggressive</span>
+                        </div>
+                        <div class="slider-value" id="aggressionValue">Balanced (50)</div>
+                    </div>
+                    
+                    <div class="slider-group">
+                        <label>🌍 Roaming</label>
+                        <div class="slider-container">
+                            <span>Stay Lane</span>
+                            <input type="range" id="roamingSlider" min="0" max="100" value="50" oninput="updateSlider('roaming')">
+                            <span>Full Roam</span>
+                        </div>
+                        <div class="slider-value" id="roamingValue">Balanced (50)</div>
+                    </div>
+                    
+                    <div class="objective-priority">
+                        <h4>🎯 Priority Objective</h4>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="objDragon" checked>
+                                <span>🐉 Dragon/Baron</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="objTower">
+                                <span>🏰 Tower Push</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="objFight">
+                                <span>⚔️ Team Fight</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="objVision">
+                                <span>👁️ Vision Control</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: INSTRUKSI PEMAIN -->
+            <div id="tab-instruksi" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3> Instruksi Individual Pemain</h3>
+                    <div id="playerInstructions"></div>
+                </div>
+            </div>
+
+            <!-- TAB: PRESET -->
+            <div id="tab-preset" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>💾 Preset Taktik</h3>
+                    <p class="info-text">Pilih preset untuk langsung menerapkan kombinasi formasi & gaya bermain.</p>
+                    
+                    <div class="preset-grid">
+                        <div class="preset-card" onclick="loadPreset('aggressive')">
+                            <div class="preset-icon"></div>
+                            <h4>Aggressive Early Game</h4>
+                            <p>First blood focus, invade jungle, snowball early</p>
+                            <div class="preset-stats">
+                                <span>Tempo: Early</span>
+                                <span>Aggro: High</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preset-card" onclick="loadPreset('balanced')">
+                            <div class="preset-icon">⚖️</div>
+                            <h4>Balanced Control</h4>
+                            <p>Farm & fight, objective focused, steady play</p>
+                            <div class="preset-stats">
+                                <span>Tempo: Mid</span>
+                                <span>Aggro: Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preset-card" onclick="loadPreset('defensive')">
+                            <div class="preset-icon">️</div>
+                            <h4>Defensive Late Game</h4>
+                            <p>Scale up, protect carries, win late team fights</p>
+                            <div class="preset-stats">
+                                <span>Tempo: Late</span>
+                                <span>Aggro: Low</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preset-card" onclick="loadPreset('hypercarry')">
+                            <div class="preset-icon">⭐</div>
+                            <h4>Hyper Carry</h4>
+                            <p>All resources to ADC, protect at all costs</p>
+                            <div class="preset-stats">
+                                <span>Tempo: Late</span>
+                                <span>Aggro: Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preset-card" onclick="loadPreset('teamfight')">
+                            <div class="preset-icon"></div>
+                            <h4>Team Fight Oriented</h4>
+                            <p>Force 5v5, pick off enemies, win with coordination</p>
+                            <div class="preset-stats">
+                                <span>Tempo: Mid</span>
+                                <span>Aggro: High</span>
+                            </div>
+                        </div>
+                        
+                        <div class="preset-card custom" onclick="saveCustomPreset()">
+                            <div class="preset-icon">💾</div>
+                            <h4>Simpan Preset Kustom</h4>
+                            <p>Simpan taktik saat ini sebagai preset baru</p>
+                            <div class="preset-stats">
+                                <span>Custom</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYNERGY METER -->
+            <div class="panel raised synergy-panel">
+                <h3>🔗 Team Synergy</h3>
+                <div class="synergy-container">
+                    <div class="synergy-meter">
+                        <div class="synergy-fill" id="synergyFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="synergy-value" id="synergyValue">0%</div>
+                </div>
+                <div class="synergy-breakdown" id="synergyBreakdown"></div>
+                <button class="btn-futuristic" onclick="saveTactics()">💾 Simpan Taktik</button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL PEMILIHAN PEMAIN -->
+    <div class="modal" id="playerPickerModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closePlayerPicker()">&times;</span>
+            <h3 id="pickerTitle">Pilih Pemain untuk Posisi TOP</h3>
+            <div id="pickerList"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="taktik.js"></script>
+</body>
+</html>
