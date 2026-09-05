@@ -2094,3 +2094,367 @@ body {
 .picker-badge.used {
     background: #dc3545;
 }
+/* ===== HALAMAN LATIHAN ===== */
+
+.training-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.player-training-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #00d4ff;
+}
+
+.player-training-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.training-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid #00d4ff;
+    object-fit: cover;
+}
+
+.player-training-info h4 {
+    margin-bottom: 3px;
+    font-size: 18px;
+}
+
+.player-training-info p {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.energy-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.energy-bar {
+    height: 100%;
+    transition: width 0.3s;
+    border-radius: 4px;
+}
+
+.energy-text {
+    font-size: 11px;
+    font-weight: bold;
+    color: #666;
+}
+
+.training-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.btn-training {
+    padding: 10px;
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-training:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-training:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-training.restore {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.player-stats-mini {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.stat-mini {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 3px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+/* Team Training */
+.team-training-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.training-program-card {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.training-program-card:hover {
+    transform: translateY(-5px);
+    border-color: #00d4ff;
+    box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+}
+
+.program-icon {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.training-program-card h4 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.training-program-card p {
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.program-stats {
+    display: flex;
+    justify-content: space-around;
+    font-size: 12px;
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+/* Schedule */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.day-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.day-card h4 {
+    margin-bottom: 10px;
+    color: #00d4ff;
+}
+
+.day-card select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+}
+
+/* Training Modal */
+.training-modal {
+    max-width: 600px;
+}
+
+.training-result-display {
+    text-align: center;
+}
+
+.result-header {
+    color: white;
+    padding: 30px;
+    border-radius: 12px 12px 0 0;
+}
+
+.result-header h1 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.result-content {
+    padding: 30px;
+}
+
+.result-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid #00d4ff;
+    margin-bottom: 15px;
+}
+
+.result-content h2 {
+    margin-bottom: 15px;
+}
+
+.result-message {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-change {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat-change span:first-child {
+    font-size: 12px;
+    color: #999;
+}
+
+.stat-change span:last-child {
+    font-size: 24px;
+    font-weight: 900;
+    color: #00d4ff;
+}
+
+.energy-update {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.energy-value {
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Team Results */
+.team-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.summary-stat {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.summary-value {
+    font-size: 36px;
+    font-weight: 900;
+    color: #00d4ff;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #666;
+}
+
+.team-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.team-result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.team-result-item.success {
+    border-left: 4px solid #28a745;
+}
+
+.team-result-item.fail {
+    border-left: 4px solid #dc3545;
+}
+
+/* Weekly Results */
+.weekly-results {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.weekly-day-result {
+    display: grid;
+    grid-template-columns: 100px 1fr 150px;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    align-items: center;
+}
+
+.day-name {
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+.day-program {
+    font-size: 14px;
+}
+
+.day-success {
+    text-align: right;
+    font-weight: bold;
+    color: #28a745;
+}
