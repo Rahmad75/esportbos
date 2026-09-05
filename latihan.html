@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Latihan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Pendapatan (1671)</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge task">✅ Tugas (2)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item active">🏋️ Latihan</a>
+                <a href="#" class="menu-item">💰 Transfer</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>🏋️ Pusat Latihan</span>
+                <span>Tim: <strong>RRQ Hoshi</strong> | Total Pemain: <strong id="totalPlayers">5</strong></span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTrainingTab('individual')">👤 Individual</button>
+                <button class="tab-btn" onclick="switchTrainingTab('team')">👥 Tim</button>
+                <button class="tab-btn" onclick="switchTrainingTab('program')">📋 Program</button>
+            </div>
+
+            <!-- TAB: INDIVIDUAL -->
+            <div id="tab-individual" class="tab-content">
+                <div class="panel raised">
+                    <h3>👤 Latihan Individual</h3>
+                    <p class="info-text">Pilih pemain dan stat yang ingin dilatih. Setiap sesi latihan mengurangi Energy.</p>
+                    
+                    <div class="training-grid" id="individualTrainingGrid">
+                        <!-- Diisi oleh JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: TEAM -->
+            <div id="tab-team" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>👥 Latihan Tim</h3>
+                    <p class="info-text">Latih semua pemain sekaligus dengan program tertentu.</p>
+                    
+                    <div class="team-training-options">
+                        <div class="training-program-card" onclick="startTeamTraining('mechanics')">
+                            <div class="program-icon">🎯</div>
+                            <h4>Mechanics Drill</h4>
+                            <p>Fokus meningkatkan skill mekanik semua pemain</p>
+                            <div class="program-stats">
+                                <span>Target: MEC +1-3</span>
+                                <span>Energy: -15</span>
+                            </div>
+                        </div>
+                        
+                        <div class="training-program-card" onclick="startTeamTraining('gamesense')">
+                            <div class="program-icon">🧠</div>
+                            <h4>Game Sense Training</h4>
+                            <p>Latih decision making dan map awareness</p>
+                            <div class="program-stats">
+                                <span>Target: GS +1-3</span>
+                                <span>Energy: -15</span>
+                            </div>
+                        </div>
+                        
+                        <div class="training-program-card" onclick="startTeamTraining('teamwork')">
+                            <div class="program-icon">🤝</div>
+                            <h4>Team Coordination</h4>
+                            <p>Latih komunikasi dan synergy tim</p>
+                            <div class="program-stats">
+                                <span>Target: TW +1-3</span>
+                                <span>Energy: -15</span>
+                            </div>
+                        </div>
+                        
+                        <div class="training-program-card" onclick="startTeamTraining('stamina')">
+                            <div class="program-icon">⚡</div>
+                            <h4>Stamina & Recovery</h4>
+                            <p>Pemulihan energy dan peningkatan stamina</p>
+                            <div class="program-stats">
+                                <span>Target: STA +5-10</span>
+                                <span>Energy: +20</span>
+                            </div>
+                        </div>
+                        
+                        <div class="training-program-card" onclick="startTeamTraining('balanced')">
+                            <div class="program-icon">️</div>
+                            <h4>Balanced Training</h4>
+                            <p>Latihan seimbang untuk semua stats</p>
+                            <div class="program-stats">
+                                <span>Target: All +1</span>
+                                <span>Energy: -20</span>
+                            </div>
+                        </div>
+                        
+                        <div class="training-program-card" onclick="startTeamTraining('intensive')">
+                            <div class="program-icon">🔥</div>
+                            <h4>Intensive Bootcamp</h4>
+                            <p>Latihan keras, hasil maksimal tapi energy banyak berkurang</p>
+                            <div class="program-stats">
+                                <span>Target: All +2-4</span>
+                                <span>Energy: -40</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: PROGRAM -->
+            <div id="tab-program" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>📋 Jadwal Latihan Mingguan</h3>
+                    <p class="info-text">Atur jadwal latihan otomatis untuk tim.</p>
+                    
+                    <div class="schedule-grid">
+                        <div class="day-card">
+                            <h4>Senin</h4>
+                            <select id="schedule-mon" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics"> Mechanics</option>
+                                <option value="gamesense">🧠 Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Selasa</h4>
+                            <select id="schedule-tue" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics">🎯 Mechanics</option>
+                                <option value="gamesense">🧠 Game Sense</option>
+                                <option value="teamwork"> Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Rabu</h4>
+                            <select id="schedule-wed" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics"> Mechanics</option>
+                                <option value="gamesense">🧠 Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Kamis</h4>
+                            <select id="schedule-thu" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics">🎯 Mechanics</option>
+                                <option value="gamesense"> Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Jumat</h4>
+                            <select id="schedule-fri" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics">🎯 Mechanics</option>
+                                <option value="gamesense"> Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Sabtu</h4>
+                            <select id="schedule-sat" onchange="saveSchedule()">
+                                <option value="rest">😴 Istirahat</option>
+                                <option value="mechanics">🎯 Mechanics</option>
+                                <option value="gamesense">🧠 Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                        
+                        <div class="day-card">
+                            <h4>Minggu</h4>
+                            <select id="schedule-sun" onchange="saveSchedule()">
+                                <option value="rest" selected>😴 Istirahat</option>
+                                <option value="mechanics">🎯 Mechanics</option>
+                                <option value="gamesense">🧠 Game Sense</option>
+                                <option value="teamwork">🤝 Teamwork</option>
+                                <option value="stamina">⚡ Stamina</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-futuristic" onclick="runWeeklyTraining()">▶️ Jalankan Jadwal Minggu Ini</button>
+                </div>
+            </div>
+
+            <!-- TRAINING RESULT MODAL -->
+            <div class="modal" id="trainingModal">
+                <div class="modal-content training-modal">
+                    <span class="modal-close" onclick="closeTrainingModal()">&times;</span>
+                    <div id="trainingResultBody"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="latihan.js"></script>
+</body>
+</html>
