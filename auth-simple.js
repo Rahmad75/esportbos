@@ -1,26 +1,42 @@
-// ===== ESPORTBOS - SIMPLE AUTH (LOCALSTORAGE) =====
+// ===== ESPORTBOS - AUTH & ADMIN SYSTEM =====
+
+// DAFTAR EMAIL OWNER (Gak case-sensitive)
+const ADMIN_EMAILS = [
+    'muhammadgazali75@gmail.com',
+    'angriyani1977@gmail.com',
+    'm.gazali1975@gmail.com'
+];
 
 let currentUser = null;
 
 function register(username, email, password) {
     const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
     
-    if (users.find(u => u.email === email)) {
+    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
         alert('Email sudah terdaftar!');
         return false;
     }
     
-    users.push({ username, email, password });
+    // Cek apakah email ini adalah admin
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    
+    users.push({ 
+        username, 
+        email: email.toLowerCase(), 
+        password, 
+        role: isAdmin ? 'admin' : 'user',
+        createdAt: new Date().toISOString()
+    });
     localStorage.setItem('esportbos_users', JSON.stringify(users));
     
-    alert('Registrasi berhasil! Silakan login.');
+    alert(isAdmin ? '👑 Registrasi Owner berhasil! Silakan login.' : 'Registrasi berhasil! Silakan login.');
     showLogin();
     return true;
 }
 
 function login(email, password) {
     const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
     
     if (!user) {
         alert('Email atau password salah!');
@@ -30,8 +46,14 @@ function login(email, password) {
     currentUser = user;
     localStorage.setItem('esportbos_current_user', JSON.stringify(user));
     
-    alert('Login berhasil! Selamat datang, ' + user.username + '!');
-    window.location.href = 'dashboard.html';
+    alert(`Login berhasil! Selamat datang, ${user.role === 'admin' ? '👑 OWNER' : ''} ${user.username}!`);
+    
+    // Redirect khusus untuk admin
+    if (user.role === 'admin') {
+        window.location.href = 'admin.html';
+    } else {
+        window.location.href = 'dashboard.html';
+    }
     return true;
 }
 
@@ -54,6 +76,15 @@ function requireAuth() {
     if (!checkAuth()) {
         alert('Silakan login terlebih dahulu!');
         window.location.href = 'index.html';
+        return false;
+    }
+    return true;
+}
+
+function requireAdmin() {
+    if (!checkAuth() || currentUser.role !== 'admin') {
+        alert('🚫 AKSES DITOLAK! Halaman ini khusus untuk Owner.');
+        window.location.href = 'dashboard.html';
         return false;
     }
     return true;
@@ -99,25 +130,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const dashboardBody = document.querySelector('.dashboard-body');
-    if (dashboardBody) {
-        requireAuth();
-        
-        if (currentUser) {
-            const userNameSpan = document.getElementById('userName');
-            if (userNameSpan) {
-                userNameSpan.textContent = currentUser.username;
-            }
+    // Auto redirect jika sudah login
+    if (checkAuth()) {
+        if (currentUser.role === 'admin' && window.location.pathname.includes('index.html')) {
+            window.location.href = 'admin.html';
         }
     }
 });
 
 window.EsportBosAuth = {
-    register,
-    login,
-    logout,
-    checkAuth,
-    requireAuth,
-    showRegister,
-    showLogin
+    register, login, logout, checkAuth, requireAuth, requireAdmin, showRegister, showLogin
 };
