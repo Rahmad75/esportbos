@@ -217,3 +217,179 @@ function switchAkunTab(tabName) {
     document.getElementById(`tab-${tabName}`).style.display = 'block';
     event.target.classList.add('active');
 }
+// ===== LELANG REFERRAL =====
+
+function loadAuction() {
+    const auctionInfo = EsportBosAuth.getAuctionInfo();
+    const infoContainer = document.getElementById('auctionInfo');
+    const actionsContainer = document.getElementById('auctionActions');
+    const poolContainer = document.getElementById('auctionPool');
+    
+    if (!infoContainer) return;
+    
+    // Render info lelang
+    if (auctionInfo.highestBidder) {
+        const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
+        const winner = users.find(u => u.email === auctionInfo.highestBidder);
+        const isWinner = winner?.email === currentUser.email;
+        const timeLeft = auctionInfo.endTime ? getTimeLeft(auctionInfo.endTime) : 'Tidak diketahui';
+        
+        infoContainer.innerHTML = `
+            <div class="auction-status ${isWinner ? 'winning' : 'losing'}">
+                <div class="auction-winner">
+                    <span class="winner-label">Pemenang Saat Ini:</span>
+                    <span class="winner-name">${winner?.username || 'Unknown'} ${isWinner ? '👑 (KAMU!)' : ''}</span>
+                </div>
+                <div class="auction-bid">
+                    <span class="bid-label">Bid Tertinggi:</span>
+                    <span class="bid-value">${auctionInfo.highestBid.toLocaleString()} Gold</span>
+                </div>
+                <div class="auction-timer">
+                    <span class="timer-label">Berakhir Dalam:</span>
+                    <span class="timer-value">${timeLeft}</span>
+                </div>
+                <div class="auction-pool-count">
+                    <span class="pool-label">User di Pool:</span>
+                    <span class="pool-value">${auctionInfo.poolCount} orang</span>
+                </div>
+            </div>
+        `;
+    } else {
+        infoContainer.innerHTML = `
+            <div class="auction-status empty">
+                <p>🏁 Belum ada yang bid. Jadilah yang pertama!</p>
+                <p class="info-text">User di pool lelang: <strong>${auctionInfo.poolCount} orang</strong></p>
+            </div>
+        `;
+    }
+    
+    // Render actions
+    const funds = parseInt(localStorage.getItem('esportbos_team_funds') || '10000');
+    const minBid = auctionInfo.highestBid > 0 ? auctionInfo.highestBid + 1000 : AUCTION_START_BID;
+    const isWinner = auctionInfo.highestBidder === currentUser.email;
+    
+    actionsContainer.innerHTML = `
+        <div class="auction-bid-form">
+            <div class="bid-input-group">
+                <label>Minimum Bid: <strong>${minBid.toLocaleString()} Gold</strong></label>
+                <input type="number" id="bidAmount" min="${minBid}" value="${minBid}" step="1000">
+                <button class="btn-futuristic" onclick="submitBid(${minBid})" ${isWinner ? 'disabled' : ''}>
+                    ${isWinner ? '👑 Kamu Pemenang' : '🔨 Bid Sekarang'}
+                </button>
+            </div>
+            ${isWinner && auctionInfo.poolCount > 0 ? `
+                <button class="btn-claim" onclick="claimAuction()">🎁 Klaim ${auctionInfo.poolCount} Referral!</button>
+            ` : ''}
+        </div>
+    `;
+    
+    // Render pool
+    if (auctionInfo.poolCount > 0) {
+        poolContainer.innerHTML = `
+            <h4 style="margin-top: 20px;"> User dalam Pool Lelang:</h4>
+            <div class="auction-pool-list">
+                ${auctionInfo.pool.slice(0, 10).map(p => `
+                    <div class="pool-item">
+                        <span class="pool-email">${p.email}</span>
+                        <span class="pool-date">${new Date(p.date).toLocaleDateString('id-ID')}</span>
+                    </div>
+                `).join('')}
+                ${auctionInfo.poolCount > 10 ? `<p style="text-align:center; color:#999;">...dan ${auctionInfo.poolCount - 10} lainnya</p>` : ''}
+            </div>
+        `;
+    } else {
+        poolContainer.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">Pool lelang kosong. Belum ada user baru tanpa referral.</p>';
+    }
+}
+
+function submitBid(minBid) {
+    const input = document.getElementById('bidAmount');
+    const amount = parseInt(input.value);
+    
+    if (!amount || amount < minBid) {
+        alert(`❌ Bid minimal ${minBid.toLocaleString()} Gold!`);
+        return;
+    }
+    
+    if (!confirm(`Yakin bid ${amount.toLocaleString()} Gold untuk lelang referral?`)) return;
+    
+    const success = EsportBosAuth.placeAuctionBid(amount);
+    
+    if (success) {
+        alert(`✅ Bid ${amount.toLocaleString()} Gold berhasil! Kamu sekarang jadi pemenang lelang.`);
+        updateFundsDisplay();
+        loadAuction();
+    }
+}
+
+function claimAuction() {
+    if (!confirm('Yakin mau klaim semua user di pool lelang sebagai referral kamu?')) return;
+    
+    const result = EsportBosAuth.claimAuctionReferrals();
+    
+    if (result.claimed > 0) {
+        alert(`🎉 Berhasil klaim ${result.claimed} referral! Bonus: +${result.bonus.toLocaleString()} Gold`);
+        updateFundsDisplay();
+        loadReferral();
+        loadAuction();
+    }
+}
+
+function getTimeLeft(endTime) {
+    const end = new Date(endTime).getTime();
+    const now = Date.now();
+    const diff = end - now;
+    
+    if (diff <= 0) return 'Sudah berakhir';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    return `${days} hari ${hours} jam`;
+}
+
+// Update loadReferral untuk include auction stats
+const originalLoadReferral = loadReferral;
+loadReferral = function() {
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) return;
+    
+    const code = user.referralCode || '-';
+    document.getElementById('myReferralCode').textContent = code;
+    
+    const baseUrl = window.location.origin + window.location.pathname.replace('akun.html', 'index.html');
+    const link = `${baseUrl}?ref=${code}`;
+    document.getElementById('referralLink').value = link;
+    
+    const stats = EsportBosAuth.getReferralStats();
+    document.getElementById('referralCount').textContent = stats.count;
+    document.getElementById('referralDirect').textContent = stats.direct;
+    document.getElementById('referralAuction').textContent = stats.auction;
+    document.getElementById('referralBonus').textContent = stats.totalBonus.toLocaleString() + ' Gold';
+    
+    const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
+    const currentUserData = users.find(u => u.email === user.email);
+    const referrals = currentUserData?.referrals || [];
+    
+    const listContainer = document.getElementById('referralList');
+    if (referrals.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:#999; margin-top: 20px;">Belum ada teman yang daftar pakai kode referral kamu. Yuk share!</p>';
+    } else {
+        listContainer.innerHTML = `
+            <h4 style="margin-top: 30px;">📋 Daftar Teman yang Direfer:</h4>
+            <div class="referral-list-items">
+                ${referrals.map(r => `
+                    <div class="referral-item">
+                        <span class="referral-email">${r.email}</span>
+                        <span class="referral-date">${new Date(r.date).toLocaleDateString('id-ID')}</span>
+                        <span class="referral-type">${r.type === 'direct' ? '🔗 Link' : '🏆 Lelang'}</span>
+                        <span class="referral-bonus">+2,000 G</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // Load auction juga
+    loadAuction();
+};
