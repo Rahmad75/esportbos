@@ -140,4 +140,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.EsportBosAuth = {
     register, login, logout, checkAuth, requireAuth, requireAdmin, showRegister, showLogin
+    // Fungsi untuk apply referral code saat register
+function applyReferralOnRegister(referralCode, newUserEmail) {
+    const referralData = JSON.parse(localStorage.getItem('esportbos_referrals') || '{}');
+    
+    let referrerEmail = null;
+    for (let email in referralData) {
+        if (referralData[email].code === referralCode) {
+            referrerEmail = email;
+            break;
+        }
+    }
+    
+    if (!referrerEmail) {
+        return { success: false, message: 'Kode referral tidak valid!' };
+    }
+    
+    if (referrerEmail === newUserEmail) {
+        return { success: false, message: 'Tidak bisa menggunakan kode referral sendiri!' };
+    }
+    
+    const newUser = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    referralData[referrerEmail].referrals.push({
+        email: newUserEmail,
+        username: newUser.username,
+        date: new Date().toLocaleDateString('id-ID')
+    });
+    referralData[referrerEmail].bonus += 500;
+    
+    localStorage.setItem('esportbos_referrals', JSON.stringify(referralData));
+    
+    const currentFunds = parseInt(localStorage.getItem('esportbos_team_funds') || '10000');
+    localStorage.setItem('esportbos_team_funds', (currentFunds + 500).toString());
+    
+    return { success: true, message: 'Referral berhasil! Referrer mendapat 500 Gold bonus!' };
+}
 };
