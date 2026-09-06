@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Owner Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body admin-theme">
+
+    <!-- NAVBAR KHUSUS ADMIN -->
+    <nav class="top-navbar admin-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="admin-badge">👑 MODE OWNER</div>
+        </div>
+        <div class="navbar-right">
+            <div class="user-profile">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+        <!-- SIDEBAR ADMIN -->
+        <aside class="sidebar admin-sidebar">
+            <nav class="sidebar-menu">
+                <a href="#overview" class="menu-item active" onclick="switchAdminTab('overview')">📊 Overview Global</a>
+                <a href="#users" class="menu-item" onclick="switchAdminTab('users')">👥 Manajemen User</a>
+                <a href="#market" class="menu-item" onclick="switchAdminTab('market')">🛒 Kontrol Market</a>
+                <a href="#system" class="menu-item" onclick="switchAdminTab('system')">⚙️ Sistem & Data</a>
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+                <a href="dashboard.html" class="menu-item">🔙 Kembali ke Game</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <!-- TAB: OVERVIEW -->
+            <div id="tab-overview" class="tab-content">
+                <div class="info-bar">
+                    <span>👑 Dashboard Owner</span>
+                    <span>Server Status: <strong style="color:#28a745;">🟢 ONLINE</strong></span>
+                </div>
+
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total User Terdaftar</span>
+                            <span class="stat-value" id="totalUsers">0</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Gold Beredar</span>
+                            <span class="stat-value" id="totalGold">0</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">⚔️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Match Dimainkan</span>
+                            <span class="stat-value" id="totalMatches">0</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">🏟️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Tim Aktif</span>
+                            <span class="stat-value" id="totalTeams">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel raised" style="margin-top: 20px;">
+                    <h3>📈 Aktivitas Sistem Terbaru</h3>
+                    <div id="systemLogs" class="system-logs">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: USERS -->
+            <div id="tab-users" class="tab-content" style="display:none;">
+                <div class="info-bar">
+                    <span>👥 Manajemen User</span>
+                </div>
+                <div class="panel raised">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Tim</th>
+                                <th>Dana Klub</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- Diisi JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: MARKET -->
+            <div id="tab-market" class="tab-content" style="display:none;">
+                <div class="info-bar">
+                    <span>🛒 Kontrol Transfer Market</span>
+                </div>
+                <div class="panel raised">
+                    <h3>Tambah Pemain ke Market Global</h3>
+                    <div class="admin-form-grid">
+                        <input type="text" id="newPlayerName" placeholder="Nama Pemain">
+                        <select id="newPlayerPos">
+                            <option value="Top">Top</option>
+                            <option value="Jungle">Jungle</option>
+                            <option value="Mid">Mid</option>
+                            <option value="ADC">ADC</option>
+                            <option value="Support">Support</option>
+                        </select>
+                        <input type="number" id="newPlayerPrice" placeholder="Harga (Gold)">
+                        <button class="btn-futuristic" onclick="addPlayerToMarket()">➕ Tambah ke Market</button>
+                    </div>
+                    <button class="btn-danger" style="margin-top: 20px;" onclick="resetMarket()">🔄 Reset Semua Isi Market</button>
+                </div>
+            </div>
+
+            <!-- TAB: SYSTEM -->
+            <div id="tab-system" class="tab-content" style="display:none;">
+                <div class="info-bar">
+                    <span>⚙️ Sistem & Data</span>
+                </div>
+                <div class="panel raised">
+                    <h3>⚠️ Zona Bahaya (Danger Zone)</h3>
+                    <p class="info-text">Tindakan di sini tidak dapat dibatalkan. Pastikan Anda tahu apa yang Anda lakukan.</p>
+                    
+                    <div class="danger-actions">
+                        <div class="danger-card">
+                            <h4>Reset Data Pertandingan</h4>
+                            <p>Menghapus semua riwayat match dan klasemen.</p>
+                            <button class="btn-danger" onclick="clearData('esportbos_match_history')">Hapus Data Match</button>
+                        </div>
+                        <div class="danger-card">
+                            <h4>Reset Total Ekonomi</h4>
+                            <p>Mengembalikan dana klub semua user ke 10.000 Gold.</p>
+                            <button class="btn-danger" onclick="resetEconomy()">Reset Ekonomi</button>
+                        </div>
+                        <div class="danger-card">
+                            <h4>NUKE SERVER (Factory Reset)</h4>
+                            <p>Menghapus SEMUA data game (User, Pemain, Market, dll).</p>
+                            <button class="btn-danger nuke" onclick="nukeServer()">💣 HAPUS SEMUA DATA</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
