@@ -3227,3 +3227,173 @@ body {
 .upgrade-item .price {
     color: #dc3545;
 }
+/* ===== HALAMAN TIM TEKNIS ===== */
+
+.staff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.staff-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.staff-card.hired {
+    border-left: 5px solid #28a745;
+}
+
+.staff-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.staff-icon {
+    font-size: 40px;
+    background: #f8f9fa;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.staff-info h4 {
+    margin-bottom: 3px;
+    font-size: 16px;
+}
+
+.staff-role {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+.staff-desc {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 20px;
+    flex-grow: 1;
+    min-height: 40px;
+}
+
+.staff-level {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+}
+
+.level-dots {
+    display: flex;
+    gap: 5px;
+}
+
+.level-dots .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e0e0e0;
+}
+
+.level-dots .dot.active {
+    background: #00d4ff;
+    box-shadow: 0 0 5px #00d4ff;
+}
+
+.staff-action {
+    margin-top: auto;
+}
+
+.btn-hire, .btn-maxed {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-hire {
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    color: white;
+}
+
+.btn-hire:hover {
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-maxed {
+    background: #e0e0e0;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* Bonus Summary */
+.bonus-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.bonus-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #00d4ff;
+}
+
+.bonus-item span:first-child {
+    font-weight: bold;
+    color: #333;
+}
+
+.bonus-val {
+    font-weight: 900;
+    color: #28a745;
+}
+
+/* Modal Staff */
+.staff-confirm {
+    text-align: center;
+    padding: 20px;
+}
+
+.confirm-staff {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.confirm-icon {
+    font-size: 60px;
+    background: #f8f9fa;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+}
