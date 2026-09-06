@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Stadion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
+                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item"> Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item active">🏟️ Stadion</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>🏟️ Manajemen Stadion</span>
+                <span>Upgrade Infrastruktur Klub</span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchStadionTab('overview')">🏟️ Overview</button>
+                <button class="tab-btn" onclick="switchStadionTab('upgrade')">️ Upgrade</button>
+                <button class="tab-btn" onclick="switchStadionTab('income')">💵 Pendapatan</button>
+            </div>
+
+            <!-- TAB: OVERVIEW -->
+            <div id="tab-overview" class="tab-content">
+                <div class="panel raised">
+                    <h3>🏟️ Stadion RRQ Hoshi</h3>
+                    
+                    <div class="stadion-visual">
+                        <div class="stadion-art" id="stadionArt">
+                            <!-- Visual stadion akan di-render JS -->
+                        </div>
+                        <div class="stadion-info-panel">
+                            <h2 id="stadionName">Gaming House Sederhana</h2>
+                            <p>Level <span id="stadionLevel">1</span></p>
+                            <div class="stadion-stats">
+                                <div class="stat-box">
+                                    <span class="stat-icon"></span>
+                                    <span class="stat-value" id="capacity">100</span>
+                                    <span class="stat-label">Kapasitas</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-icon">🎟️</span>
+                                    <span class="stat-value" id="ticketPrice">50</span>
+                                    <span class="stat-label">Harga Tiket</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-icon">💰</span>
+                                    <span class="stat-value" id="matchIncome">5,000</span>
+                                    <span class="stat-label">Income/Match</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: UPGRADE -->
+            <div id="tab-upgrade" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>️ Upgrade Stadion</h3>
+                    <p class="info-text">Tingkatkan level stadion untuk menambah kapasitas dan pendapatan tiket.</p>
+                    
+                    <div class="upgrade-stages">
+                        <div class="stage-card completed" id="stage1">
+                            <div class="stage-number">1</div>
+                            <h4>Gaming House</h4>
+                            <p>Kapasitas: 100</p>
+                            <p>Income: 5,000/match</p>
+                            <div class="stage-status">✅ Selesai</div>
+                        </div>
+                        
+                        <div class="stage-card current" id="stage2">
+                            <div class="stage-number">2</div>
+                            <h4>Arena Esport</h4>
+                            <p>Kapasitas: 500</p>
+                            <p>Income: 25,000/match</p>
+                            <div class="stage-status">📍 Saat Ini</div>
+                            <button class="btn-upgrade" onclick="upgradeStadion(2)">Upgrade (15,000 G)</button>
+                        </div>
+                        
+                        <div class="stage-card locked" id="stage3">
+                            <div class="stage-number">3</div>
+                            <h4>Stadion Nasional</h4>
+                            <p>Kapasitas: 2,000</p>
+                            <p>Income: 100,000/match</p>
+                            <div class="stage-status">🔒 Terkunci</div>
+                            <button class="btn-upgrade" onclick="upgradeStadion(3)" disabled>Upgrade (50,000 G)</button>
+                        </div>
+                        
+                        <div class="stage-card locked" id="stage4">
+                            <div class="stage-number">4</div>
+                            <h4>Super Arena</h4>
+                            <p>Kapasitas: 10,000</p>
+                            <p>Income: 500,000/match</p>
+                            <div class="stage-status">🔒 Terkunci</div>
+                            <button class="btn-upgrade" onclick="upgradeStadion(4)" disabled>Upgrade (200,000 G)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: INCOME -->
+            <div id="tab-income" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>💵 Pendapatan Tiket</h3>
+                    <p class="info-text">Klaim pendapatan tiket dari pertandingan kandang.</p>
+                    
+                    <div class="income-overview">
+                        <div class="income-card">
+                            <div class="income-icon">🎟️</div>
+                            <div class="income-info">
+                                <span class="income-label">Pendapatan Tertunda</span>
+                                <span class="income-value" id="pendingIncome">0</span>
+                            </div>
+                        </div>
+                        <div class="income-card">
+                            <div class="income-icon"></div>
+                            <div class="income-info">
+                                <span class="income-label">Total Match Kandang</span>
+                                <span class="income-value" id="totalHomeMatches">0</span>
+                            </div>
+                        </div>
+                        <div class="income-card">
+                            <div class="income-icon">💰</div>
+                            <div class="income-info">
+                                <span class="income-label">Total Pendapatan</span>
+                                <span class="income-value" id="totalIncome">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="income-actions">
+                        <button class="btn-futuristic btn-large" onclick="claimTicketIncome()">💰 Klaim Pendapatan Tiket</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal" id="stadionModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeStadionModal()">&times;</span>
+            <div id="stadionModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="stadion.js"></script>
+</body>
+</html>
