@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Transfer Market</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
+                <a href="transfer.html" class="menu-item active">💰 Transfer</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>💰 Transfer Market</span>
+                <span>Pasar Pemain Global</span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTransferTab('market')"> Beli Pemain</button>
+                <button class="tab-btn" onclick="switchTransferTab('myteam')">👕 Jual Pemain Saya</button>
+                <button class="tab-btn" onclick="switchTransferTab('history')">📜 Riwayat</button>
+            </div>
+
+            <!-- TAB: MARKET -->
+            <div id="tab-market" class="tab-content">
+                <div class="panel raised">
+                    <h3>🌍 Pemain Tersedia di Market</h3>
+                    <p class="info-text">Pemain ini tersedia untuk dibeli. Harga bisa berubah sewaktu-waktu!</p>
+                    <div class="market-filters">
+                        <select id="filterPosition" onchange="renderMarket()">
+                            <option value="all">Semua Posisi</option>
+                            <option value="Top">Top</option>
+                            <option value="Jungle">Jungle</option>
+                            <option value="Mid">Mid</option>
+                            <option value="ADC">ADC</option>
+                            <option value="Support">Support</option>
+                        </select>
+                        <select id="filterBudget" onchange="renderMarket()">
+                            <option value="all">Semua Harga</option>
+                            <option value="low">< 5.000 Gold</option>
+                            <option value="mid">5.000 - 15.000 Gold</option>
+                            <option value="high">> 15.000 Gold</option>
+                        </select>
+                    </div>
+                    <div class="market-grid" id="marketGrid">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: MY TEAM -->
+            <div id="tab-myteam" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>👕 Daftar Pemain Tim Saya</h3>
+                    <p class="info-text">Pilih pemain untuk dilepas ke pasar transfer.</p>
+                    <div class="market-grid" id="myTeamGrid">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: HISTORY -->
+            <div id="tab-history" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>📜 Riwayat Transfer Klub</h3>
+                    <div id="transferHistoryList">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL KONFIRMASI -->
+    <div class="modal" id="transferModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeTransferModal()">&times;</span>
+            <div id="transferModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="transfer.js"></script>
+</body>
+</html>
