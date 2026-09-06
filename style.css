@@ -2719,3 +2719,286 @@ body {
 .history-amount.negative {
     color: #dc3545;
 }
+/* ===== HALAMAN AKADEMI MUDA ===== */
+
+.scout-info {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.scout-stats {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.scout-stat {
+    text-align: center;
+}
+
+.scout-stat .stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.scout-stat .stat-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 900;
+    color: #00d4ff;
+}
+
+.btn-large {
+    padding: 15px 40px;
+    font-size: 16px;
+}
+
+.scouted-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.young-player-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.young-player-card:hover {
+    transform: translateY(-5px);
+    border-color: #00d4ff;
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+}
+
+.player-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.young-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid #00d4ff;
+    object-fit: cover;
+}
+
+.player-info h4 {
+    margin-bottom: 3px;
+    font-size: 16px;
+}
+
+.player-age {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.potential-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+}
+
+.player-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.player-stats .stat-item {
+    text-align: center;
+}
+
+.player-stats .stat-item span {
+    display: block;
+    font-size: 10px;
+    color: #999;
+}
+
+.player-stats .stat-item strong {
+    display: block;
+    font-size: 14px;
+    color: #00d4ff;
+}
+
+.player-price {
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.btn-recruit {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-recruit:hover {
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+}
+
+/* Academy Upgrade */
+.academy-upgrade {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.upgrade-current, .upgrade-next {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+}
+
+.upgrade-next {
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    color: white;
+}
+
+.upgrade-current h4, .upgrade-next h4 {
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.level-display {
+    margin-bottom: 20px;
+}
+
+.level-number {
+    display: block;
+    font-size: 72px;
+    font-weight: 900;
+    color: #00d4ff;
+    line-height: 1;
+}
+
+.level-number.next {
+    color: white;
+}
+
+.level-label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.upgrade-next .level-label {
+    color: rgba(255,255,255,0.9);
+}
+
+.level-benefits {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.level-benefits p {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.upgrade-next .level-benefits p {
+    color: white;
+}
+
+.upgrade-next .btn-futuristic {
+    background: white;
+    color: #00d4ff;
+}
+
+/* Recruit Modal */
+.recruit-confirm {
+    text-align: center;
+    padding: 20px;
+}
+
+.recruit-confirm h3 {
+    margin-bottom: 20px;
+}
+
+.potential-display {
+    display: inline-block;
+    padding: 6px 15px;
+    border-radius: 15px;
+    font-weight: bold;
+    color: white;
+    margin-top: 10px;
+}
+
+/* Academy History */
+.history-item-academy {
+    display: grid;
+    grid-template-columns: 1fr 100px 150px;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid #00d4ff;
+}
+
+.history-info strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.history-pos {
+    font-size: 12px;
+    color: #666;
+    margin-right: 10px;
+}
+
+.history-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.history-potential {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+}
+
+.history-price {
+    text-align: right;
+    font-weight: bold;
+    color: #00d4ff;
+}
