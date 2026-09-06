@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Akun Saya</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="user-profile">
+                <img id="navProfilePic" src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
+                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item"> Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="akun.html" class="menu-item active">👤 Akun Saya</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>👤 Akun Saya</span>
+                <span>Kelola Profil & Referral</span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchAkunTab('profil')">👤 Profil</button>
+                <button class="tab-btn" onclick="switchAkunTab('referral')">🎁 Referral</button>
+                <button class="tab-btn" onclick="switchAkunTab('reset')">🔄 Reset Data</button>
+            </div>
+
+            <!-- TAB: PROFIL -->
+            <div id="tab-profil" class="tab-content">
+                <div class="panel raised">
+                    <h3>👤 Profil Saya</h3>
+                    
+                    <div class="profile-container">
+                        <div class="profile-photo-section">
+                            <img id="profilePhoto" src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="Profile" class="profile-photo">
+                            <label for="photoUpload" class="btn-upload">📷 Ganti Foto</label>
+                            <input type="file" id="photoUpload" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
+                            <p class="info-text">Upload foto profil (JPG/PNG, max 2MB)</p>
+                        </div>
+                        
+                        <div class="profile-info-section">
+                            <div class="info-row">
+                                <label>Username:</label>
+                                <span id="profileUsername">-</span>
+                            </div>
+                            <div class="info-row">
+                                <label>Email:</label>
+                                <span id="profileEmail">-</span>
+                            </div>
+                            <div class="info-row">
+                                <label>Role:</label>
+                                <span id="profileRole" class="role-badge">-</span>
+                            </div>
+                            <div class="info-row">
+                                <label>Bergabung:</label>
+                                <span id="profileJoinDate">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: REFERRAL -->
+            <div id="tab-referral" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🎁 Program Referral</h3>
+                    <p class="info-text">Ajak teman bergabung dan dapatkan <strong>500 Gold</strong> untuk setiap teman yang mendaftar!</p>
+                    
+                    <div class="referral-box">
+                        <div class="referral-code-display">
+                            <label>Kode Referral Anda:</label>
+                            <div class="code-box">
+                                <span id="referralCode">-</span>
+                                <button class="btn-copy" onclick="copyReferralCode()">📋 Copy</button>
+                            </div>
+                        </div>
+                        
+                        <div class="referral-stats">
+                            <div class="stat-card">
+                                <span class="stat-icon">👥</span>
+                                <div class="stat-info">
+                                    <span class="stat-label">Total Referral</span>
+                                    <span class="stat-value" id="totalReferrals">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <span class="stat-label">Bonus Didapat</span>
+                                    <span class="stat-value" id="referralBonus">0 Gold</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="referral-list">
+                            <h4>Daftar Teman yang Anda Ajak:</h4>
+                            <div id="referralList">
+                                <p style="color:#999; text-align:center;">Belum ada referral.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: RESET -->
+            <div id="tab-reset" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3> Reset Data Game</h3>
+                    <p class="info-text">Mulai ulang semua data game dari nol. Tindakan ini tidak dapat dibatalkan!</p>
+                    
+                    <div class="reset-options">
+                        <div class="reset-card">
+                            <h4> Reset Data Pertandingan</h4>
+                            <p>Hapus riwayat match dan klasemen.</p>
+                            <button class="btn-danger" onclick="resetData('esportbos_match_history')">Reset Match</button>
+                        </div>
+                        
+                        <div class="reset-card">
+                            <h4> Reset Data Pemain</h4>
+                            <p>Hapus semua pemain di tim.</p>
+                            <button class="btn-danger" onclick="resetData('esportbos_players')">Reset Pemain</button>
+                        </div>
+                        
+                        <div class="reset-card">
+                            <h4>💰 Reset Ekonomi</h4>
+                            <p>Kembalikan dana klub ke 10.000 Gold.</p>
+                            <button class="btn-danger" onclick="resetEconomy()">Reset Ekonomi</button>
+                        </div>
+                        
+                        <div class="reset-card nuke">
+                            <h4>💣 Factory Reset</h4>
+                            <p>Hapus SEMUA data dan mulai dari awal.</p>
+                            <button class="btn-danger nuke-btn" onclick="factoryReset()">HAPUS SEMUA</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="akun.js"></script>
+</body>
+</html>
