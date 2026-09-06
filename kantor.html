@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Kantor Pusat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo"></div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: <strong id="clubPopularity">76</strong>%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popFill" style="width: 76%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item active">🏢 Kantor</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>🏢 Kantor Pusat & Manajemen</span>
+                <span>Atur Keuangan & Sponsorship</span>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchKantorTab('keuangan')">💵 Keuangan</button>
+                <button class="tab-btn" onclick="switchKantorTab('sponsor')"> Sponsor</button>
+                <button class="tab-btn" onclick="switchKantorTab('fasilitas')">🏗️ Fasilitas</button>
+            </div>
+
+            <!-- TAB: KEUANGAN -->
+            <div id="tab-keuangan" class="tab-content">
+                <div class="panel raised">
+                    <h3>💵 Laporan Keuangan</h3>
+                    
+                    <div class="finance-overview">
+                        <div class="finance-card balance">
+                            <div class="finance-icon">💰</div>
+                            <div class="finance-info">
+                                <span class="finance-label">Saldo Saat Ini</span>
+                                <span class="finance-value" id="currentBalance">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-card income">
+                            <div class="finance-icon"></div>
+                            <div class="finance-info">
+                                <span class="finance-label">Pemasukan / Minggu</span>
+                                <span class="finance-value" id="weeklyIncome">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-card expense">
+                            <div class="finance-icon">📉</div>
+                            <div class="finance-info">
+                                <span class="finance-label">Pengeluaran / Minggu</span>
+                                <span class="finance-value" id="weeklyExpense">0</span>
+                            </div>
+                        </div>
+                        <div class="finance-card profit">
+                            <div class="finance-icon">💎</div>
+                            <div class="finance-info">
+                                <span class="finance-label">Profit Bersih</span>
+                                <span class="finance-value" id="netProfit">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="finance-actions">
+                        <button class="btn-futuristic btn-large" onclick="claimWeeklyIncome()"> Klaim Pendapatan Mingguan</button>
+                        <p class="info-text" style="margin-top: 15px;">Klaim pendapatan dari sponsor dan kurangi biaya operasional tim.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SPONSOR -->
+            <div id="tab-sponsor" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3> Manajemen Sponsor</h3>
+                    <p class="info-text">Tanda tangani sponsor untuk meningkatkan pemasukan mingguan. Beberapa sponsor membutuhkan Popularitas Klub tertentu.</p>
+                    
+                    <div class="sponsor-limit-info">
+                        <span>Slot Sponsor Aktif: <strong id="activeSponsorCount">0</strong> / <strong id="maxSponsorSlots">2</strong></span>
+                    </div>
+
+                    <h4 style="margin-top: 20px;">📜 Sponsor Tersedia</h4>
+                    <div class="sponsor-grid" id="availableSponsors">
+                        <!-- Diisi JS -->
+                    </div>
+
+                    <h4 style="margin-top: 30px;">✅ Sponsor Aktif</h4>
+                    <div class="sponsor-grid" id="activeSponsors">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: FASILITAS -->
+            <div id="tab-fasilitas" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🏗️ Upgrade Fasilitas Kantor</h3>
+                    <p class="info-text">Upgrade kantor untuk membuka slot sponsor lebih banyak dan meningkatkan reputasi klub.</p>
+                    
+                    <div class="facility-current">
+                        <div class="facility-icon-large">🏢</div>
+                        <h2 id="currentFacilityName">Ruko Sederhana</h2>
+                        <p>Level <span id="currentFacilityLevel">1</span></p>
+                        <div class="facility-stats">
+                            <p>✅ Slot Sponsor Maksimal: <strong id="currentMaxSlots">2</strong></p>
+                            <p>✅ Bonus Popularitas: <strong>+0%</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="facility-upgrade-box">
+                        <h3>Upgrade ke Level Berikutnya</h3>
+                        <div class="upgrade-details">
+                            <div class="upgrade-item">
+                                <span>Level Baru:</span>
+                                <strong id="nextFacilityName">Gedung Bertingkat</strong>
+                            </div>
+                            <div class="upgrade-item">
+                                <span>Slot Sponsor:</span>
+                                <strong id="nextMaxSlots">4</strong>
+                            </div>
+                            <div class="upgrade-item">
+                                <span>Biaya Upgrade:</span>
+                                <strong class="price" id="upgradeCost">10.000 Gold</strong>
+                            </div>
+                        </div>
+                        <button class="btn-futuristic btn-large" id="btnUpgradeFacility" onclick="upgradeFacility()">🏗️ Upgrade Sekarang</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL NOTIFIKASI -->
+    <div class="modal" id="kantorModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeKantorModal()">&times;</span>
+            <div id="kantorModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="kantor.js"></script>
+</body>
+</html>
