@@ -51,10 +51,16 @@ body {
 
 /* ===== HERO SECTION ===== */
 .hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 80px 50px;
-    text-align: center;
-    color: white;
+    background: linear-gradient(rgba(102, 126, 234, 0.75), rgba(118, 75, 162, 0.75)), 
+                url('esports-arena-bg.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
 }
 
