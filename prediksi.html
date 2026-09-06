@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Liga Prediksi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="user-profile">
+                <img id="navAvatar" src="" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name" id="teamName">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">️ Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item active"> Liga Prediksi</a>
+                <a href="akun.html" class="menu-item"> Akun Saya</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span> Liga Prediksi Musim 28</span>
+                <span>Peringkatmu: <strong id="userRank">#77</strong> / 498</span>
+            </div>
+
+            <!-- STATS OVERVIEW -->
+            <div class="prediction-stats">
+                <div class="stat-card">
+                    <div class="stat-icon"></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Peringkatmu</span>
+                        <span class="stat-value" id="myRank">#77</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Skormu</span>
+                        <span class="stat-value" id="myScore">56</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔮</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Pilihan Dibuat</span>
+                        <span class="stat-value" id="myPredictions">26</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Benar</span>
+                        <span class="stat-value" id="myCorrect">18 (69%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchPrediksiTab('today')">⭐ Laga Unggulan Hari Ini</button>
+                <button class="tab-btn" onclick="switchPrediksiTab('all')">📋 Semua Pertandingan</button>
+                <button class="tab-btn" onclick="switchPrediksiTab('leaderboard')">🏆 Papan Peringkat</button>
+            </div>
+
+            <!-- TAB: TODAY -->
+            <div id="tab-today" class="tab-content">
+                <div class="panel raised">
+                    <h3>⭐ Laga Unggulan Hari Ini (5)</h3>
+                    <p class="info-text">Prediksi skor pertandingan Top ELO untuk dapat poin!</p>
+                    
+                    <div class="matches-list" id="todayMatches">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: ALL MATCHES -->
+            <div id="tab-all" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>📋 Semua Pertandingan Musim Ini</h3>
+                    <div class="matches-list" id="allMatches">
+                        <!-- Diisi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: LEADERBOARD -->
+            <div id="tab-leaderboard" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🏆 Papan Peringkat Musim (Top 50)</h3>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Peringkat</th>
+                                <th>Δ</th>
+                                <th>Manager</th>
+                                <th>Pilihan</th>
+                                <th>Benar</th>
+                                <th>Skor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <!-- Diisi JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL PREDIKSI -->
+    <div class="modal" id="predictionModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closePredictionModal()">&times;</span>
+            <div id="predictionModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="prediksi.js"></script>
+</body>
+</html>
