@@ -3397,3 +3397,231 @@ body {
     justify-content: center;
     border-radius: 15px;
 }
+/* ===== HALAMAN STADION ===== */
+
+.stadion-visual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.stadion-art {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+}
+
+.art-building {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.art-building.small .art-roof { font-size: 48px; }
+.art-building.small .art-body { font-size: 36px; }
+
+.art-building.medium .art-roof { font-size: 64px; }
+.art-building.medium .art-body { font-size: 48px; }
+.art-building.medium .art-crowd { font-size: 24px; }
+
+.art-building.large .art-roof { font-size: 80px; }
+.art-building.large .art-body { font-size: 60px; }
+.art-building.large .art-crowd { font-size: 32px; }
+.art-building.large .art-lights { font-size: 28px; }
+
+.art-building.xlarge .art-roof { font-size: 96px; }
+.art-building.xlarge .art-body { font-size: 72px; }
+.art-building.xlarge .art-crowd { font-size: 40px; }
+.art-building.xlarge .art-lights { font-size: 36px; }
+.art-building.xlarge .art-flag { font-size: 32px; }
+
+.stadion-info-panel {
+    text-align: center;
+}
+
+.stadion-info-panel h2 {
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: #00d4ff;
+}
+
+.stadion-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.stat-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.stat-icon {
+    font-size: 32px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: #00d4ff;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Upgrade Stages */
+.upgrade-stages {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stage-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.stage-card.completed {
+    border-color: #28a745;
+    background: #f0fff4;
+}
+
+.stage-card.current {
+    border-color: #00d4ff;
+    background: #f0f9ff;
+    transform: scale(1.05);
+}
+
+.stage-card.locked {
+    opacity: 0.6;
+    background: #f8f9fa;
+}
+
+.stage-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #00d4ff;
+    color: white;
+    font-size: 24px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.stage-card.completed .stage-number {
+    background: #28a745;
+}
+
+.stage-card.locked .stage-number {
+    background: #999;
+}
+
+.stage-card h4 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.stage-card p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stage-status {
+    margin: 15px 0;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.btn-upgrade {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-upgrade:hover:not(:disabled) {
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-upgrade:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Income */
+.income-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.income-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-left: 5px solid #00d4ff;
+}
+
+.income-icon {
+    font-size: 32px;
+}
+
+.income-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.income-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.income-value {
+    font-size: 20px;
+    font-weight: 900;
+    color: #00d4ff;
+}
+
+.income-actions {
+    text-align: center;
+    margin-top: 30px;
+}
