@@ -101,47 +101,100 @@
             </div>
 
             <!-- TAB: REFERRAL -->
-            <div id="tab-referral" class="tab-content" style="display:none;">
-                <div class="panel raised">
-                    <h3>🎁 Program Referral</h3>
-                    <p class="info-text">Ajak teman bergabung dan dapatkan <strong>500 Gold</strong> untuk setiap teman yang mendaftar!</p>
-                    
-                    <div class="referral-box">
-                        <div class="referral-code-display">
-                            <label>Kode Referral Anda:</label>
-                            <div class="code-box">
-                                <span id="referralCode">-</span>
-                                <button class="btn-copy" onclick="copyReferralCode()">📋 Copy</button>
-                            </div>
-                        </div>
-                        
-                        <div class="referral-stats">
-                            <div class="stat-card">
-                                <span class="stat-icon">👥</span>
-                                <div class="stat-info">
-                                    <span class="stat-label">Total Referral</span>
-                                    <span class="stat-value" id="totalReferrals">0</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-icon">💰</span>
-                                <div class="stat-info">
-                                    <span class="stat-label">Bonus Didapat</span>
-                                    <span class="stat-value" id="referralBonus">0 Gold</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="referral-list">
-                            <h4>Daftar Teman yang Anda Ajak:</h4>
-                            <div id="referralList">
-                                <p style="color:#999; text-align:center;">Belum ada referral.</p>
-                            </div>
-                        </div>
+<div id="tab-referral" class="tab-content" style="display:none;">
+    <div class="panel raised">
+        <h3>🎁 Program Referral</h3>
+        <p class="info-text">Ajak teman bermain EsportBos dan dapatkan bonus Gold!</p>
+        
+        <!-- BAGIAN 1: LINK REFERRAL -->
+        <div class="referral-hero">
+            <div class="referral-code-box">
+                <span class="referral-label">Kode Referral Kamu:</span>
+                <div class="referral-code" id="myReferralCode">-</div>
+                <button class="btn-copy" onclick="copyReferralCode()"> Salin Kode</button>
+            </div>
+            
+            <div class="referral-rewards">
+                <div class="reward-card">
+                    <div class="reward-icon">🎁</div>
+                    <div class="reward-info">
+                        <span class="reward-amount">+1,000 Gold</span>
+                        <span class="reward-desc">Untuk teman yang daftar</span>
+                    </div>
+                </div>
+                <div class="reward-card">
+                    <div class="reward-icon">💰</div>
+                    <div class="reward-info">
+                        <span class="reward-amount">+2,000 Gold</span>
+                        <span class="reward-desc">Untuk kamu per referral</span>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <div class="referral-link-box">
+            <h4> Link Referral:</h4>
+            <div class="link-display">
+                <input type="text" id="referralLink" readonly>
+                <button class="btn-copy" onclick="copyReferralLink()">📋 Salin Link</button>
+            </div>
+            <p class="info-text" style="margin-top:10px;">💡 Share link ini! Teman yang klik & daftar otomatis jadi referral kamu.</p>
+        </div>
+
+        <div class="referral-stats">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Referral</span>
+                    <span class="stat-value" id="referralCount">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔗</div>
+                <div class="stat-info">
+                    <span class="stat-label">Via Link</span>
+                    <span class="stat-value" id="referralDirect">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <span class="stat-label">Via Lelang</span>
+                    <span class="stat-value" id="referralAuction">0</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Bonus</span>
+                    <span class="stat-value" id="referralBonus">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="referral-list" id="referralList">
+            <!-- Diisi JS -->
+        </div>
+    </div>
+
+    <!-- BAGIAN 2: LELANG REFERRAL -->
+    <div class="panel raised" style="margin-top: 20px;">
+        <h3>🏆 Lelang Referral Bulanan</h3>
+        <p class="info-text">Menang lelang = Dapat SEMUA user baru tanpa link referral bulan ini!</p>
+        
+        <div class="auction-info" id="auctionInfo">
+            <!-- Diisi JS -->
+        </div>
+
+        <div class="auction-actions" id="auctionActions">
+            <!-- Diisi JS -->
+        </div>
+
+        <div class="auction-pool" id="auctionPool">
+            <!-- Diisi JS -->
+        </div>
+    </div>
+</div>
             <!-- TAB: RESET -->
             <div id="tab-reset" class="tab-content" style="display:none;">
                 <div class="panel raised">
