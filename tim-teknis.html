@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Tim Teknis</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="user-profile">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo"></div>
+                <h3 class="team-name">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item active">‍💻 Tim Teknis</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>👨‍💻 Tim Teknis & Support</span>
+                <span>Rekrut Staff Profesional</span>
+            </div>
+
+            <div class="panel raised">
+                <h3>📋 Daftar Staff Tersedia</h3>
+                <p class="info-text">Rekrut staff untuk memberikan bonus pasif kepada tim dan pemain. Setiap staff memiliki level yang bisa di-upgrade.</p>
+                
+                <div class="staff-grid" id="staffGrid">
+                    <!-- Diisi JS -->
+                </div>
+            </div>
+
+            <div class="panel raised" style="margin-top: 20px;">
+                <h3> Efek Bonus Aktif</h3>
+                <div class="bonus-summary" id="bonusSummary">
+                    <!-- Diisi JS -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL REKRUT/UPGRADE -->
+    <div class="modal" id="staffModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeStaffModal()">&times;</span>
+            <div id="staffModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="tim-teknis.js"></script>
+</body>
+</html>
