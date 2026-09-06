@@ -8,22 +8,26 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- NAVBAR -->
+    <!-- ===== NAVBAR ATAS ===== -->
     <nav class="top-navbar">
         <div class="navbar-left">
-            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
                 <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
-            <div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
-            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <div class="stat-badge">💰 Pendapatan (0)</div>
+<div class="stat-badge">💰 Dana Klub: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
+            <div class="stat-badge task">✅ Tugas (0)</div>
+            <div class="stat-badge message">️ Pesan (0)</div>
+            <script src="auth-simple.js"></script>
             <div class="user-profile">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="User">
-                <span id="userName">Loading...</span>
-                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
-            </div>
+    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
+    <span id="userName">Loading...</span>
+    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+</div>
         </div>
     </nav>
 
