@@ -4825,3 +4825,20 @@ body {
     color: #667eea;
     width: 100%;
 }
+/* Seragamkan tombol di navbar */
+.navbar-right .stat-badge {
+    background: white;
+    border: 2px solid #e0e0e0;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-right .stat-badge.market-badge {
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    color: white;
+    border: none;
+}
