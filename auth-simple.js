@@ -44,7 +44,17 @@ function register(username, email, password, referralCode = '') {
         alert('❌ Email sudah terdaftar!');
         return false;
     }
-    
+    // Saat user register, inisialisasi saldo
+function initializeBalances(email) {
+    // Cek apakah sudah ada, kalau belum buat baru
+    if (!localStorage.getItem(`esportbos_diamonds_${email}`)) {
+        localStorage.setItem(`esportbos_diamonds_${email}`, '0');
+    }
+    if (!localStorage.getItem(`esportbos_currency_${email}`)) {
+        localStorage.setItem(`esportbos_currency_${email}`, '1000'); // Bonus awal 1000 Currency
+    }
+    // Gold udah ada di 'esportbos_team_funds'
+}
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const newCode = generateReferralCode();
     const avatarSeed = generateAvatarSeed();
