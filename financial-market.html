@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Financial Market</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge"> Pendapatan (0)</div>
+            <div class="stat-badge">💵 Dana: <strong id="teamFundsDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (1141)</div>
+            <a href="financial-market.html" class="stat-badge market-badge active">📈 Market</a>
+            <div class="user-profile">
+                <img id="navAvatar" src="" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name" id="teamName">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item"> Taktik</a>
+                <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">️ Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="financial-market.html" class="menu-item active">📈 Financial Market</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>📈 Financial Market</span>
+                <span>Pasar Mata Uang EsportBos</span>
+            </div>
+
+            <!-- BALANCE OVERVIEW -->
+            <div class="balance-overview">
+                <div class="balance-card diamond">
+                    <div class="balance-icon">💎</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Diamond</span>
+                        <span class="balance-value" id="diamondBalance">0</span>
+                        <span class="balance-sub">Premium Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card gold">
+                    <div class="balance-icon">🟡</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Gold</span>
+                        <span class="balance-value" id="goldBalance">0</span>
+                        <span class="balance-sub">Global Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card currency">
+                    <div class="balance-icon">🎟️</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Currency</span>
+                        <span class="balance-value" id="currencyBalance">0</span>
+                        <span class="balance-sub">Local Currency</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXCHANGE SECTION -->
+            <div class="panel raised">
+                <h3>💱 Exchange Mata Uang</h3>
+                <p class="info-text">Tukar mata uang dengan kurs real-time. Biaya konversi: 5%</p>
+                
+                <div class="exchange-tabs">
+                    <button class="exchange-tab active" onclick="switchExchange('diamond-gold')">💎 → 🟡</button>
+                    <button class="exchange-tab" onclick="switchExchange('gold-currency')">🟡 → 🎟️</button>
+                    <button class="exchange-tab" onclick="switchExchange('diamond-currency')">💎 → ️</button>
+                </div>
+
+                <div class="exchange-box" id="exchangeBox">
+                    <!-- Diisi JS -->
+                </div>
+            </div>
+
+            <!-- MARKET CHART -->
+            <div class="panel raised">
+                <h3> Grafik Kurs (24 Jam Terakhir)</h3>
+                <div class="chart-container">
+                    <canvas id="marketChart" width="1000" height="300"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-color diamond"></span> Diamond/Gold</span>
+                    <span class="legend-item"><span class="legend-color gold"></span> Gold/Currency</span>
+                </div>
+            </div>
+
+            <!-- TRANSACTION LOG -->
+            <div class="panel raised">
+                <h3>📜 Transaksi Terbaru</h3>
+                <div class="transaction-list" id="transactionList">
+                    <!-- Diisi JS -->
+                </div>
+            </div>
+
+            <!-- WITHDRAW SECTION -->
+            <div class="panel raised">
+                <h3>💸 Withdraw Diamond</h3>
+                <p class="info-text">Minimum WD: 2,500 Diamonds (net). Pajak platform: 15%</p>
+                
+                <div class="withdraw-box">
+                    <div class="withdraw-info">
+                        <div class="info-row">
+                            <span>Saldo Diamond:</span>
+                            <strong id="withdrawBalance">0</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Minimum WD (net):</span>
+                            <strong>2,500 Diamonds</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Yang harus dikirim (gross):</span>
+                            <strong id="grossAmount">2,941 Diamonds</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Nilai Rupiah (net):</span>
+                            <strong id="rupiahValue">Rp 500,000</strong>
+                        </div>
+                    </div>
+                    <button class="btn-futuristic btn-large" onclick="requestWithdraw()">💸 Request Withdraw</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL EXCHANGE -->
+    <div class="modal" id="exchangeModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeExchangeModal()">&times;</span>
+            <div id="exchangeModalBody"></div>
+        </div>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="financial-market.js"></script>
+</body>
+</html>
