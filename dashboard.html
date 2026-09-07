@@ -22,7 +22,31 @@
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
             <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <script src="auth-simple.js">
+                // ===== UPDATE BALANCE DISPLAY =====
+function updateBalanceDisplay() {
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) return;
+    
+    // Ambil saldo dari localStorage
+    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${user.email}`) || '0');
+    const gold = parseInt(localStorage.getItem('esportbos_team_funds') || '0');
+    const currency = parseInt(localStorage.getItem(`esportbos_currency_${user.email}`) || '0');
+    
+    // Update tampilan
+    document.getElementById('diamondBalance').textContent = diamonds.toLocaleString();
+    document.getElementById('goldBalance').textContent = gold.toLocaleString();
+    document.getElementById('currencyBalance').textContent = currency.toLocaleString();
+}
+
+// Panggil saat halaman load
+document.addEventListener('DOMContentLoaded', function() {
+    updateBalanceDisplay();
+    
+    // Update setiap 5 detik (biar real-time)
+    setInterval(updateBalanceDisplay, 5000);
+});
+            </script>
             <div class="user-profile">
     <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
     <span id="userName">Loading...</span>
