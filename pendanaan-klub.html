@@ -191,64 +191,36 @@ async function topUp(paket, harga, diamond, gold) {
         window.location.href = 'index.html';
         return;
     }
-    
-    // Generate unique transaction ID
-    const transactionId = 'ESB' + Date.now();
-    
+
     try {
-        // 1. Simpan transaksi ke Supabase (status: pending)
-        const { error: dbError } = await window.supabaseClient
-            .from('transactions')
-            .insert({
-                user_id: user.id,
-                transaction_id: transactionId,
-                type: 'topup',
-                package: paket,
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        
+        const response = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                packageType: paket,
                 amount: harga,
                 diamond: diamond,
-                gold: gold,
-                status: 'pending',
-                created_at: new Date().toISOString()
-            });
-        
-        if (dbError) {
-            console.error('Database error:', dbError);
-            alert('❌ Gagal membuat transaksi. Silakan coba lagi.');
-            return;
+                gold: gold
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('✅ Transaksi dibuat! Mengalihkan ke halaman pembayaran...');
+            window.location.href = data.paymentUrl;
+        } else {
+            alert(' Gagal: ' + data.error);
         }
-        
-        // 2. Redirect ke Duitku Payment Gateway
-        // Format URL Duitku (sesuaikan dengan dokumentasi Duitku)
-        const duitkuUrl = `https://api.duitku.com/webpayment/api/merchant/createInvoice`;
-        
-        // Parameters untuk Duitku (sesuaikan dengan API Duitku)
-        const paymentParams = {
-            paymentAmount: harga,
-            paymentMethod: null, // null = user pilih sendiri
-            merchantCode: 'YOUR_MERCHANT_CODE', // Ganti dengan merchant code lo
-            merchantOrderId: transactionId,
-            productDetails: `EsportBos ${paket.toUpperCase()} Package - ${diamond} Diamond + ${gold} Gold`,
-            additionalParam: '',
-            paymentExpiryInSeconds: 3600, // 1 jam
-            returnUrl: 'https://esportbos.com/payment-callback.html',
-            signature: generateSignature(transactionId, harga) // Generate signature
-        };
-        
-        console.log('Payment params:', paymentParams);
-        
-        // 3. Redirect user ke payment page
-        // Option A: Redirect langsung
-        // window.location.href = duitkuUrl + '?' + new URLSearchParams(paymentParams);
-        
-        // Option B: Buka popup (lebih user-friendly)
-        const popupUrl = duitkuUrl + '?' + new URLSearchParams(paymentParams);
-        window.open(popupUrl, 'PaymentWindow', 'width=800,height=600');
-        
-        alert('✅ Transaksi dibuat! Silakan selesaikan pembayaran.\n\nTransaction ID: ' + transactionId);
-        
-    } catch (err) {
-        console.error('Error:', err);
-        alert('❌ Terjadi kesalahan: ' + err.message);
+
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('❌ Terjadi kesalahan sistem.');
     }
 }
 
