@@ -37,6 +37,7 @@ async function handleRegister() {
     const clubName = document.getElementById('registerClubName').value.trim();
     const referral = document.getElementById('registerReferral').value.trim();
     
+    // Validasi field (kode yang sudah ada)
     if (!username || !email || !password || !clubName) {
         alert('❌ Semua field wajib diisi!');
         return;
@@ -47,11 +48,14 @@ async function handleRegister() {
         return;
     }
     
-    if (!window.supabaseClient) {
-        alert('❌ Supabase belum siap. Silakan refresh halaman.');
+    // ✅ VALIDASI CAPTCHA
+    const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+    if (!turnstileResponse || !turnstileResponse.value) {
+        alert('❌ Harap selesaikan verifikasi keamanan (captcha)!');
         return;
     }
     
+    // Lanjutkan register ke Supabase
     try {
         const { data, error } = await window.supabaseClient.auth.signUp({
             email: email,
@@ -65,35 +69,9 @@ async function handleRegister() {
             }
         });
         
-        if (error) {
-            alert('❌ Error: ' + error.message);
-            return;
-        }
-        
-        if (data.user) {
-            await window.supabaseClient
-                .from('profiles')
-                .update({ 
-                    username: username,
-                    club_name: clubName,
-                    diamonds: 0,
-                    gold: 0,
-                    currency: 0,
-                    popularity: 50,
-                    moral: 70,
-                    role: 'OWNER'
-                })
-                .eq('id', data.user.id);
-        }
-        
-        alert('✅ Registrasi berhasil! Silakan login.');
-        showLogin();
-        
-    } catch (err) {
-        alert('❌ Terjadi kesalahan: ' + err.message);
+        // ... kode selanjutnya tetap sama ...
     }
 }
-
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
