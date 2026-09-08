@@ -237,13 +237,11 @@
         alert('📷 Fitur upload foto akan segera hadir!');
     }
 
-    // Reset data (placeholder)
-    function resetData() {
-        if (confirm('⚠️ Yakin ingin reset semua data? Tindakan ini tidak dapat dibatalkan!')) {
-            alert('🔄 Fitur reset data akan segera hadir!');
-        }
-    }
     </script>
-
+<!-- Urutan Script WAJIB di SEMUA halaman -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>  <!-- INI FILE SAKTI BARU -->
+<script src="script.js"></script> <!-- Script khusus halaman itu -->
 </body>
 </html>
