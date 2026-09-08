@@ -42,6 +42,7 @@
         <button type="button" class="btn-futuristic btn-register" onclick="showRegister()">Daftar Sekarang - GRATIS!</button>
     </form>
     <div class="login-link">
+        
         Belum punya akun? <a href="#" onclick="showRegister()">Register di sini</a>
     </div>
     <div class="form-group">
@@ -50,7 +51,12 @@
     <small style="color:#999; font-size:12px;">💡 Jika kamu dapat link referral, kode akan otomatis terisi</small>
 </div>
 </div>
-
+     <!-- Tambahkan ini di dalam form register, setelah input Username/Email -->
+<div class="form-group">
+    <label for="regClubName">🏆 Nama Klub</label>
+    <input type="text" id="regClubName" placeholder="Contoh: RRQ Hoshi, Garuda FC, dll" required>
+    <small style="color: #999;">Pilih nama klub impianmu! (Bisa diganti nanti)</small>
+</div>
 <!-- REGISTER FORM -->
 <div class="login-panel" id="register" style="display: none;">
     <h2>Daftar EsportBos</h2>
