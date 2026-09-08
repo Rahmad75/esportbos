@@ -134,34 +134,36 @@
             </div>
 
             <!-- Tab: Referral -->
-            <div id="tab-referral" class="tab-content" style="display: none;">
-                <div class="panel raised">
-                    <h3>🎁 Program Referral</h3>
-                    <p>Undang teman dan dapatkan bonus!</p>
-                    <div class="referral-box">
-                        <label>Kode Referral Anda:</label>
-                        <input type="text" id="referralCode" readonly value="Loading...">
-                        <button onclick="copyReferral()" class="btn-copy">📋 Copy</button>
-                    </div>
-                    <div class="referral-stats">
-                        <div>Total Referral: <strong id="totalReferral">0</strong></div>
-                        <div>Bonus Didapat: <strong id="referralBonus">0</strong> Gold</div>
-                    </div>
-                </div>
+<div id="tab-referral" class="tab-content" style="display: none;">
+    <div class="panel raised">
+        <h3>🎁 Program Referral</h3>
+        <p>Undang teman dan dapatkan bonus <strong>100 Gold</strong> untuk setiap teman yang mendaftar!</p>
+        
+        <div class="referral-box">
+            <label>Link Referral Anda:</label>
+            <div class="referral-link-container">
+                <input type="text" id="referralLink" readonly value="Loading...">
+                <button onclick="copyReferralLink()" class="btn-copy"> Copy Link</button>
             </div>
+            <small>Bagikan link ini ke teman-teman Anda</small>
+        </div>
 
-            <!-- Tab: Reset Data -->
-            <div id="tab-reset" class="tab-content" style="display: none;">
-                <div class="panel raised">
-                    <h3>🔄 Reset Data</h3>
-                    <p>⚠️ Perhatian: Tindakan ini tidak dapat dibatalkan!</p>
-                    <button onclick="resetData()" class="btn-danger">🗑️ Reset Semua Data</button>
-                </div>
+        <div class="referral-box">
+            <label>Kode Referral:</label>
+            <div class="referral-link-container">
+                <input type="text" id="referralCode" readonly value="Loading...">
+                <button onclick="copyReferralCode()" class="btn-copy">📋 Copy Kode</button>
             </div>
+        </div>
 
-        </main>
+        <div class="referral-stats">
+            <div>Total Referral: <strong id="totalReferral">0</strong> orang</div>
+            <div>Bonus Didapat: <strong id="referralBonus">0</strong> Gold</div>
+        </div>
     </div>
+</div>
 
+            
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth.js"></script>
