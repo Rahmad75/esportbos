@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
 function initSupabaseClient() {
     if (typeof window.supabase !== 'undefined') {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('✅ Supabase client initialized:', window.supabaseClient);
+        console.log('✅ Supabase client initialized');
         return true;
     }
     return false;
@@ -37,26 +37,39 @@ async function handleRegister() {
     const clubName = document.getElementById('registerClubName').value.trim();
     const referral = document.getElementById('registerReferral').value.trim();
     
-    // Validasi field (kode yang sudah ada)
     if (!username || !email || !password || !clubName) {
         alert('❌ Semua field wajib diisi!');
         return;
     }
     
     if (password.length < 6) {
-        alert('❌ Password minimal 6 karakter!');
+        alert(' Password minimal 6 karakter!');
         return;
     }
     
-    // ✅ VALIDASI CAPTCHA
+    // Validasi Captcha
     const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
     if (!turnstileResponse || !turnstileResponse.value) {
         alert('❌ Harap selesaikan verifikasi keamanan (captcha)!');
         return;
     }
     
-    // Lanjutkan register ke Supabase
     try {
+        // Verifikasi captcha ke Edge Function
+        const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: turnstileResponse.value })
+        });
+        
+        const captchaData = await captchaResponse.json();
+        
+        if (!captchaData.success) {
+            alert('❌ Verifikasi captcha gagal. Coba lagi.');
+            return;
+        }
+        
+        // Daftar user di Supabase
         const { data, error } = await window.supabaseClient.auth.signUp({
             email: email,
             password: password,
@@ -69,20 +82,25 @@ async function handleRegister() {
             }
         });
         
-        // ... kode selanjutnya tetap sama ...
+        if (error) {
+            alert('❌ Error: ' + error.message);
+            return;
+        }
+        
+        alert('✅ Registrasi berhasil! Silakan cek email untuk verifikasi, lalu login.');
+        showLogin();
+        
+    } catch (err) {
+        alert('❌ Terjadi kesalahan: ' + err.message);
     }
 }
+
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     
     if (!email || !password) {
         alert('❌ Email dan password wajib diisi!');
-        return;
-    }
-    
-    if (!window.supabaseClient) {
-        alert('❌ Supabase belum siap. Silakan refresh halaman.');
         return;
     }
     
