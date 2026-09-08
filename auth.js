@@ -1,19 +1,27 @@
 // ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
+// File ini sudah include Supabase client initialization
 
-// Fungsi untuk menunggu supabaseClient ready
-function waitForSupabase(callback, retries = 10) {
-    if (typeof window.supabaseClient !== 'undefined') {
-        callback();
-    } else if (retries > 0) {
-        console.log('Menunggu Supabase client... retries left:', retries);
-        setTimeout(() => waitForSupabase(callback, retries - 1), 500);
-    } else {
-        console.error('❌ Supabase client gagal ter-load setelah 5 detik');
-        alert('Error: Supabase tidak terinisialisasi. Silakan refresh halaman.');
+// 1. INISIALISASI SUPABASE CLIENT LANGSUNG DI SINI
+const SUPABASE_URL = 'https://xvnpbmxyxphrddjzldbt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bm1wYm15eHBocmRkampsZGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDI0OTgsImV4cCI6MjEwNDQxODQ5OH0.YvXP6nGV7QkQwi9S9xKGKDHUhrLP-sWY83N1iOcVEi0';
+
+// Tunggu Supabase SDK load, lalu init client
+function initSupabaseClient() {
+    if (typeof window.supabase !== 'undefined') {
+        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase client initialized:', window.supabaseClient);
+        return true;
     }
+    return false;
 }
 
-// Fungsi untuk switch antara Login dan Register
+// Coba init langsung
+if (!initSupabaseClient()) {
+    // Kalau belum ready, tunggu sebentar
+    setTimeout(initSupabaseClient, 500);
+}
+
+// 2. FUNGSI SWITCH FORM
 function showLogin() {
     const loginEl = document.getElementById('login');
     const registerEl = document.getElementById('register');
@@ -28,7 +36,7 @@ function showRegister() {
     if (registerEl) registerEl.style.display = 'block';
 }
 
-// ===== FUNGSI REGISTER =====
+// 3. FUNGSI REGISTER
 async function handleRegister() {
     const username = document.getElementById('registerUsername').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
@@ -36,7 +44,6 @@ async function handleRegister() {
     const clubName = document.getElementById('registerClubName').value.trim();
     const referral = document.getElementById('registerReferral').value.trim();
     
-    // Validasi
     if (!username || !email || !password || !clubName) {
         alert('❌ Semua field wajib diisi!');
         return;
@@ -47,8 +54,12 @@ async function handleRegister() {
         return;
     }
     
+    if (!window.supabaseClient) {
+        alert(' Supabase belum siap. Silakan refresh halaman.');
+        return;
+    }
+    
     try {
-        // 1. Daftar user di Supabase Auth
         const { data, error } = await window.supabaseClient.auth.signUp({
             email: email,
             password: password,
@@ -66,9 +77,8 @@ async function handleRegister() {
             return;
         }
         
-        // 2. Update profil dengan nama klub
         if (data.user) {
-            const { error: updateError } = await window.supabaseClient
+            await window.supabaseClient
                 .from('profiles')
                 .update({ 
                     username: username,
@@ -81,13 +91,9 @@ async function handleRegister() {
                     role: 'OWNER'
                 })
                 .eq('id', data.user.id);
-            
-            if (updateError) {
-                console.error('Update profile error:', updateError);
-            }
         }
         
-        alert('✅ Registrasi berhasil! Silakan login dengan akun yang baru dibuat.');
+        alert('✅ Registrasi berhasil! Silakan login.');
         showLogin();
         
     } catch (err) {
@@ -95,13 +101,18 @@ async function handleRegister() {
     }
 }
 
-// ===== FUNGSI LOGIN =====
+// 4. FUNGSI LOGIN
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     
     if (!email || !password) {
         alert('❌ Email dan password wajib diisi!');
+        return;
+    }
+    
+    if (!window.supabaseClient) {
+        alert('❌ Supabase belum siap. Silakan refresh halaman.');
         return;
     }
     
@@ -116,18 +127,12 @@ async function handleLogin() {
             return;
         }
         
-        // 3. Ambil data profil dari database
-        const { data: profile, error: profileError } = await window.supabaseClient
+        const { data: profile } = await window.supabaseClient
             .from('profiles')
             .select('*')
             .eq('id', data.user.id)
             .single();
         
-        if (profileError) {
-            console.error('Profile error:', profileError);
-        }
-        
-        // 4. Simpan session di localStorage (untuk akses cepat)
         const userData = {
             id: data.user.id,
             email: data.user.email,
@@ -152,52 +157,53 @@ async function handleLogin() {
     }
 }
 
-// ===== FUNGSI LOGOUT =====
+// 5. FUNGSI LOGOUT
 async function handleLogout() {
-    await window.supabaseClient.auth.signOut();
+    if (window.supabaseClient) {
+        await window.supabaseClient.auth.signOut();
+    }
     localStorage.removeItem('esportbos_current_user');
-    alert('👋 Berhasil logout!');
     window.location.href = 'index.html';
 }
 
-// ===== FUNGSI CEK AUTH =====
+// 6. CEK AUTH
 async function checkAuth() {
+    if (!window.supabaseClient) return false;
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     return session !== null;
 }
 
-// ===== INIT SAAT DOM LOAD =====
+// 7. INIT SAAT DOM LOAD
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, checking supabaseClient...');
+    console.log('DOM loaded');
     
-    // Tunggu supabaseClient ready (dengan retry)
-    waitForSupabase(function() {
-        console.log('✅ Supabase client ready:', window.supabaseClient);
-        
-        // Setup form listeners
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        
-        if (loginForm) {
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                handleLogin();
-            });
-        }
-        
-        if (registerForm) {
-            registerForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                handleRegister();
-            });
-        }
-        
-        // Default tampilkan login
-        showLogin();
-    });
+    // Pastikan Supabase client ready
+    if (!window.supabaseClient) {
+        initSupabaseClient();
+    }
+    
+    // Setup form listeners
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+    }
+    
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleRegister();
+        });
+    }
+    
+    showLogin();
 });
 
-// Export untuk halaman lain
+// Export
 window.EsportBosAuth = {
     login: handleLogin,
     register: handleRegister,
