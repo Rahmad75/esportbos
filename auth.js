@@ -1,5 +1,26 @@
 // ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
 
+// Cek apakah supabaseClient sudah tersedia
+if (typeof window.supabaseClient === 'undefined') {
+    console.error('❌ Supabase client belum ter-load! Periksa urutan script di HTML.');
+}
+
+// Tunggu DOM load dulu
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking supabaseClient...');
+    
+    // Cek lagi setelah DOM load
+    if (typeof window.supabaseClient === 'undefined') {
+        console.error('❌ Supabase client masih undefined!');
+        alert('Error: Supabase tidak terinisialisasi. Silakan refresh halaman.');
+        return;
+    }
+    
+    console.log('✅ Supabase client ready:', window.supabaseClient);
+    
+    // ... kode selanjutnya ...
+});
+
 // Tunggu supabase-client.js load dulu
 document.addEventListener('DOMContentLoaded', function() {
     // Cek apakah ada form login/register di halaman
