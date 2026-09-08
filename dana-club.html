@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Dana Klub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR (sama seperti dashboard) -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="stat-badge">💰 Pendapatan (0)</div>
+            <div class="stat-badge">💵 Dana: <strong id="navGoldDisplay">0</strong> Gold</div>
+            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
+            <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
+            <div class="user-profile">
+                <img id="navAvatar" src="" alt="User">
+                <span id="userName">Loading...</span>
+                <button onclick="EsportBosAuth.logout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name" id="teamName">RRQ Hoshi</h3>
+                <div class="team-rank">16th in C.4 🇮</div>
+                <div class="team-popularity">
+                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span>Moral Tim: 78%</span>
+                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                </div>
+            </div>
+
+            <div class="team-stats">
+                <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+            </div>
+
+            <button class="btn-pendanaan">💰 Pendanaan Klub</button>
+
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">⚙️ Taktik</a>
+                <a href="pertandingan.html" class="menu-item">🎮 Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="financial-market.html" class="menu-item">📈 Financial Market</a>
+                <a href="dana-klub.html" class="menu-item active">💵 Dana Klub</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>💵 Dana Klub</span>
+                <span>Manajemen Keuangan Lengkap</span>
+            </div>
+
+            <!-- BALANCE OVERVIEW -->
+            <div class="balance-overview">
+                <div class="balance-card diamond">
+                    <div class="balance-icon">💎</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Diamond</span>
+                        <span class="balance-value" id="totalDiamond">0</span>
+                        <span class="balance-sub">Premium Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card gold">
+                    <div class="balance-icon">🟡</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Gold</span>
+                        <span class="balance-value" id="totalGold">0</span>
+                        <span class="balance-sub">Global Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card currency">
+                    <div class="balance-icon">️</div>
+                    <div class="balance-info">
+                        <span class="balance-label">Currency</span>
+                        <span class="balance-value" id="totalCurrency">0</span>
+                        <span class="balance-sub">Local Currency</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEEKLY FINANCIAL SUMMARY -->
+            <div class="panel raised">
+                <h3>📊 Ringkasan Keuangan Mingguan</h3>
+                
+                <div class="weekly-summary">
+                    <div class="summary-card income">
+                        <h4>💰 Pemasukan Minggu Ini</h4>
+                        <div class="summary-amount" id="weeklyIncome">0 Currency</div>
+                        <ul class="income-breakdown" id="incomeBreakdown">
+                            <!-- Diisi JS -->
+                        </ul>
+                    </div>
+                    
+                    <div class="summary-card expense">
+                        <h4>💸 Pengeluaran Minggu Ini</h4>
+                        <div class="summary-amount" id="weeklyExpense">0 Currency</div>
+                        <ul class="expense-breakdown" id="expenseBreakdown">
+                            <!-- Diisi JS -->
+                        </ul>
+                    </div>
+                    
+                    <div class="summary-card net">
+                        <h4>📈 Saldo Bersih</h4>
+                        <div class="summary-amount" id="netBalance">0 Currency</div>
+                        <div class="net-status" id="netStatus">
+                            <!-- Diisi JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INCOME SOURCES -->
+            <div class="panel raised">
+                <h3>💰 Sumber Pemasukan</h3>
+                
+                <div class="income-sources">
+                    <div class="source-card">
+                        <div class="source-icon">🏆</div>
+                        <div class="source-info">
+                            <h4>Hadiah Pertandingan</h4>
+                            <p>Menang: +50 Currency | Seri: +20 Currency | Kalah: +5 Currency</p>
+                            <span class="source-total" id="matchIncome">Total: 0 Currency</span>
+                        </div>
+                    </div>
+                    
+                    <div class="source-card">
+                        <div class="source-icon">🤝</div>
+                        <div class="source-info">
+                            <h4>Sponsor Mingguan</h4>
+                            <p>Berdasarkan popularitas klub & performa tim</p>
+                            <span class="source-total" id="sponsorIncome">Total: 0 Currency</span>
+                        </div>
+                    </div>
+                    
+                    <div class="source-card">
+                        <div class="source-icon">🎟️</div>
+                        <div class="source-info">
+                            <h4>Penjualan Tiket</h4>
+                            <p>Berdasarkan level stadion & jumlah penonton</p>
+                            <span class="source-total" id="ticketIncome">Total: 0 Currency</span>
+                        </div>
+                    </div>
+                    
+                    <div class="source-card">
+                        <div class="source-icon">🎯</div>
+                        <div class="source-info">
+                            <h4>Liga Prediksi</h4>
+                            <p>Hadiah untuk prediksi yang tepat</p>
+                            <span class="source-total" id="predictionIncome">Total: 0 Currency</span>
+                        </div>
+                    </div>
+                    
+                    <div class="source-card">
+                        <div class="source-icon">💎</div>
+                        <div class="source-info">
+                            <h4>Top-Up Diamond</h4>
+                            <p>Total Diamond yang dibeli</p>
+                            <span class="source-total" id="topupIncome">Total: 0 Diamond</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPENSE BREAKDOWN -->
+            <div class="panel raised">
+                <h3>💸 Rincian Pengeluaran</h3>
+                
+                <div class="expense-breakdown-container">
+                    <div class="expense-item">
+                        <div class="expense-label">
+                            <span>👥 Gaji Pemain</span>
+                            <span class="expense-detail" id="playerWagesDetail">0 pemain</span>
+                        </div>
+                        <div class="expense-amount" id="playerWages">0 Currency/minggu</div>
+                    </div>
+                    
+                    <div class="expense-item">
+                        <div class="expense-label">
+                            <span>👨‍💏 Gaji Staff (Coach & Scout)</span>
+                            <span class="expense-detail" id="staffWagesDetail">0 staff</span>
+                        </div>
+                        <div class="expense-amount" id="staffWages">0 Currency/minggu</div>
+                    </div>
+                    
+                    <div class="expense-item">
+                        <div class="expense-label">
+                            <span>🏟️ Maintenance Stadion</span>
+                            <span class="expense-detail">Level <span id="stadiumLevel">1</span></span>
+                        </div>
+                        <div class="expense-amount" id="stadiumMaintenance">0 Currency/minggu</div>
+                    </div>
+                    
+                    <div class="expense-item">
+                        <div class="expense-label">
+                            <span>🎓 Akademi Muda</span>
+                            <span class="expense-detail">Biaya pelatihan</span>
+                        </div>
+                        <div class="expense-amount" id="academyCost">0 Currency/minggu</div>
+                    </div>
+                    
+                    <div class="expense-item total">
+                        <div class="expense-label">
+                            <strong>💵 Total Pengeluaran Mingguan</strong>
+                        </div>
+                        <div class="expense-amount total" id="totalWeeklyExpense">0 Currency</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRANSACTION HISTORY -->
+            <div class="panel raised">
+                <h3>📜 Riwayat Transaksi</h3>
+                
+                <div class="transaction-filters">
+                    <button class="filter-btn active" onclick="filterTransactions('all')">Semua</button>
+                    <button class="filter-btn" onclick="filterTransactions('income')">Pemasukan</button>
+                    <button class="filter-btn" onclick="filterTransactions('expense')">Pengeluaran</button>
+                    <button class="filter-btn" onclick="filterTransactions('exchange')">Exchange</button>
+                </div>
+                
+                <div class="transaction-list" id="transactionList">
+                    <!-- Diisi JS -->
+                </div>
+            </div>
+
+            <!-- FINANCIAL PROJECTION -->
+            <div class="panel raised">
+                <h3> Proyeksi Keuangan</h3>
+                
+                <div class="projection-box">
+                    <div class="projection-item">
+                        <span class="projection-label">Estimasi Pemasukan Minggu Depan:</span>
+                        <span class="projection-value" id="projectedIncome">0 Currency</span>
+                    </div>
+                    <div class="projection-item">
+                        <span class="projection-label">Estimasi Pengeluaran Tetap:</span>
+                        <span class="projection-value expense" id="projectedExpense">0 Currency</span>
+                    </div>
+                    <div class="projection-item net">
+                        <span class="projection-label">Proyeksi Saldo Bersih:</span>
+                        <span class="projection-value" id="projectedNet">0 Currency</span>
+                    </div>
+                    <p class="projection-note">* Berdasarkan rata-rata 4 minggu terakhir</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="auth-simple.js"></script>
+    <script src="dana-klub.js"></script>
+</body>
+</html>
