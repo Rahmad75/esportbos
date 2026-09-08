@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Dashboard Manager</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,37 +23,12 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js">
-                // ===== UPDATE BALANCE DISPLAY =====
-function updateBalanceDisplay() {
-    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
-    if (!user) return;
-    
-    // Ambil saldo dari localStorage
-    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${user.email}`) || '0');
-    const gold = parseInt(localStorage.getItem('esportbos_team_funds') || '0');
-    const currency = parseInt(localStorage.getItem(`esportbos_currency_${user.email}`) || '0');
-    
-    // Update tampilan
-    document.getElementById('diamondBalance').textContent = diamonds.toLocaleString();
-    document.getElementById('goldBalance').textContent = gold.toLocaleString();
-    document.getElementById('currencyBalance').textContent = currency.toLocaleString();
-}
-
-// Panggil saat halaman load
-document.addEventListener('DOMContentLoaded', function() {
-    updateBalanceDisplay();
-    
-    // Update setiap 5 detik (biar real-time)
-    setInterval(updateBalanceDisplay, 5000);
-});
-            </script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
@@ -65,37 +42,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3 class="team-name" id="clubName">My Club</h3>
                 <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
+                    <span id="popularityText">Popularitas Klub: 76%</span>
                     <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
+                        <div class="pop-fill" id="popularityBar" style="width: 76%;"></div>
                     </div>
-                    <span>Popularitas Klub: 76%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
+                    <span id="moralText">Moral Tim: 78%</span>
                     <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
+                        <div class="moral-fill" id="moralBar" style="width: 78%;"></div>
                     </div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='financial-market.html'">💼 Pendanaan Klub</button>
             </div>
 
             <!-- Menu Navigasi -->
             <nav class="sidebar-menu">
-                <a href="pemain.html" class="menu-item active">👥 Pemain</a>
+                <a href="dashboard.html" class="menu-item active">🏠 Dashboard</a>
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
-                <a href="latihan.html" class="menu-item">️ Latihan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
                 <a href="transfer.html" class="menu-item">💰 Transfer</a>
-                <a href="akademi.html" class="menu-item"> Akademi Muda</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
                 <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-                <a href="tim-teknis" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
 
@@ -113,37 +91,35 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Info Bar -->
             <div class="info-bar">
                 <span>Musim 28 / Hari 3</span>
-                <span> Pertandingan selanjutnya: Inter FC (K) dalam 12 Jam</span>
+                <span>⚽ Pertandingan selanjutnya: <strong id="infoNextMatch">Inter FC (K)</strong> dalam 12 Jam</span>
             </div>
 
             <!-- Top Panels: Last Match, Next Match, Competition -->
             <div class="top-panels">
                 <div class="panel raised">
                     <h4>⏮ Pertandingan Terakhir</h4>
-                    <div class="match-last">
-    <div class="team-home" id="lastMatchHome">-</div>
-    <div class="score-home" id="lastMatchHomeScore">-</div>
-    <div class="score-away" id="lastMatchAwayScore">-</div>
-    <div class="team-away" id="lastMatchAway">-</div>
-    <div class="match-info" id="lastMatchInfo">-</div>
-</div>
-                    <div class="match-info">Liga Nasional - 11 Jam lalu</div>
+                    <div class="match-result">
+                        <span class="team" id="lastMatchHome">-</span>
+                        <span class="score"><span id="lastMatchHomeScore">-</span> - <span id="lastMatchAwayScore">-</span></span>
+                        <span class="team" id="lastMatchAway">-</span>
+                    </div>
+                    <div class="match-info" id="lastMatchInfo">-</div>
                 </div>
 
                 <div class="panel raised">
                     <h4>⏭ Pertandingan Selanjutnya</h4>
                     <div class="match-result">
-                        <span class="team">Metaverse FC</span>
+                        <span class="team" id="nextMatchHome">-</span>
                         <span class="score">VS</span>
-                        <span class="team">Inter FC</span>
+                        <span class="team" id="nextMatchAway">-</span>
                     </div>
-                    <div class="match-info">Liga Nasional - dalam 12 Jam</div>
+                    <div class="match-info" id="nextMatchInfo">-</div>
                 </div>
 
                 <div class="panel raised">
                     <h4>🏆 Kompetisi</h4>
                     <div class="competition-info">
-                        <div>C.4 <span class="badge">16th</span> (0 pts)</div>
+                        <div>C.4 <span class="badge" id="clubRankBadge">16th</span> (0 pts)</div>
                         <div class="progress">1/642</div>
                     </div>
                 </div>
@@ -160,168 +136,165 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="panel raised">
                     <h3>📅 Pertandingan Terbesar yang Akan Datang</h3>
                     <div class="match-table">
-                        <div class="table-header">
-                            <span>Kandang</span>
-                            <span>Tandang</span>
-                            <span>Waktu</span>
-                        </div>
+                        <div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div>
                         <div class="table-row"><span>🇳🇱 Fc Dordrecht</span><span>🇵🇹 Palense</span><span>dalam 14 Jam</span></div>
-                        <div class="table-row"><span>󠁧󠁢󠁮󠁧 Plymouth</span><span>🏴󠁢󠁥󠁧󠁿 Liverpool F.C.</span><span>dalam 15 Jam</span></div>
+                        <div class="table-row"><span>🏴󠁧󠁢󠁥󠁧󠁿 Plymouth</span><span>🏴󠁧󠁢󠁥󠁧󠁿 Liverpool F.C.</span><span>dalam 15 Jam</span></div>
                         <div class="table-row"><span>🇪🇸 Atlético Peligro</span><span>🇮🇹 FC U GARDIDD</span><span>dalam 13 Jam</span></div>
-                        <div class="table-row"><span>🇸 Alcorcón</span><span>🇪🇸 U.D. Salamanca</span><span>dalam 14 Jam</span></div>
-                        <div class="table-row"><span>🇦🇷 Apuestes.arg</span><span>🇳🇱 Dutch Lions</span><span>dalam 17 Jam</span></div>
-                        <div class="table-row"><span>🇪🇸 FCB-Spain</span><span> Apuestes.com</span><span>dalam 14 Jam</span></div>
-                        <div class="table-row"><span>🇳 Orange Lions</span><span>🇳 Amstelveen</span><span>dalam 14 Jam</span></div>
-                        <div class="table-row"><span>🇪🇸 F.C.S.B</span><span>🌐 Respect</span><span>dalam 13 Jam</span></div>
-                        <div class="table-row"><span>🇸🇦 ALAHLY</span><span>🇸🇦 AlNasry Any Way</span><span>dalam 13 Jam</span></div>
-                        <div class="table-row"><span>🇪 Racing de Santander</span><span>🇫🇷 Stade Malherbe de Caen</span><span>dalam 14 Jam</span></div>
+                        <div class="table-row"><span>🇪🇸 Alcorcón</span><span>🇪🇸 U.D. Salamanca</span><span>dalam 14 Jam</span></div>
                     </div>
                 </div>
 
                 <div class="panel raised">
                     <h3>💬 Postingan Forum Terbaru</h3>
-                    <div class="forum-list">
-                        <div class="forum-item">
-                            <span class="forum-topic">🔥 Milli Takım Son Dünya Kupasını Gerçekten Kaçırdı mı?</span>
-                            <span class="forum-time">10 Jam lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Juan Cruz Cáceres</span>
-                            <span class="forum-time">11 Jam lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">2 team rules</span>
-                            <span class="forum-time">2 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Experience Help</span>
-                            <span class="forum-time">2 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Young 2 star players on market</span>
-                            <span class="forum-time">2 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">RANGINGS TOP Players invest/withdraw money in the game!</span>
-                            <span class="forum-time">3 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Don't forget to backing up managers for sVCT coins</span>
-                            <span class="forum-time">3 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Suggestions for Future Game Improvements</span>
-                            <span class="forum-time">5 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">Transfer listing - Proportional fee</span>
-                            <span class="forum-time">5 Hari lalu</span>
-                        </div>
-                        <div class="forum-item">
-                            <span class="forum-topic">🇮🇹 Grazie do reprezentacji</span>
-                            <span class="forum-time">6 Hari lalu</span>
-                        </div>
+                    <div class="forum-list" id="forumList">
+                        <!-- Diisi otomatis oleh JavaScript -->
                     </div>
                 </div>
             </div>
- <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+
+            <!-- ADSTERRA NATIVE BANNER -->
+            <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+                <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+            </div>
+
             <!-- Transfer Tables -->
             <div class="transfer-grid">
                 <div class="panel raised">
                     <h3>💸 Transfer Pemain Terbaru</h3>
                     <div class="transfer-table">
-                        <div class="table-header">
-                            <span>Pos</span>
-                            <span>Dari</span>
-                            <span>Ke</span>
-                            <span>Nilai Bid</span>
-                        </div>
-                        <div class="table-row"><span class="pos gt">GT</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid"> 0.95</span></div>
+                        <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
+                        <div class="table-row"><span class="pos gt">GT</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid">💰 0.95</span></div>
                         <div class="table-row"><span class="pos p">P</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid">💰 0.30</span></div>
-                        <div class="table-row"><span class="pos p">P</span><span>Liège</span><span>Sir Alex XI</span><span class="bid">💰 0.02</span></div>
                         <div class="table-row"><span class="pos bka">BKa</span><span>FC Karaczany</span><span>Sir Alex XI</span><span class="bid">💰 1.35</span></div>
-                        <div class="table-row"><span class="pos bt">BT</span><span>Mineros FC</span><span>Pringy Fc</span><span class="bid">💰 0.38</span></div>
-                        <div class="table-row"><span class="pos gka">GKa</span><span>Bebas Transfer</span><span>ANTV</span><span class="bid">💰 0.05</span></div>
-                        <div class="table-row"><span class="pos bt">BT</span><span>Palmeiras</span><span>Fener</span><span class="bid">💰 2.02</span></div>
-                        <div class="table-row"><span class="pos k">K</span><span>Bebas Transfer</span><span>Macan FC</span><span class="bid"> 5.12</span></div>
-                        <div class="table-row"><span class="pos bki">BKi</span><span>EL VALHALLA FC</span><span>Pumas</span><span class="bid">💰 0.85</span></div>
-                        <div class="table-row"><span class="pos p">P</span><span>AZ Diamond</span><span>Dangerous B</span><span class="bid">💰 0.90</span></div>
                     </div>
                 </div>
 
                 <div class="panel raised">
-                    <h3> Bid Transfer Terbaru</h3>
+                    <h3>🔨 Bid Transfer Terbaru</h3>
                     <div class="transfer-table">
-                        <div class="table-header">
-                            <span>Pos</span>
-                            <span>Oleh Tim</span>
-                            <span>Nilai Bid</span>
-                            <span>Waktu Lalu</span>
-                        </div>
+                        <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
                         <div class="table-row"><span class="pos bt">BT</span><span>Wimbledon</span><span class="bid">💰 0.90</span><span>9 Menit</span></div>
                         <div class="table-row"><span class="pos gki">GKi</span><span>Sir Alex XI</span><span class="bid">💰 0.40</span><span>22 Menit</span></div>
-                        <div class="table-row"><span class="pos bki">BKi</span><span>Gilroyd</span><span class="bid">💰 0.09</span><span>25 Menit</span></div>
-                        <div class="table-row"><span class="pos p">P</span><span>Gilroyd</span><span class="bid">💰 0.24</span><span>26 Menit</span></div>
-                        <div class="table-row"><span class="pos gtka">GTKa</span><span>Gilroyd</span><span class="bid">💰 0.52</span><span>26 Menit</span></div>
-                        <div class="table-row"><span class="pos gtka">GTKa</span><span>Fi.Lan.Ti. Pesaro</span><span class="bid">💰 0.57</span><span>26 Menit</span></div>
-                        <div class="table-row"><span class="pos gki">GKi</span><span>Gilroyd</span><span class="bid">💰 0.41</span><span>28 Menit</span></div>
-                        <div class="table-row"><span class="pos gt">GT</span><span>Sir Alex XI</span><span class="bid">💰 0.95</span><span>31 Menit</span></div>
                         <div class="table-row"><span class="pos gt">GT</span><span>FC Internazionale</span><span class="bid">💰 0.90</span><span>32 Menit</span></div>
-                        <div class="table-row"><span class="pos bka">BKa</span><span>Sir Alex XI</span><span class="bid">💰 1.35</span><span>35 Menit</span></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Penawaran Section (Papan Jati) -->
-            <div class="panel wood-panel">
-                <h3> Penawaran</h3>
-                <p>Tidak punya cukup dana untuk membeli pemain baru? Danai klubmu dengan menyelesaikan tugas, survei, dan lainnya! Lihat berapa banyak yang telah didapat manager lain di bawah ini.</p>
-                <div class="penawaran-stats">
-                    <div>Selesai: <strong>17,870</strong> Penawaran</div>
-                    <div>Total Terbayar: <strong>4,170.16</strong> Platinum</div>
-                </div>
-                <button class="btn-futuristic btn-ayo">Ayo</button>
-            </div>
-
         </main>
     </div>
-<!-- Tambahkan ini di dalam <head> atau sebelum penutup </body> -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Auth Script -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="auth.js"></script>
 
-<script>
-// Cek auth sebelum dashboard load
-window.addEventListener('DOMContentLoaded', async function() {
-    const isLoggedIn = await window.EsportBosAuth.checkAuth();
-    if (!isLoggedIn) {
-        alert('Silakan login terlebih dahulu!');
-        window.location.href = 'index.html';
-    } else {
-        // Tampilkan nama user di navbar
-        const user = JSON.parse(localStorage.getItem('esportbos_user'));
-        if (user) {
-            const userProfileName = document.querySelector('.user-profile span');
-            if (userProfileName) {
-                userProfileName.textContent = user.username || user.email;
+    <!-- Auth Script -->
+    <script src="auth.js"></script>
+
+    <!-- ===== SCRIPT UTAMA DASHBOARD (SEMUA LOGIKA ADA DI SINI) ===== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // 1. Cek Login
+        if (typeof window.EsportBosAuth !== 'undefined') {
+            const isLoggedIn = await window.EsportBosAuth.checkAuth();
+            if (!isLoggedIn) {
+                alert('Silakan login terlebih dahulu!');
+                window.location.href = 'index.html';
+                return;
             }
         }
-    }
-});
-</script>
 
-<script src="script.js"></script>
-<script src="script.js"></script>
-    <script src="script.js"></script>
+        const user = JSON.parse(localStorage.getItem('esportbos_current_user') || localStorage.getItem('esportbos_user'));
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        const email = user.email;
+        const username = user.username || user.email.split('@')[0];
+
+        // Update Navbar
+        document.getElementById('userName').textContent = username;
+        document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+
+        // 2. Update Saldo
+        const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${email}`) || '0');
+        const gold = parseInt(localStorage.getItem(`esportbos_gold_${email}`) || localStorage.getItem('esportbos_team_funds') || '0');
+        const currency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
+
+        document.getElementById('diamondBalance').textContent = diamonds.toLocaleString('id-ID');
+        document.getElementById('goldBalance').textContent = gold.toLocaleString('id-ID');
+        document.getElementById('currencyBalance').textContent = currency.toLocaleString('id-ID');
+
+        // 3. Update Profil Klub
+        const clubName = localStorage.getItem(`esportbos_club_name_${email}`) || 'My Esport Club';
+        const clubRank = localStorage.getItem(`esportbos_club_rank_${email}`) || '16th in C.4';
+        const popularity = parseInt(localStorage.getItem(`esportbos_popularity_${email}`) || '76');
+        const moral = parseInt(localStorage.getItem(`esportbos_moral_${email}`) || '78');
+
+        document.getElementById('clubName').textContent = clubName;
+        document.getElementById('clubRank').textContent = clubRank;
+        document.getElementById('clubRankBadge').textContent = clubRank.split(' ')[0];
+        
+        document.getElementById('popularityText').textContent = `Popularitas Klub: ${popularity}%`;
+        document.getElementById('popularityBar').style.width = `${popularity}%`;
+        
+        document.getElementById('moralText').textContent = `Moral Tim: ${moral}%`;
+        document.getElementById('moralBar').style.width = `${moral}%`;
+
+        // 4. Update Match Data
+        const lastMatch = JSON.parse(localStorage.getItem(`esportbos_last_match_${email}`) || 'null');
+        if (lastMatch) {
+            document.getElementById('lastMatchHome').textContent = lastMatch.home;
+            document.getElementById('lastMatchHomeScore').textContent = lastMatch.homeScore;
+            document.getElementById('lastMatchAwayScore').textContent = lastMatch.awayScore;
+            document.getElementById('lastMatchAway').textContent = lastMatch.away;
+            document.getElementById('lastMatchInfo').textContent = `${lastMatch.league} - ${lastMatch.time}`;
+        }
+
+        const nextMatch = JSON.parse(localStorage.getItem(`esportbos_next_match_${email}`) || 'null');
+        if (nextMatch) {
+            document.getElementById('nextMatchHome').textContent = nextMatch.home;
+            document.getElementById('nextMatchAway').textContent = nextMatch.away;
+            document.getElementById('nextMatchInfo').textContent = `${nextMatch.league} - dalam ${nextMatch.time}`;
+            document.getElementById('infoNextMatch').textContent = `${nextMatch.away} (${nextMatch.home === clubName ? 'K' : 'T'})`;
+        }
+
+        // 5. Update Forum (Dummy Data jika kosong)
+        let posts = JSON.parse(localStorage.getItem('esportbos_forum_posts') || 'null');
+        if (!posts) {
+            posts = [
+                { topic: "🔥 Selamat datang di EsportBos Manager!", time: "Baru saja" },
+                { topic: "Tips mendapatkan Currency dengan cepat", time: "1 Jam lalu" },
+                { topic: "Strategi taktik 4-3-3 untuk pemula", time: "3 Jam lalu" },
+                { topic: "Jadwal maintenance server minggu depan", time: "5 Jam lalu" },
+                { topic: "Cara withdraw diamond ke rekening", time: "1 Hari lalu" }
+            ];
+            localStorage.setItem('esportbos_forum_posts', JSON.stringify(posts));
+        }
+
+        const forumList = document.getElementById('forumList');
+        forumList.innerHTML = posts.slice(0, 5).map(post => `
+            <div class="forum-item">
+                <span class="forum-topic">${post.topic}</span>
+                <span class="forum-time">${post.time}</span>
+            </div>
+        `).join('');
+
+        // 6. FIRST MATCH BONUS (Hanya muncul sekali)
+        const hasPlayedFirstMatch = localStorage.getItem(`esportbos_first_match_${email}`);
+        if (hasPlayedFirstMatch === null || hasPlayedFirstMatch === 'true') {
+            localStorage.setItem(`esportbos_first_match_${email}`, 'false');
+            const currentCurrency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
+            const newCurrency = currentCurrency + 500;
+            localStorage.setItem(`esportbos_currency_${email}`, newCurrency.toString());
+            
+            setTimeout(() => {
+                alert(`🎉 SELAMAT DATANG DI ESPORTBOS!\n\nKamu mendapat bonus NEW MANAGER:\n💰 500 Currency\n\nGunakan untuk membayar gaji pemain minggu pertama!\n\nSelamat bermain!`);
+                document.getElementById('currencyBalance').textContent = newCurrency.toLocaleString('id-ID');
+            }, 1000);
+        }
+    });
+    </script>
+
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
 
-</body>
-</html>
 </body>
 </html>
