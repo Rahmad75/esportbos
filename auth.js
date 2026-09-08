@@ -1,50 +1,39 @@
-// ===== ESPORTBOS AUTHENTICATION SYSTEM =====
+// ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
 
-// Fungsi untuk menampilkan form Login
+// Tunggu supabase-client.js load dulu
+document.addEventListener('DOMContentLoaded', function() {
+    // Cek apakah ada form login/register di halaman
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+    }
+    
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleRegister();
+        });
+    }
+});
+
+// Fungsi untuk switch antara Login dan Register
 function showLogin() {
     document.getElementById('login').style.display = 'block';
     document.getElementById('register').style.display = 'none';
 }
 
-// Fungsi untuk menampilkan form Register
 function showRegister() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('register').style.display = 'block';
 }
 
-// Fungsi Login
-function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    
-    // Validasi
-    if (!email || !password) {
-        alert('❌ Email dan password wajib diisi!');
-        return;
-    }
-    
-    // Ambil data users dari localStorage
-    const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
-    
-    // Cari user berdasarkan email
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (user) {
-        // Login berhasil - simpan user yang sedang login
-        localStorage.setItem('esportbos_current_user', JSON.stringify(user));
-        
-        // Inisialisasi data jika belum ada
-        initializeUserData(user.email);
-        
-        alert('✅ Login berhasil! Selamat datang, ' + user.username + '!');
-        window.location.href = 'dashboard.html';
-    } else {
-        alert('❌ Email atau password salah! Silakan daftar jika belum punya akun.');
-    }
-}
-
-// Fungsi Register
-function handleRegister() {
+// ===== FUNGSI REGISTER =====
+async function handleRegister() {
     const username = document.getElementById('registerUsername').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
@@ -53,7 +42,7 @@ function handleRegister() {
     
     // Validasi
     if (!username || !email || !password || !clubName) {
-        alert('❌ Semua field wajib diisi!');
+        alert(' Semua field wajib diisi!');
         return;
     }
     
@@ -62,117 +51,130 @@ function handleRegister() {
         return;
     }
     
-    // Ambil data users
-    const users = JSON.parse(localStorage.getItem('esportbos_users') || '[]');
-    
-    // Cek apakah email sudah terdaftar
-    if (users.find(u => u.email === email)) {
-        alert('❌ Email sudah terdaftar! Silakan login.');
+    try {
+        // 1. Daftar user di Supabase Auth
+        const { data, error } = await window.supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    username: username,
+                    club_name: clubName,
+                    referral: referral
+                }
+            }
+        });
+        
+        if (error) {
+            alert('❌ Error: ' + error.message);
+            return;
+        }
+        
+        // 2. Update profil dengan nama klub
+        if (data.user) {
+            const { error: updateError } = await window.supabaseClient
+                .from('profiles')
+                .update({ 
+                    username: username,
+                    club_name: clubName,
+                    diamonds: 0,
+                    gold: 0,
+                    currency: 0,
+                    popularity: 50,
+                    moral: 70,
+                    role: 'OWNER'
+                })
+                .eq('id', data.user.id);
+            
+            if (updateError) {
+                console.error('Update profile error:', updateError);
+            }
+        }
+        
+        alert('✅ Registrasi berhasil! Silakan login dengan akun yang baru dibuat.');
         showLogin();
+        
+    } catch (err) {
+        alert('❌ Terjadi kesalahan: ' + err.message);
+    }
+}
+
+// ===== FUNGSI LOGIN =====
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        alert('❌ Email dan password wajib diisi!');
         return;
     }
     
-    // Buat user baru
-    const newUser = {
-        username: username,
-        email: email,
-        password: password,
-        referral: referral,
-        joinedDate: new Date().toISOString()
-    };
-    
-    // Simpan user baru
-    users.push(newUser);
-    localStorage.setItem('esportbos_users', JSON.stringify(users));
-    
-    // Simpan nama klub
-    localStorage.setItem(`esportbos_club_name_${email}`, clubName);
-    
-    // Inisialisasi data ekonomi
-    initializeUserData(email);
-    
-    alert('✅ Registrasi berhasil! Silakan login dengan akun yang baru dibuat.');
-    showLogin();
-}
-
-// Fungsi untuk inisialisasi data user
-function initializeUserData(email) {
-    // Cek apakah sudah ada data
-    if (localStorage.getItem(`esportbos_diamonds_${email}`) === null) {
-        localStorage.setItem(`esportbos_diamonds_${email}`, '0');
-    }
-    if (localStorage.getItem(`esportbos_gold_${email}`) === null) {
-        localStorage.setItem(`esportbos_gold_${email}`, '0');
-    }
-    if (localStorage.getItem(`esportbos_currency_${email}`) === null) {
-        localStorage.setItem(`esportbos_currency_${email}`, '0');
-    }
-    if (localStorage.getItem(`esportbos_club_rank_${email}`) === null) {
-        localStorage.setItem(`esportbos_club_rank_${email}`, '16th in C.4');
-    }
-    if (localStorage.getItem(`esportbos_popularity_${email}`) === null) {
-        localStorage.setItem(`esportbos_popularity_${email}`, '50');
-    }
-    if (localStorage.getItem(`esportbos_moral_${email}`) === null) {
-        localStorage.setItem(`esportbos_moral_${email}`, '70');
-    }
-    if (localStorage.getItem(`esportbos_first_match_${email}`) === null) {
-        localStorage.setItem(`esportbos_first_match_${email}`, 'true');
-    }
-    
-    // Data match dummy jika belum ada
-    if (localStorage.getItem(`esportbos_last_match_${email}`) === null) {
-        const clubName = localStorage.getItem(`esportbos_club_name_${email}`) || 'My Club';
-        const dummyLastMatch = {
-            home: 'Modena',
-            homeScore: 8,
-            awayScore: 1,
-            away: clubName,
-            league: 'Liga Nasional',
-            time: '11 Jam lalu'
+    try {
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        
+        if (error) {
+            alert('❌ Login gagal: ' + error.message);
+            return;
+        }
+        
+        // 3. Ambil data profil dari database
+        const { data: profile, error: profileError } = await window.supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+        
+        if (profileError) {
+            console.error('Profile error:', profileError);
+        }
+        
+        // 4. Simpan session di localStorage (untuk akses cepat)
+        const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            username: profile?.username || data.user.user_metadata?.username || email.split('@')[0],
+            club_name: profile?.club_name || 'My Club',
+            diamonds: profile?.diamonds || 0,
+            gold: profile?.gold || 0,
+            currency: profile?.currency || 0,
+            popularity: profile?.popularity || 50,
+            moral: profile?.moral || 70,
+            role: profile?.role || 'OWNER',
+            joined_date: profile?.joined_date || new Date().toISOString()
         };
-        localStorage.setItem(`esportbos_last_match_${email}`, JSON.stringify(dummyLastMatch));
-    }
-    
-    if (localStorage.getItem(`esportbos_next_match_${email}`) === null) {
-        const clubName = localStorage.getItem(`esportbos_club_name_${email}`) || 'My Club';
-        const dummyNextMatch = {
-            home: clubName,
-            away: 'Inter FC',
-            league: 'Liga Nasional',
-            time: '12 Jam'
-        };
-        localStorage.setItem(`esportbos_next_match_${email}`, JSON.stringify(dummyNextMatch));
+        
+        localStorage.setItem('esportbos_current_user', JSON.stringify(userData));
+        
+        alert('✅ Login berhasil! Selamat datang, ' + userData.username + '!');
+        window.location.href = 'dashboard.html';
+        
+    } catch (err) {
+        alert(' Terjadi kesalahan: ' + err.message);
     }
 }
 
-// Fungsi Logout
-function handleLogout() {
+// ===== FUNGSI LOGOUT =====
+async function handleLogout() {
+    await window.supabaseClient.auth.signOut();
     localStorage.removeItem('esportbos_current_user');
     alert('👋 Berhasil logout!');
     window.location.href = 'index.html';
 }
 
-// Fungsi untuk cek apakah user sudah login
-function checkAuth() {
-    const currentUser = localStorage.getItem('esportbos_current_user');
-    return currentUser !== null;
+// ===== FUNGSI CEK AUTH =====
+async function checkAuth() {
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    return session !== null;
 }
 
-// Auto-load saat halaman dimuat
-document.addEventListener('DOMContentLoaded', function() {
-    // Cek apakah ada fungsi showLogin/showRegister di halaman
-    if (document.getElementById('login') && document.getElementById('register')) {
-        // Default tampilkan login
-        showLogin();
-    }
-});
-
-// Export fungsi untuk digunakan di halaman lain
+// Export untuk halaman lain
 window.EsportBosAuth = {
     login: handleLogin,
     register: handleRegister,
     logout: handleLogout,
-    checkAuth: checkAuth,
-    logoutUser: handleLogout
+    logoutUser: handleLogout,
+    checkAuth: checkAuth
 };
