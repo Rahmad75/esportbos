@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Pendanaan Klub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="top-navbar">
+        <div class="navbar-left">
+            <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
+        </div>
+        <div class="navbar-right">
+            <a href="dashboard.html" class="stat-badge notif">Lobby</a>
+            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
+            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
+            <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
+            <div class="user-profile">
+                <img src="" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name" id="clubName">My Club</h3>
+                <div class="team-rank" id="clubRank">-</div>
+                <div class="team-popularity">
+                    <span id="popularityText">Popularitas Klub: -</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 50%;"></div></div>
+                </div>
+                <div class="team-moral">
+                    <span id="moralText">Moral Tim: -</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 70%;"></div></div>
+                </div>
+                <div class="team-stats">
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan active" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
+                <a href="pemain.html" class="menu-item"> Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
+
+            <div class="social-icons">
+                <a href="#">📘</a>
+                <a href="#">💬</a>
+                <a href="#">📷</a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <div class="info-bar">
+                <span>💼 Pendanaan Klub</span>
+                <span>Top-up Dana untuk Klub Anda</span>
+            </div>
+
+            <!-- Info Saldo -->
+            <div class="panel raised">
+                <h3>💰 Saldo Klub Anda</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Diamond</div>
+                        <div id="saldoDiamond" style="font-size: 36px; font-weight: bold;">0</div>
+                        <div style="font-size: 12px; opacity: 0.8;">Premium Currency</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Gold</div>
+                        <div id="saldoGold" style="font-size: 36px; font-weight: bold;">0</div>
+                        <div style="font-size: 12px; opacity: 0.8;">Global Currency</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 25px; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 14px; opacity: 0.9;">Currency</div>
+                        <div id="saldoCurrency" style="font-size: 36px; font-weight: bold;">0</div>
+                        <div style="font-size: 12px; opacity: 0.8;">Local Currency</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paket Top-Up -->
+            <div class="panel raised">
+                <h3>📦 Paket Pendanaan</h3>
+                <p style="color: #666; margin-bottom: 20px;">Pilih paket yang sesuai dengan kebutuhan klub Anda</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    
+                    <!-- Paket Starter -->
+                    <div style="border: 2px solid #ddd; border-radius: 12px; padding: 25px; text-align: center; transition: all 0.3s;">
+                        <h4 style="color: #667eea;">🥉 Starter</h4>
+                        <div style="font-size: 48px; margin: 15px 0;">💎 100</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 50.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                            <li>✅ 100 Diamond</li>
+                            <li>✅ Bonus 50 Gold</li>
+                            <li>✅ Instant Delivery</li>
+                        </ul>
+                        <button onclick="topUp('starter', 50000, 100, 50)" class="btn-topup" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                    </div>
+
+                    <!-- Paket Pro -->
+                    <div style="border: 3px solid #ff9800; border-radius: 12px; padding: 25px; text-align: center; position: relative;">
+                        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ff9800; color: white; padding: 4px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">POPULER</div>
+                        <h4 style="color: #ff9800;">🥈 Pro</h4>
+                        <div style="font-size: 48px; margin: 15px 0;">💎 500</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 200.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                            <li>✅ 500 Diamond</li>
+                            <li>✅ Bonus 300 Gold</li>
+                            <li>✅ Instant Delivery</li>
+                        </ul>
+                        <button onclick="topUp('pro', 200000, 500, 300)" class="btn-topup" style="width: 100%; padding: 12px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                    </div>
+
+                    <!-- Paket Elite -->
+                    <div style="border: 2px solid #ddd; border-radius: 12px; padding: 25px; text-align: center;">
+                        <h4 style="color: #f5576c;">🥇 Elite</h4>
+                        <div style="font-size: 48px; margin: 15px 0;">💎 1500</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 500.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                            <li>✅ 1500 Diamond</li>
+                            <li>✅ Bonus 1000 Gold</li>
+                            <li>✅ Instant Delivery</li>
+                            <li>✅ VIP Badge</li>
+                        </ul>
+                        <button onclick="topUp('elite', 500000, 1500, 1000)" class="btn-topup" style="width: 100%; padding: 12px; background: #f5576c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Metode Pembayaran -->
+            <div class="panel raised">
+                <h3>💳 Metode Pembayaran</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; padding: 20px;">
+                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">🏦 Transfer Bank</div>
+                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">📱 E-Wallet (OVO, DANA, GoPay)</div>
+                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">🏪 Minimarket (Alfamart, Indomaret)</div>
+                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">💳 Kartu Kredit/Debit</div>
+                </div>
+                <p style="text-align: center; color: #999; margin-top: 15px;">
+                     Pembayaran diproses melalui <strong>Duitku Payment Gateway</strong> (Akan segera hadir)
+                </p>
+            </div>
+
+            <!-- Riwayat Transaksi -->
+            <div class="panel raised">
+                <h3>📜 Riwayat Pendanaan</h3>
+                <div id="riwayatPendanaan" style="padding: 20px; text-align: center; color: #999;">
+                    Belum ada riwayat pendanaan. Mulai top-up pertama Anda!
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+    // Fungsi top-up (placeholder - nanti integrasi Duitku)
+    function topUp(paket, harga, diamond, gold) {
+        const user = window.currentUser;
+        if (!user) {
+            alert('❌ Silakan login terlebih dahulu!');
+            return;
+        }
+        
+        alert(`📦 Paket ${paket.toUpperCase()} dipilih!\n\n💎 ${diamond} Diamond\n🟡 ${gold} Gold\n💰 Harga: Rp ${harga.toLocaleString('id-ID')}\n\n✅ Pembayaran akan diproses melalui Duitku (segera hadir)`);
+        
+        // Simulasi top-up (nanti diganti dengan Duitku callback)
+        // updateUserBalance('diamonds', diamond);
+        // updateUserBalance('gold', gold);
+    }
+    </script>
+
+</body>
+</html>
