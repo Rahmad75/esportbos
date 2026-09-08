@@ -7,8 +7,229 @@ let exchangeRates = {
     diamondToCurrency: 1250 // 1 Diamond = 1250 Currency
 };
 
-// Exchange fee 5%
-const EXCHANGE_FEE = 0.05;
+// ===== EXCHANGE CONFIGURATION =====
+const EXCHANGE_FEE = 0.02; // 2% fee
+
+const exchangeRates = {
+    'diamond-gold': 25,           // 1 Diamond = 25 Gold
+    'gold-diamond': 0.04,         // 25 Gold = 1 Diamond (1/25)
+    'gold-currency': 50,          // 1 Gold = 50 Currency
+    'currency-gold': 0.02,        // 50 Currency = 1 Gold (1/50)
+    'diamond-currency': 1250,     // 1 Diamond = 1,250 Currency
+    'currency-diamond': 0.0008    // 1,250 Currency = 1 Diamond (1/1250)
+};
+
+const exchangeLabels = {
+    'diamond-gold': { from: 'Diamond', to: 'Gold', symbol: '💎 → 🟡' },
+    'gold-diamond': { from: 'Gold', to: 'Diamond', symbol: '🟡 → 💎' },
+    'gold-currency': { from: 'Gold', to: 'Currency', symbol: '🟡 → 🎟️' },
+    'currency-gold': { from: 'Currency', to: 'Gold', symbol: '🎟️ → ' },
+    'diamond-currency': { from: 'Diamond', to: 'Currency', symbol: '💎 → 🎟️' },
+    'currency-diamond': { from: 'Currency', to: 'Diamond', symbol: '🎟️ → 💎' }
+};
+
+let currentDirection = 'diamond-gold';
+
+// Set exchange direction
+function setExchangeDirection(direction) {
+    currentDirection = direction;
+    
+    // Update semua tabs
+    document.querySelectorAll('.direction-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Update labels
+    const labels = exchangeLabels[direction];
+    document.getElementById('fromLabel').textContent = `Dari (${labels.from})`;
+    document.getElementById('toLabel').textContent = `Ke (${labels.to})`;
+    
+    // Update rate info
+    const rate = exchangeRates[direction];
+    let rateText = '';
+    if (direction.includes('diamond-gold')) {
+        rateText = `Kurs: 1 Diamond = ${rate} Gold`;
+    } else if (direction.includes('gold-diamond')) {
+        rateText = `Kurs: ${1/rate} Gold = 1 Diamond`;
+    } else if (direction.includes('gold-currency')) {
+        rateText = `Kurs: 1 Gold = ${rate} Currency`;
+    } else if (direction.includes('currency-gold')) {
+        rateText = `Kurs: ${1/rate} Currency = 1 Gold`;
+    } else if (direction.includes('diamond-currency')) {
+        rateText = `Kurs: 1 Diamond = ${rate.toLocaleString('id-ID')} Currency`;
+    } else if (direction.includes('currency-diamond')) {
+        rateText = `Kurs: ${1/rate} Currency = 1 Diamond`;
+    }
+    document.getElementById('rateInfo').textContent = rateText;
+    
+    // Reset inputs
+    document.getElementById('exchangeAmount').value = '';
+    document.getElementById('exchangeResult').value = '';
+    
+    // Update balance display
+    updateBalanceDisplay();
+}
+
+// Calculate exchange result
+function calculateExchange() {
+    const amount = parseFloat(document.getElementById('exchangeAmount').value) || 0;
+    const rate = exchangeRates[currentDirection];
+    
+    if (amount <= 0) {
+        document.getElementById('exchangeResult').value = '';
+        document.getElementById('feeInfo').textContent = 'Biaya: 2%';
+        return;
+    }
+    
+    const grossResult = amount * rate;
+    const fee = grossResult * EXCHANGE_FEE;
+    const netResult = grossResult - fee;
+    
+    const labels = exchangeLabels[currentDirection];
+    
+    // Format result berdasarkan tipe
+    if (currentDirection.includes('diamond')) {
+        // Hasil dalam Diamond (bisa desimal)
+        document.getElementById('exchangeResult').value = netResult.toFixed(4) + ' ' + labels.to;
+        document.getElementById('feeInfo').textContent = `Biaya: 2% (${fee.toFixed(4)} ${labels.to})`;
+    } else {
+        // Hasil dalam Gold/Currency (bilangan bulat)
+        document.getElementById('exchangeResult').value = Math.floor(netResult).toLocaleString('id-ID') + ' ' + labels.to;
+        document.getElementById('feeInfo').textContent = `Biaya: 2% (${Math.floor(fee).toLocaleString('id-ID')} ${labels.to})`;
+    }
+}
+
+// Execute exchange
+function executeExchange() {
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) {
+        alert('❌ Silakan login terlebih dahulu!');
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('exchangeAmount').value);
+    if (!amount || amount <= 0) {
+        alert('❌ Masukkan jumlah yang valid!');
+        return;
+    }
+    
+    const email = user.email;
+    const rate = exchangeRates[currentDirection];
+    const grossResult = amount * rate;
+    const fee = grossResult * EXCHANGE_FEE;
+    const netResult = grossResult - fee;
+    
+    // Get current balances
+    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${email}`) || '0');
+    const gold = parseInt(localStorage.getItem(`esportbos_gold_${email}`) || '0');
+    const currency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
+    
+    // Process exchange berdasarkan direction
+    let success = false;
+    let message = '';
+    
+    switch(currentDirection) {
+        case 'diamond-gold':
+            if (amount > diamonds) {
+                alert(`❌ Saldo Diamond tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_diamonds_${email}`, (diamonds - amount).toString());
+            localStorage.setItem(`esportbos_gold_${email}`, (gold + Math.floor(netResult)).toString());
+            message = `${amount} Diamond → ${Math.floor(netResult).toLocaleString('id-ID')} Gold`;
+            success = true;
+            break;
+            
+        case 'gold-diamond':
+            if (amount > gold) {
+                alert(`❌ Saldo Gold tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_gold_${email}`, (gold - amount).toString());
+            localStorage.setItem(`esportbos_diamonds_${email}`, (diamonds + Math.floor(netResult)).toString());
+            message = `${amount.toLocaleString('id-ID')} Gold → ${Math.floor(netResult)} Diamond`;
+            success = true;
+            break;
+            
+        case 'gold-currency':
+            if (amount > gold) {
+                alert(`❌ Saldo Gold tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_gold_${email}`, (gold - amount).toString());
+            localStorage.setItem(`esportbos_currency_${email}`, (currency + Math.floor(netResult)).toString());
+            message = `${amount.toLocaleString('id-ID')} Gold → ${Math.floor(netResult).toLocaleString('id-ID')} Currency`;
+            success = true;
+            break;
+            
+        case 'currency-gold':
+            if (amount > currency) {
+                alert(`❌ Saldo Currency tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_currency_${email}`, (currency - amount).toString());
+            localStorage.setItem(`esportbos_gold_${email}`, (gold + Math.floor(netResult)).toString());
+            message = `${amount.toLocaleString('id-ID')} Currency → ${Math.floor(netResult).toLocaleString('id-ID')} Gold`;
+            success = true;
+            break;
+            
+        case 'diamond-currency':
+            if (amount > diamonds) {
+                alert(`❌ Saldo Diamond tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_diamonds_${email}`, (diamonds - amount).toString());
+            localStorage.setItem(`esportbos_currency_${email}`, (currency + Math.floor(netResult)).toString());
+            message = `${amount} Diamond → ${Math.floor(netResult).toLocaleString('id-ID')} Currency`;
+            success = true;
+            break;
+            
+        case 'currency-diamond':
+            if (amount > currency) {
+                alert(`❌ Saldo Currency tidak cukup!`);
+                return;
+            }
+            localStorage.setItem(`esportbos_currency_${email}`, (currency - amount).toString());
+            localStorage.setItem(`esportbos_diamonds_${email}`, (diamonds + Math.floor(netResult)).toString());
+            message = `${amount.toLocaleString('id-ID')} Currency → ${Math.floor(netResult)} Diamond`;
+            success = true;
+            break;
+    }
+    
+    if (success) {
+        alert(`✅ Exchange berhasil!\n\n${message}\n(Biaya: 2%)`);
+        
+        // Reset form
+        document.getElementById('exchangeAmount').value = '';
+        document.getElementById('exchangeResult').value = '';
+        
+        // Update displays
+        updateBalanceDisplay();
+        updateEconomyDisplay();
+    }
+}
+
+// Update balance display in exchange form
+function updateBalanceDisplay() {
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) return;
+    
+    const email = user.email;
+    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${email}`) || '0');
+    const gold = parseInt(localStorage.getItem(`esportbos_gold_${email}`) || '0');
+    const currency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
+    
+    const fromBalance = document.getElementById('fromBalance');
+    const labels = exchangeLabels[currentDirection];
+    
+    let balance = 0;
+    if (labels.from === 'Diamond') balance = diamonds;
+    else if (labels.from === 'Gold') balance = gold;
+    else if (labels.from === 'Currency') balance = currency;
+    
+    fromBalance.textContent = `Saldo: ${balance.toLocaleString('id-ID')} ${labels.from}`;
+}
 
 // Load user balances
 function loadBalances() {
