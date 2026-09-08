@@ -45,15 +45,26 @@ function register(username, email, password, referralCode = '') {
         return false;
     }
     // Saat user register, inisialisasi saldo
-function initializeBalances(email) {
-    // Cek apakah sudah ada, kalau belum buat baru
-    if (!localStorage.getItem(`esportbos_diamonds_${email}`)) {
+function initializeUserEconomy(email) {
+    // 1. Diamond: 0 (Harus usaha atau top-up)
+    if (localStorage.getItem(`esportbos_diamonds_${email}`) === null) {
         localStorage.setItem(`esportbos_diamonds_${email}`, '0');
     }
-    if (!localStorage.getItem(`esportbos_currency_${email}`)) {
-        localStorage.setItem(`esportbos_currency_${email}`, '1000'); // Bonus awal 1000 Currency
+    
+    // 2. Gold: 0 (Harus dapat dari jual pemain, achievement, atau referral)
+    if (localStorage.getItem(`esportbos_gold_${email}`) === null) {
+        localStorage.setItem(`esportbos_gold_${email}`, '0');
     }
-    // Gold udah ada di 'esportbos_team_funds'
+    
+    // 3. Currency: 0 (Akan dapat suntikan saat match pertama)
+    if (localStorage.getItem(`esportbos_currency_${email}`) === null) {
+        localStorage.setItem(`esportbos_currency_${email}`, '0');
+    }
+
+    // 4. Flag First Match (Belum pernah main)
+    if (localStorage.getItem(`esportbos_first_match_${email}`) === null) {
+        localStorage.setItem(`esportbos_first_match_${email}`, 'true');
+    }
 }
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const newCode = generateReferralCode();
