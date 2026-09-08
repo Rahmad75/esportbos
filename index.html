@@ -27,60 +27,65 @@
         </div>
     </section>
 
- <!-- LOGIN FORM -->
-<div class="login-panel" id="login">
-    <h2>Masuk ke EsportBos</h2>
-    <form id="loginForm">
-        <div class="form-group">
-            <input type="email" id="loginEmail" placeholder="Email" required>
-        </div>
-        <div class="form-group">
-            <input type="password" id="loginPassword" placeholder="Password" required>
-        </div>
-        <button type="submit" class="btn-futuristic">Login</button>
-        <div class="login-divider">atau</div>
-        <button type="button" class="btn-futuristic btn-register" onclick="showRegister()">Daftar Sekarang - GRATIS!</button>
-    </form>
-    <div class="login-link">
-        <!-- Tambahkan ini di dalam form register, setelah input Username/Email -->
-<div class="form-group">
-    <label for="regClubName">🏆 Nama Klub</label>
-    <input type="text" id="regClubName" placeholder="Contoh: RRQ Hoshi, Garuda FC, dll" required>
-    <small style="color: #999;">Pilih nama klub impianmu! (Bisa diganti nanti)</small>
-</div>
-        Belum punya akun? <a href="#" onclick="showRegister()">Register di sini</a>
-    </div>
-    <div class="form-group">
-    <label> Kode Referral (Opsional)</label>
-    <input type="text" id="registerReferral" placeholder="Masukkan kode referral atau gunakan link referral">
-    <small style="color:#999; font-size:12px;">💡 Jika kamu dapat link referral, kode akan otomatis terisi</small>
-</div>
-</div>
-     
-<!-- REGISTER FORM -->
-<div class="login-panel" id="register" style="display: none;">
-    <h2>Daftar EsportBos</h2>
-    <form id="registerForm">
-        <div class="form-group">
-            <input type="text" id="registerUsername" placeholder="Username" required>
-        </div>
-        <div class="form-group">
-            <input type="email" id="registerEmail" placeholder="Email" required>
-        </div>
-        <div class="form-group">
-            <input type="password" id="registerPassword" placeholder="Password (min 6 karakter)" required minlength="6">
-        </div>
-        <button type="submit" class="btn-futuristic btn-register">Buat Akun</button>
+    <!-- LOGIN FORM -->
+    <div class="login-panel" id="login">
+        <h2>Masuk ke EsportBos</h2>
+        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+            <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn-futuristic">Login</button>
+            <div class="login-divider">atau</div>
+            <button type="button" class="btn-futuristic btn-register" onclick="showRegister()">Daftar Sekarang - GRATIS!</button>
+        </form>
         <div class="login-link">
-            Sudah punya akun? <a href="#" onclick="showLogin()">Login di sini</a>
+            Belum punya akun? <a href="#" onclick="showRegister()">Register di sini</a>
         </div>
-    </form>
-</div>
+    </div>
+     
+    <!-- REGISTER FORM (SUDAH DIPERBAIKI) -->
+    <div class="login-panel" id="register" style="display: none;">
+        <h2>Daftar EsportBos</h2>
+        <form id="registerForm" onsubmit="event.preventDefault(); handleRegister();">
+            <div class="form-group">
+                <input type="text" id="registerUsername" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="registerEmail" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="registerPassword" placeholder="Password (min 6 karakter)" required minlength="6">
+            </div>
+            
+            <!-- BARU: Nama Klub (Dipindah ke sini) -->
+            <div class="form-group">
+                <label for="registerClubName" style="color: #fff; font-size: 14px; margin-bottom: 5px; display: block;">🏆 Nama Klub</label>
+                <input type="text" id="registerClubName" placeholder="Contoh: RRQ Hoshi, Garuda FC" required>
+                <small style="color:#999; font-size:12px;">Pilih nama klub impianmu! (Bisa diganti nanti)</small>
+            </div>
+
+            <!-- BARU: Kode Referral (Dipindah ke sini) -->
+            <div class="form-group">
+                <label style="color: #fff; font-size: 14px; margin-bottom: 5px; display: block;">🔗 Kode Referral (Opsional)</label>
+                <input type="text" id="registerReferral" placeholder="Masukkan kode referral">
+                <small style="color:#999; font-size:12px;">💡 Jika dapat link referral, kode otomatis terisi</small>
+            </div>
+
+            <button type="submit" class="btn-futuristic btn-register">Buat Akun</button>
+            <div class="login-link">
+                Sudah punya akun? <a href="#" onclick="showLogin()">Login di sini</a>
+            </div>
+        </form>
+    </div>
+
     <!-- SCREENSHOTS -->
     <section class="screenshots">
         <h2>Lihat Gameplay EsportBos</h2>
         <div class="screenshots-grid">
-            <div class="screenshot-box"> Dashboard Manager</div>
+            <div class="screenshot-box">📊 Dashboard Manager</div>
             <div class="screenshot-box">⚙️ Manajemen Roster</div>
             <div class="screenshot-box">🧠 Taktik & Draft</div>
             <div class="screenshot-box">💰 Transfer Market</div>
@@ -103,52 +108,32 @@
                 <p>"EsportBos bikin ketagihan! Gue coba iseng, eh malah jadi juara liga 3x musim ini!"</p>
                 <div class="testimonial-author">- EsportsKing</div>
             </div>
-            <div class="testimonial-box">
-                <div class="stars">⭐⭐⭐⭐⭐</div>
-                <p>"Kalau lo cari game manager esports yang bikin lo merasa jadi bos beneran, ini jawabannya. Taktik, draft, transfer - semua ada!"</p>
-                <div class="testimonial-author">- GamingBoss</div>
-            </div>
-            <div class="testimonial-box">
-                <div class="stars">⭐⭐⭐⭐⭐</div>
-                <p>"EsportBos bukan cuma game, ini simulator manajemen esports yang serius. Pemenang ditentukan skill, bukan pay-to-win!"</p>
-                <div class="testimonial-author">- StrategyMaster</div>
-            </div>
         </div>
     </section>
 
-    <!-- FITUR UNGGULAN (Papan Jati) -->
+    <!-- FITUR UNGGULAN -->
     <section class="features" id="features">
         <h2>🎮 Fitur Unggulan EsportBos</h2>
         <div class="features-grid">
             <div class="feature-box">
                 <div class="feature-icon">👥</div>
                 <h3>Manajemen Roster</h3>
-                <p>Rekrut 5 pemain bintang, latih mechanics & game sense mereka, bangun chemistry tim yang solid</p>
+                <p>Rekrut 5 pemain bintang, latih mechanics & game sense mereka.</p>
             </div>
             <div class="feature-box">
                 <div class="feature-icon">🧠</div>
                 <h3>Taktik & Draft Phase</h3>
-                <p>Atur strategi setiap match, pilih hero/agent, ban musuh, dan kalahkan lawan dengan taktik cerdas</p>
+                <p>Atur strategi setiap match, pilih hero/agent, dan kalahkan lawan.</p>
             </div>
             <div class="feature-box">
-                <div class="feature-icon"></div>
+                <div class="feature-icon">💼</div>
                 <h3>Bisnis Esports</h3>
-                <p>Cari sponsor, upgrade gaming house, kelola gaji pemain, dan bangun kerajaan esports-mu</p>
-            </div>
-            <div class="feature-box">
-                <div class="feature-icon"></div>
-                <h3>Turnamen Global</h3>
-                <p>Bertanding di liga lokal hingga turnamen internasional. Raih hadiah jutaan dollar!</p>
-            </div>
-            <div class="feature-box">
-                <div class="feature-icon"></div>
-                <h3>Transfer Market</h3>
-                <p>Jual beli pemain dengan sistem bidding. Temukan hidden gem dari seluruh dunia!</p>
+                <p>Cari sponsor, upgrade gaming house, kelola gaji pemain.</p>
             </div>
             <div class="feature-box">
                 <div class="feature-icon">🌍</div>
                 <h3>Komunitas Worldwide</h3>
-                <p>Bersaing dengan manager dari Indonesia, Brasil, Eropa, dan seluruh dunia!</p>
+                <p>Bersaing dengan manager dari Indonesia dan seluruh dunia!</p>
             </div>
         </div>
     </section>
@@ -158,24 +143,16 @@
         <ul class="footer-links">
             <li><a href="#">Tentang Kami</a></li>
             <li><a href="#">Kebijakan Privasi</a></li>
-            <li><a href="#">Syarat & Ketentuan</a></li>
             <li><a href="#">Bantuan</a></li>
-            <li><a href="#">Blog</a></li>
         </ul>
-        <div class="social-links">
-            <a href="#">📘</a>
-            <a href="#">💬</a>
-            <a href="#">📷</a>
-        </div>
         <div class="copyright">
             Copyright 2026 © EsportBos.com - All Rights Reserved
         </div>
     </footer>
-<script src="auth-simple.js"></script>
-<script src="script.js"></script>
-<!-- Auth System -->
-<script src="auth.js"></script>
-<!-- Main Script -->
-<script src="script.js"></script>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+
 </body>
 </html>
