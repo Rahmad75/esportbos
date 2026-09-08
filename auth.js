@@ -1,56 +1,31 @@
 // ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
 
-// Cek apakah supabaseClient sudah tersedia
-if (typeof window.supabaseClient === 'undefined') {
-    console.error('❌ Supabase client belum ter-load! Periksa urutan script di HTML.');
-}
-
-// Tunggu DOM load dulu
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, checking supabaseClient...');
-    
-    // Cek lagi setelah DOM load
-    if (typeof window.supabaseClient === 'undefined') {
-        console.error('❌ Supabase client masih undefined!');
+// Fungsi untuk menunggu supabaseClient ready
+function waitForSupabase(callback, retries = 10) {
+    if (typeof window.supabaseClient !== 'undefined') {
+        callback();
+    } else if (retries > 0) {
+        console.log('Menunggu Supabase client... retries left:', retries);
+        setTimeout(() => waitForSupabase(callback, retries - 1), 500);
+    } else {
+        console.error('❌ Supabase client gagal ter-load setelah 5 detik');
         alert('Error: Supabase tidak terinisialisasi. Silakan refresh halaman.');
-        return;
     }
-    
-    console.log('✅ Supabase client ready:', window.supabaseClient);
-    
-    // ... kode selanjutnya ...
-});
-
-// Tunggu supabase-client.js load dulu
-document.addEventListener('DOMContentLoaded', function() {
-    // Cek apakah ada form login/register di halaman
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleLogin();
-        });
-    }
-    
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleRegister();
-        });
-    }
-});
+}
 
 // Fungsi untuk switch antara Login dan Register
 function showLogin() {
-    document.getElementById('login').style.display = 'block';
-    document.getElementById('register').style.display = 'none';
+    const loginEl = document.getElementById('login');
+    const registerEl = document.getElementById('register');
+    if (loginEl) loginEl.style.display = 'block';
+    if (registerEl) registerEl.style.display = 'none';
 }
 
 function showRegister() {
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('register').style.display = 'block';
+    const loginEl = document.getElementById('login');
+    const registerEl = document.getElementById('register');
+    if (loginEl) loginEl.style.display = 'none';
+    if (registerEl) registerEl.style.display = 'block';
 }
 
 // ===== FUNGSI REGISTER =====
@@ -63,7 +38,7 @@ async function handleRegister() {
     
     // Validasi
     if (!username || !email || !password || !clubName) {
-        alert(' Semua field wajib diisi!');
+        alert('❌ Semua field wajib diisi!');
         return;
     }
     
@@ -173,7 +148,7 @@ async function handleLogin() {
         window.location.href = 'dashboard.html';
         
     } catch (err) {
-        alert(' Terjadi kesalahan: ' + err.message);
+        alert('❌ Terjadi kesalahan: ' + err.message);
     }
 }
 
@@ -190,6 +165,37 @@ async function checkAuth() {
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     return session !== null;
 }
+
+// ===== INIT SAAT DOM LOAD =====
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking supabaseClient...');
+    
+    // Tunggu supabaseClient ready (dengan retry)
+    waitForSupabase(function() {
+        console.log('✅ Supabase client ready:', window.supabaseClient);
+        
+        // Setup form listeners
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
+            });
+        }
+        
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleRegister();
+            });
+        }
+        
+        // Default tampilkan login
+        showLogin();
+    });
+});
 
 // Export untuk halaman lain
 window.EsportBosAuth = {
