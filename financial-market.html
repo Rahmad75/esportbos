@@ -122,9 +122,40 @@
                 </div>
 
                 <div class="exchange-box" id="exchangeBox">
-                    <!-- Diisi JS -->
-                </div>
-            </div>
+    <div class="exchange-direction-tabs">
+        <button class="direction-tab active" onclick="setExchangeDirection('diamond-gold')">💎 → 🟡</button>
+        <button class="direction-tab" onclick="setExchangeDirection('gold-diamond')"> → 💎</button>
+    </div>
+    
+    <div class="exchange-direction-tabs" style="margin-top: 10px;">
+        <button class="direction-tab" onclick="setExchangeDirection('gold-currency')"> → 🎟️</button>
+        <button class="direction-tab" onclick="setExchangeDirection('currency-gold')">🎟️ → 🟡</button>
+    </div>
+    
+    <div class="exchange-direction-tabs" style="margin-top: 10px;">
+        <button class="direction-tab" onclick="setExchangeDirection('diamond-currency')">💎 → 🎟️</button>
+        <button class="direction-tab" onclick="setExchangeDirection('currency-diamond')">️ → 💎</button>
+    </div>
+    
+    <div class="exchange-form">
+        <div class="exchange-input-group">
+            <label id="fromLabel">Dari (Diamond)</label>
+            <input type="number" id="exchangeAmount" min="1" placeholder="Jumlah" oninput="calculateExchange()">
+            <span class="balance-hint" id="fromBalance">Saldo: 0 Diamond</span>
+        </div>
+        
+        <div class="exchange-arrow">→</div>
+        
+        <div class="exchange-input-group">
+            <label id="toLabel">Ke (Gold)</label>
+            <input type="text" id="exchangeResult" readonly placeholder="Hasil">
+            <span class="rate-info" id="rateInfo">Kurs: 1 Diamond = 25 Gold</span>
+            <span class="fee-info" id="feeInfo">Biaya: 2%</span>
+        </div>
+        
+        <button class="btn-futuristic btn-large" onclick="executeExchange()">💱 TUKAR SEKARANG</button>
+    </div>
+</div>
 
             <!-- MARKET CHART -->
             <div class="panel raised">
