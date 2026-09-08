@@ -52,5 +52,42 @@ function migrateOldData() {
 document.addEventListener('DOMContentLoaded', function() {
     migrateOldData(); // ← TAMBAH INI
     updateEconomyDisplay();
-});
+// ===== FIRST MATCH BONUS SYSTEM =====
+
+// Fungsi untuk cek dan beri bonus match pertama
+function checkAndGiveFirstMatchBonus() {
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) return;
+    
+    const email = user.email;
+    
+    // Cek apakah user sudah pernah main match
+    const hasPlayedFirstMatch = localStorage.getItem(`esportbos_first_match_${email}`);
+    
+    // Kalau belum pernah main (null atau 'true')
+    if (hasPlayedFirstMatch === null || hasPlayedFirstMatch === 'true') {
+        // Tandai sudah dapat bonus
+        localStorage.setItem(`esportbos_first_match_${email}`, 'false');
+        
+        // Beri 500 Currency
+        const currentCurrency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
+        const newCurrency = currentCurrency + 500;
+        localStorage.setItem(`esportbos_currency_${email}`, newCurrency.toString());
+        
+        // Tampilkan alert
+        setTimeout(() => {
+            alert(`🎉 SELAMAT DATANG DI ESPORTBOS!\n\nKamu mendapat bonus NEW MANAGER:\n💰 500 Currency\n\nGunakan untuk membayar gaji pemain minggu pertama!\n\nSelamat bermain!`);
+            
+            // Update tampilan
+            updateEconomyDisplay();
+        }, 1000);
+    }
+}
+
+// Panggil fungsi ini saat dashboard load
+document.addEventListener('DOMContentLoaded', function() {
+    // ... kode existing lo ...
+    
+    // Tambahkan baris ini di akhir
+    checkAndGiveFirstMatchBonus();
 });
