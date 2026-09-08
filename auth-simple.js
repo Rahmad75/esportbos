@@ -66,6 +66,43 @@ function initializeUserEconomy(email) {
         localStorage.setItem(`esportbos_first_match_${email}`, 'true');
     }
 }
+    // Ambil nama klub dari form
+const clubName = document.getElementById('regClubName').value.trim();
+
+// Validasi: Nama klub tidak boleh kosong
+if (!clubName) {
+    alert('❌ Nama klub wajib diisi!');
+    return;
+}
+
+// Simpan nama klub ke localStorage
+const email = document.getElementById('regEmail').value; // sesuaikan dengan variabel email lo
+localStorage.setItem(`esportbos_club_name_${email}`, clubName);
+
+// Inisialisasi data dummy lainnya
+localStorage.setItem(`esportbos_club_rank_${email}`, '16th in C.4');
+localStorage.setItem(`esportbos_popularity_${email}`, '50');
+localStorage.setItem(`esportbos_moral_${email}`, '70');
+localStorage.setItem(`esportbos_first_match_${email}`, 'true');
+
+// Data match dummy
+const dummyLastMatch = { 
+    home: 'Modena', 
+    homeScore: 8, 
+    awayScore: 1, 
+    away: clubName, 
+    league: 'Liga Nasional', 
+    time: '11 Jam lalu' 
+};
+localStorage.setItem(`esportbos_last_match_${email}`, JSON.stringify(dummyLastMatch));
+
+const dummyNextMatch = { 
+    home: clubName, 
+    away: 'Inter FC', 
+    league: 'Liga Nasional', 
+    time: '12 Jam' 
+};
+localStorage.setItem(`esportbos_next_match_${email}`, JSON.stringify(dummyNextMatch));
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const newCode = generateReferralCode();
     const avatarSeed = generateAvatarSeed();
