@@ -295,6 +295,42 @@
 
     <!-- ADSTERRA SOCIAL BAR -->
     <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
+<script src="auth.js"></script>
 
+<script>
+// Load data dari Supabase saat dashboard dibuka
+document.addEventListener('DOMContentLoaded', async function() {
+    // Cek login
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (!session) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Ambil data user dari localStorage (sudah disimpan saat login)
+    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Update UI dengan data dari Supabase
+    document.getElementById('userName').textContent = user.username;
+    document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+    
+    document.getElementById('clubName').textContent = user.club_name;
+    document.getElementById('diamondBalance').textContent = user.diamonds.toLocaleString('id-ID');
+    document.getElementById('goldBalance').textContent = user.gold.toLocaleString('id-ID');
+    document.getElementById('currencyBalance').textContent = user.currency.toLocaleString('id-ID');
+    
+    // Update popularitas & moral
+    const popBar = document.getElementById('popularityBar');
+    const moralBar = document.getElementById('moralBar');
+    if (popBar) popBar.style.width = `${user.popularity}%`;
+    if (moralBar) moralBar.style.width = `${user.moral}%`;
+});
+</script>
 </body>
 </html>
