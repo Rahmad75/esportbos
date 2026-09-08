@@ -1,11 +1,8 @@
 // ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
-// File ini sudah include Supabase client initialization
 
-// 1. INISIALISASI SUPABASE CLIENT LANGSUNG DI SINI
-const SUPABASE_URL = 'https://xvnpbmxyxphrddjzldbt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2bm1wYm15eHBocmRkampsZGJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDI0OTgsImV4cCI6MjEwNDQxODQ5OH0.YvXP6nGV7QkQwi9S9xKGKDHUhrLP-sWY83N1iOcVEi0';
+const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
 
-// Tunggu Supabase SDK load, lalu init client
 function initSupabaseClient() {
     if (typeof window.supabase !== 'undefined') {
         window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -15,13 +12,10 @@ function initSupabaseClient() {
     return false;
 }
 
-// Coba init langsung
 if (!initSupabaseClient()) {
-    // Kalau belum ready, tunggu sebentar
     setTimeout(initSupabaseClient, 500);
 }
 
-// 2. FUNGSI SWITCH FORM
 function showLogin() {
     const loginEl = document.getElementById('login');
     const registerEl = document.getElementById('register');
@@ -36,7 +30,6 @@ function showRegister() {
     if (registerEl) registerEl.style.display = 'block';
 }
 
-// 3. FUNGSI REGISTER
 async function handleRegister() {
     const username = document.getElementById('registerUsername').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
@@ -55,7 +48,7 @@ async function handleRegister() {
     }
     
     if (!window.supabaseClient) {
-        alert(' Supabase belum siap. Silakan refresh halaman.');
+        alert('❌ Supabase belum siap. Silakan refresh halaman.');
         return;
     }
     
@@ -101,7 +94,6 @@ async function handleRegister() {
     }
 }
 
-// 4. FUNGSI LOGIN
 async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -157,7 +149,6 @@ async function handleLogin() {
     }
 }
 
-// 5. FUNGSI LOGOUT
 async function handleLogout() {
     if (window.supabaseClient) {
         await window.supabaseClient.auth.signOut();
@@ -166,23 +157,19 @@ async function handleLogout() {
     window.location.href = 'index.html';
 }
 
-// 6. CEK AUTH
 async function checkAuth() {
     if (!window.supabaseClient) return false;
     const { data: { session } } = await window.supabaseClient.auth.getSession();
     return session !== null;
 }
 
-// 7. INIT SAAT DOM LOAD
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded');
     
-    // Pastikan Supabase client ready
     if (!window.supabaseClient) {
         initSupabaseClient();
     }
     
-    // Setup form listeners
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
     
@@ -203,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
     showLogin();
 });
 
-// Export
 window.EsportBosAuth = {
     login: handleLogin,
     register: handleRegister,
