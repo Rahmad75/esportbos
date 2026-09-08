@@ -1,53 +1,58 @@
-// ===== COMMON FUNCTIONS FOR ALL PAGES =====
+// ===== COMMON FUNCTIONS - UNTUK SEMUA HALAMAN =====
 
-// Fungsi untuk load data user ke navbar & sidebar
-function loadCommonData() {
+// Load data user ke UI (navbar + sidebar)
+async function loadCommonData() {
+    // Cek login
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if (!session) {
+        window.location.href = 'index.html';
+        return null;
+    }
+    
+    // Ambil data dari localStorage (sudah disimpan saat login)
     const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
     if (!user) {
         window.location.href = 'index.html';
-        return;
+        return null;
     }
-    
-    const email = user.email;
-    const username = user.username || user.email.split('@')[0];
     
     // Update Navbar
     const navUserName = document.getElementById('userName');
     const navAvatar = document.getElementById('navAvatar');
-    if (navUserName) navUserName.textContent = username;
+    if (navUserName) navUserName.textContent = user.username;
     if (navAvatar) {
-        navAvatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+        navAvatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
     }
     
-    // Update Saldo di Sidebar
-    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${email}`) || '0');
-    const gold = parseInt(localStorage.getItem(`esportbos_gold_${email}`) || '0');
-    const currency = parseInt(localStorage.getItem(`esportbos_currency_${email}`) || '0');
-    
+    // Update Sidebar - Saldo
     const elDiamond = document.getElementById('diamondBalance');
     const elGold = document.getElementById('goldBalance');
     const elCurrency = document.getElementById('currencyBalance');
     
-    if (elDiamond) elDiamond.textContent = diamonds.toLocaleString('id-ID');
-    if (elGold) elGold.textContent = gold.toLocaleString('id-ID');
-    if (elCurrency) elCurrency.textContent = currency.toLocaleString('id-ID');
+    if (elDiamond) elDiamond.textContent = user.diamonds.toLocaleString('id-ID');
+    if (elGold) elGold.textContent = user.gold.toLocaleString('id-ID');
+    if (elCurrency) elCurrency.textContent = user.currency.toLocaleString('id-ID');
     
-    // Update Profil Klub di Sidebar
-    const clubName = localStorage.getItem(`esportbos_club_name_${email}`) || 'My Club';
-    const popularity = parseInt(localStorage.getItem(`esportbos_popularity_${email}`) || '76');
-    const moral = parseInt(localStorage.getItem(`esportbos_moral_${email}`) || '78');
+    // Update Sidebar - Profil Klub
+    const elClubName = document.getElementById('clubName');
+    if (elClubName) elClubName.textContent = user.club_name;
     
-    const elClubName = document.querySelector('.team-name');
-    if (elClubName && !elClubName.id) elClubName.textContent = clubName;
+    const popBar = document.getElementById('popularityBar');
+    const moralBar = document.getElementById('moralBar');
+    if (popBar) popBar.style.width = `${user.popularity}%`;
+    if (moralBar) moralBar.style.width = `${user.moral}%`;
     
-    const elPopularity = document.getElementById('popularityBar');
-    if (elPopularity) elPopularity.style.width = `${popularity}%`;
-    
-    const elMoral = document.getElementById('moralBar');
-    if (elMoral) elMoral.style.width = `${moral}%`;
+    return user;
 }
 
-// Jalankan saat semua halaman load
+// Jalankan saat halaman load
 document.addEventListener('DOMContentLoaded', function() {
-    loadCommonData();
+    if (window.supabaseClient) {
+        loadCommonData();
+    } else {
+        // Tunggu supabase client ready
+        setTimeout(() => {
+            if (window.supabaseClient) loadCommonData();
+        }, 1000);
+    }
 });
