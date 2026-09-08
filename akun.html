@@ -8,71 +8,76 @@
 </head>
 <body class="dashboard-body">
 
-    <!-- ===== NAVBAR ATAS ===== -->
+    <!-- NAVBAR -->
     <nav class="top-navbar">
         <div class="navbar-left">
-            <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
+            <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
-            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
+            <a href="dana-klub.html" class="stat-badge notif"> Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
 
-        <!-- ===== SIDEBAR KIRI ===== -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">My Club</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
+                    <span id="popularityText">Popularitas Klub: 76%</span>
                     <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
+                        <div class="pop-fill" id="popularityBar" style="width: 76%;"></div>
                     </div>
-                    <span>Popularitas Klub: 76%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
+                    <span id="moralText">Moral Tim: 78%</span>
                     <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
+                        <div class="moral-fill" id="moralBar" style="width: 78%;"></div>
                     </div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='financial-market.html'">💼 Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item"> Dashboard</a>
                 <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
-                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
-                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-                <a href="kantor.html" class="menu-item"> Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item active">👤 Akun Saya</a>
             </nav>
+
+            <div class="social-icons">
+                <a href="#">📘</a>
+                <a href="#">💬</a>
+                <a href="#">📷</a>
+            </div>
         </aside>
 
         <!-- MAIN CONTENT -->
@@ -83,27 +88,26 @@
                 <span>Kelola Profil & Referral</span>
             </div>
 
-            <!-- TABS -->
+            <!-- Tabs -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchAkunTab('profil')">👤 Profil</button>
-                <button class="tab-btn" onclick="switchAkunTab('referral')">🎁 Referral</button>
-                <button class="tab-btn" onclick="switchAkunTab('reset')">🔄 Reset Data</button>
+                <button class="tab-btn active" onclick="showTab('profil')">👤 Profil</button>
+                <button class="tab-btn" onclick="showTab('referral')">🎁 Referral</button>
+                <button class="tab-btn" onclick="showTab('reset')">🔄 Reset Data</button>
             </div>
 
-            <!-- TAB: PROFIL -->
+            <!-- Tab: Profil -->
             <div id="tab-profil" class="tab-content">
                 <div class="panel raised">
                     <h3>👤 Profil Saya</h3>
                     
                     <div class="profile-container">
-                        <div class="profile-photo-section">
-                            <img id="profilePhoto" src="https://api.dicebear.com/7.x/avataaars/svg?seed=BosKu" alt="Profile" class="profile-photo">
-                            <label for="photoUpload" class="btn-upload">📷 Ganti Foto</label>
-                            <input type="file" id="photoUpload" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
-                            <p class="info-text">Upload foto profil (JPG/PNG, max 2MB)</p>
+                        <div class="profile-avatar">
+                            <img id="profileAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="Avatar">
+                            <button class="btn-change-photo" onclick="changePhoto()">📷 Ganti Foto</button>
+                            <small>Upload foto profil (JPG/PNG, max 2MB)</small>
                         </div>
                         
-                        <div class="profile-info-section">
+                        <div class="profile-info">
                             <div class="info-row">
                                 <label>Username:</label>
                                 <span id="profileUsername">-</span>
@@ -113,125 +117,133 @@
                                 <span id="profileEmail">-</span>
                             </div>
                             <div class="info-row">
+                                <label>Nama Klub:</label>
+                                <span id="profileClubName">-</span>
+                            </div>
+                            <div class="info-row">
                                 <label>Role:</label>
-                                <span id="profileRole" class="role-badge">-</span>
+                                <span id="profileRole">-</span>
                             </div>
                             <div class="info-row">
                                 <label>Bergabung:</label>
-                                <span id="profileJoinDate">-</span>
+                                <span id="profileJoined">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB: REFERRAL -->
-<div id="tab-referral" class="tab-content" style="display:none;">
-    <div class="panel raised">
-        <h3>🎁 Program Referral</h3>
-        <p class="info-text">Ajak teman bermain EsportBos dan dapatkan bonus Gold!</p>
-        
-        <!-- BAGIAN 1: LINK REFERRAL -->
-        <div class="referral-hero">
-            <div class="referral-code-box">
-                <span class="referral-label">Kode Referral Kamu:</span>
-                <div class="referral-code" id="myReferralCode">-</div>
-                <button class="btn-copy" onclick="copyReferralCode()"> Salin Kode</button>
-            </div>
-            
-            <div class="referral-rewards">
-                <div class="reward-card">
-                    <div class="reward-icon">🎁</div>
-                    <div class="reward-info">
-                        <span class="reward-amount">+1,000 Gold</span>
-                        <span class="reward-desc">Untuk teman yang daftar</span>
+            <!-- Tab: Referral -->
+            <div id="tab-referral" class="tab-content" style="display: none;">
+                <div class="panel raised">
+                    <h3>🎁 Program Referral</h3>
+                    <p>Undang teman dan dapatkan bonus!</p>
+                    <div class="referral-box">
+                        <label>Kode Referral Anda:</label>
+                        <input type="text" id="referralCode" readonly value="Loading...">
+                        <button onclick="copyReferral()" class="btn-copy">📋 Copy</button>
                     </div>
-                </div>
-                <div class="reward-card">
-                    <div class="reward-icon">💰</div>
-                    <div class="reward-info">
-                        <span class="reward-amount">+2,000 Gold</span>
-                        <span class="reward-desc">Untuk kamu per referral</span>
+                    <div class="referral-stats">
+                        <div>Total Referral: <strong id="totalReferral">0</strong></div>
+                        <div>Bonus Didapat: <strong id="referralBonus">0</strong> Gold</div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="referral-link-box">
-            <h4> Link Referral:</h4>
-            <div class="link-display">
-                <input type="text" id="referralLink" readonly>
-                <button class="btn-copy" onclick="copyReferralLink()">📋 Salin Link</button>
+            <!-- Tab: Reset Data -->
+            <div id="tab-reset" class="tab-content" style="display: none;">
+                <div class="panel raised">
+                    <h3>🔄 Reset Data</h3>
+                    <p>⚠️ Perhatian: Tindakan ini tidak dapat dibatalkan!</p>
+                    <button onclick="resetData()" class="btn-danger">🗑️ Reset Semua Data</button>
+                </div>
             </div>
-            <p class="info-text" style="margin-top:10px;">💡 Share link ini! Teman yang klik & daftar otomatis jadi referral kamu.</p>
-        </div>
 
-        <div class="referral-stats">
-            <div class="stat-card">
-                <div class="stat-icon">👥</div>
-                <div class="stat-info">
-                    <span class="stat-label">Total Referral</span>
-                    <span class="stat-value" id="referralCount">0</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🔗</div>
-                <div class="stat-info">
-                    <span class="stat-label">Via Link</span>
-                    <span class="stat-value" id="referralDirect">0</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🏆</div>
-                <div class="stat-info">
-                    <span class="stat-label">Via Lelang</span>
-                    <span class="stat-value" id="referralAuction">0</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">💰</div>
-                <div class="stat-info">
-                    <span class="stat-label">Total Bonus</span>
-                    <span class="stat-value" id="referralBonus">0</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="referral-list" id="referralList">
-            <!-- Diisi JS -->
-        </div>
+        </main>
     </div>
 
-    <!-- BAGIAN 2: LELANG REFERRAL -->
-    <div class="panel raised" style="margin-top: 20px;">
-        <h3>🏆 Lelang Referral Bulanan</h3>
-        <p class="info-text">Menang lelang = Dapat SEMUA user baru tanpa link referral bulan ini!</p>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+    // Load data user saat halaman dibuka
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Cek login
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        if (!session) {
+            window.location.href = 'index.html';
+            return;
+        }
         
-        <div class="auction-info" id="auctionInfo">
-            <!-- Diisi JS -->
-        </div>
+        // Ambil data dari localStorage (sudah disimpan saat login)
+        const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
+        if (!user) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Update Navbar
+        document.getElementById('userName').textContent = user.username;
+        document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+        
+        // Update Sidebar
+        document.getElementById('clubName').textContent = user.club_name;
+        document.getElementById('diamondBalance').textContent = user.diamonds.toLocaleString('id-ID');
+        document.getElementById('goldBalance').textContent = user.gold.toLocaleString('id-ID');
+        document.getElementById('currencyBalance').textContent = user.currency.toLocaleString('id-ID');
+        
+        const popBar = document.getElementById('popularityBar');
+        const moralBar = document.getElementById('moralBar');
+        if (popBar) popBar.style.width = `${user.popularity}%`;
+        if (moralBar) moralBar.style.width = `${user.moral}%`;
+        
+        // Update Profil
+        document.getElementById('profileUsername').textContent = user.username;
+        document.getElementById('profileEmail').textContent = user.email;
+        document.getElementById('profileClubName').textContent = user.club_name;
+        document.getElementById('profileRole').textContent = user.role || 'OWNER';
+        document.getElementById('profileJoined').textContent = new Date(user.joined_date).toLocaleDateString('id-ID');
+        document.getElementById('profileAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
+        
+        // Update Referral Code
+        document.getElementById('referralCode').value = user.username.toUpperCase();
+    });
 
-        <div class="auction-actions" id="auctionActions">
-            <!-- Diisi JS -->
-        </div>
+    // Tab switching
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.getElementById(`tab-${tabName}`).style.display = 'block';
+        event.target.classList.add('active');
+    }
 
-        <div class="auction-pool" id="auctionPool">
-            <!-- Diisi JS -->
-        </div>
-    </div>
-</div>
+    // Copy referral code
+    function copyReferral() {
+        const code = document.getElementById('referralCode').value;
+        navigator.clipboard.writeText(code).then(() => {
+            alert('✅ Kode referral disalin: ' + code);
+        });
+    }
 
-    <script src="auth-simple.js"></script>
-    <script src="akun.js"></script>
-    <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
-    <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    // Change photo (placeholder)
+    function changePhoto() {
+        alert('📷 Fitur upload foto akan segera hadir!');
+    }
+
+    // Reset data (placeholder)
+    function resetData() {
+        if (confirm('⚠️ Yakin ingin reset semua data? Tindakan ini tidak dapat dibatalkan!')) {
+            alert('🔄 Fitur reset data akan segera hadir!');
+        }
+    }
+    </script>
+
 </body>
 </html>
