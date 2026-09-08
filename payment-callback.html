@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>EsportBos - Payment Callback</title>
+</head>
+<body>
+    <div style="text-align: center; padding: 50px;">
+        <h2>Memproses Pembayaran...</h2>
+        <p id="statusText">Mohon tunggu sebentar</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Handle callback dari Duitku
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Ambil parameter dari URL (Duitku callback)
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('merchantOrderId');
+        const resultCode = urlParams.get('resultCode');
+        const status = urlParams.get('status');
+        
+        if (!orderId) {
+            document.getElementById('statusText').textContent = 'Invalid callback';
+            return;
+        }
+        
+        try {
+            // Update transaksi di database
+            const { data: transaction, error: fetchError } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('transaction_id', orderId)
+                .single();
+            
+            if (fetchError || !transaction) {
+                throw new Error('Transaksi tidak ditemukan');
+            }
+            
+            // Cek status pembayaran
+            const isSuccess = status === '0' || resultCode === '0'; // 0 = success di Duitku
+            
+            const { error: updateError } = await supabase
+                .from('transactions')
+                .update({
+                    status: isSuccess ? 'success' : 'failed',
+                    payment_method: urlParams.get('paymentMethod'),
+                    duitku_response: Object.fromEntries(urlParams),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('transaction_id', orderId);
+            
+            if (updateError) throw updateError;
+            
+            // Jika sukses, update saldo user
+            if (isSuccess) {
+                // Update diamonds
+                await supabase.rpc('increment_user_balance', {
+                    user_uuid: transaction.user_id,
+                    diamond_amount: transaction.diamond,
+                    gold_amount: transaction.gold,
+                    currency_amount: transaction.currency
+                });
+                
+                document.getElementById('statusText').innerHTML = `
+                    ✅ Pembayaran Berhasil!<br>
+                    ${transaction.diamond} Diamond & ${transaction.gold} Gold telah ditambahkan ke akun Anda.
+                `;
+            } else {
+                document.getElementById('statusText').textContent = '❌ Pembayaran Gagal atau Dibatalkan';
+            }
+            
+            // Redirect ke dashboard setelah 3 detik
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 3000);
+            
+        } catch (err) {
+            console.error('Callback error:', err);
+            document.getElementById('statusText').textContent = 'Error: ' + err.message;
+        }
+    });
+    </script>
+</body>
+</html>
