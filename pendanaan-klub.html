@@ -182,28 +182,167 @@
         </main>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="auth.js"></script>
-    <script src="app.js"></script>
-    <script src="script.js"></script>
-
     <script>
-    // Fungsi top-up (placeholder - nanti integrasi Duitku)
-    function topUp(paket, harga, diamond, gold) {
-        const user = window.currentUser;
-        if (!user) {
-            alert('❌ Silakan login terlebih dahulu!');
+// Fungsi untuk create payment request ke Duitku
+async function topUp(paket, harga, diamond, gold) {
+    const user = window.currentUser;
+    if (!user) {
+        alert('❌ Silakan login terlebih dahulu!');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Generate unique transaction ID
+    const transactionId = 'ESB' + Date.now();
+    
+    try {
+        // 1. Simpan transaksi ke Supabase (status: pending)
+        const { error: dbError } = await window.supabaseClient
+            .from('transactions')
+            .insert({
+                user_id: user.id,
+                transaction_id: transactionId,
+                type: 'topup',
+                package: paket,
+                amount: harga,
+                diamond: diamond,
+                gold: gold,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            });
+        
+        if (dbError) {
+            console.error('Database error:', dbError);
+            alert('❌ Gagal membuat transaksi. Silakan coba lagi.');
             return;
         }
         
-        alert(`📦 Paket ${paket.toUpperCase()} dipilih!\n\n💎 ${diamond} Diamond\n🟡 ${gold} Gold\n💰 Harga: Rp ${harga.toLocaleString('id-ID')}\n\n✅ Pembayaran akan diproses melalui Duitku (segera hadir)`);
+        // 2. Redirect ke Duitku Payment Gateway
+        // Format URL Duitku (sesuaikan dengan dokumentasi Duitku)
+        const duitkuUrl = `https://api.duitku.com/webpayment/api/merchant/createInvoice`;
         
-        // Simulasi top-up (nanti diganti dengan Duitku callback)
-        // updateUserBalance('diamonds', diamond);
-        // updateUserBalance('gold', gold);
+        // Parameters untuk Duitku (sesuaikan dengan API Duitku)
+        const paymentParams = {
+            paymentAmount: harga,
+            paymentMethod: null, // null = user pilih sendiri
+            merchantCode: 'YOUR_MERCHANT_CODE', // Ganti dengan merchant code lo
+            merchantOrderId: transactionId,
+            productDetails: `EsportBos ${paket.toUpperCase()} Package - ${diamond} Diamond + ${gold} Gold`,
+            additionalParam: '',
+            paymentExpiryInSeconds: 3600, // 1 jam
+            returnUrl: 'https://esportbos.com/payment-callback.html',
+            signature: generateSignature(transactionId, harga) // Generate signature
+        };
+        
+        console.log('Payment params:', paymentParams);
+        
+        // 3. Redirect user ke payment page
+        // Option A: Redirect langsung
+        // window.location.href = duitkuUrl + '?' + new URLSearchParams(paymentParams);
+        
+        // Option B: Buka popup (lebih user-friendly)
+        const popupUrl = duitkuUrl + '?' + new URLSearchParams(paymentParams);
+        window.open(popupUrl, 'PaymentWindow', 'width=800,height=600');
+        
+        alert('✅ Transaksi dibuat! Silakan selesaikan pembayaran.\n\nTransaction ID: ' + transactionId);
+        
+    } catch (err) {
+        console.error('Error:', err);
+        alert('❌ Terjadi kesalahan: ' + err.message);
     }
-    </script>
+}
 
+// Fungsi generate signature untuk Duitku
+function generateSignature(orderId, amount) {
+    // Signature = MD5(MerchantCode + Amount + MerchantOrderId + SecretKey)
+    // Ganti 'YOUR_SECRET_KEY' dengan secret key dari Duitku
+    const merchantCode = 'YOUR_MERCHANT_CODE';
+    const secretKey = '5e9a78b75a211329a8e9d6353bce19a3';
+    const stringToHash = merchantCode + amount + orderId + secretKey;
+    
+    // Simple MD5 hash (gunakan library MD5 atau crypto)
+    return simpleMD5(stringToHash);
+}
+
+// Simple MD5 function (gunakan library crypto-js untuk production)
+function simpleMD5(str) {
+    // Ini cuma placeholder - gunakan library MD5 yang proper
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16);
+}
+
+// Load riwayat transaksi user
+async function loadRiwayatPendanaan() {
+    const user = window.currentUser;
+    if (!user) return;
+    
+    const { data, error } = await window.supabaseClient
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', 'topup')
+        .order('created_at', { ascending: false })
+        .limit(10);
+    
+    const container = document.getElementById('riwayatPendanaan');
+    
+    if (error || !data || data.length === 0) {
+        container.innerHTML = 'Belum ada riwayat pendanaan. Mulai top-up pertama Anda!';
+        return;
+    }
+    
+    const statusColors = {
+        'pending': '#ffc107',
+        'success': '#28a745',
+        'failed': '#dc3545'
+    };
+    
+    const statusLabels = {
+        'pending': '⏳ Pending',
+        'success': '✅ Berhasil',
+        'failed': '❌ Gagal'
+    };
+    
+    container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 12px; text-align: left;">Tanggal</th>
+                    <th style="padding: 12px; text-align: left;">Paket</th>
+                    <th style="padding: 12px; text-align: left;">Jumlah</th>
+                    <th style="padding: 12px; text-align: left;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(tx => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px;">${new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
+                        <td style="padding: 12px; font-weight: bold;">${tx.package.toUpperCase()}</td>
+                        <td style="padding: 12px;">Rp ${tx.amount.toLocaleString('id-ID')}</td>
+                        <td style="padding: 12px;">
+                            <span style="padding: 5px 12px; background: ${statusColors[tx.status]}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                                ${statusLabels[tx.status]}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Jalankan saat halaman load
+document.addEventListener('DOMContentLoaded', async function() {
+    await waitForCurrentUser();
+    if (window.currentUser) {
+        loadRiwayatPendanaan();
+    }
+});
+</script>
 </body>
 </html>
