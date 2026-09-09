@@ -56,7 +56,7 @@ async function handleRegister() {
     
     try {
         // Verifikasi captcha ke Edge Function
-        const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha', {
+        const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha-', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: turnstileResponse.value })
