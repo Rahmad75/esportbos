@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Roster Pemain</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,37 +23,12 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js">
-                // ===== UPDATE BALANCE DISPLAY =====
-function updateBalanceDisplay() {
-    const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
-    if (!user) return;
-    
-    // Ambil saldo dari localStorage
-    const diamonds = parseInt(localStorage.getItem(`esportbos_diamonds_${user.email}`) || '0');
-    const gold = parseInt(localStorage.getItem('esportbos_team_funds') || '0');
-    const currency = parseInt(localStorage.getItem(`esportbos_currency_${user.email}`) || '0');
-    
-    // Update tampilan
-    document.getElementById('diamondBalance').textContent = diamonds.toLocaleString();
-    document.getElementById('goldBalance').textContent = gold.toLocaleString();
-    document.getElementById('currencyBalance').textContent = currency.toLocaleString();
-}
-
-// Panggil saat halaman load
-document.addEventListener('DOMContentLoaded', function() {
-    updateBalanceDisplay();
-    
-    // Update setiap 5 detik (biar real-time)
-    setInterval(updateBalanceDisplay, 5000);
-});
-            </script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
@@ -61,42 +38,43 @@ document.addEventListener('DOMContentLoaded', function() {
         <aside class="sidebar">
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <span>Popularitas Klub: 76%</span>
-                    <div class="pop-bar"><div class="pop-fill" style="width: 76%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: -%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar"><div class="moral-fill" style="width: 78%;"></div></div>
+                    <span id="moralText">Moral Tim: -%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
                 <a href="pemain.html" class="menu-item active">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
-                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
                 <a href="kantor.html" class="menu-item">🏢 Kantor</a>
                 <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
 
             <div class="social-icons">
                 <a href="#">📘</a>
                 <a href="#">💬</a>
-                <a href="#"></a>
+                <a href="#">📷</a>
             </div>
         </aside>
 
@@ -105,44 +83,174 @@ document.addEventListener('DOMContentLoaded', function() {
             
             <div class="info-bar">
                 <span>👥 Manajemen Roster</span>
-                <span>Tim: <strong>RRQ Hoshi</strong> | Total Pemain: <strong id="totalPlayers">5</strong></span>
+                <span>Tim: <strong id="infoTeamName">Loading...</strong> | Total Pemain: <strong id="totalPlayers">0</strong></span>
             </div>
 
             <!-- Tombol Aksi -->
             <div class="action-bar">
-            <button class="btn-futuristic btn-small" onclick="window.location.href='transfer.html'">➕ Rekrut Pemain Baru</button>
-            <button class="btn-futuristic btn-small btn-secondary" onclick="window.location.href='latihan.html'">️ Latih Tim</button>
-            <button class="btn-futuristic btn-small btn-secondary" onclick="window.location.href='taktik.html'">⭐ Pilih Kapten</button>
+                <button class="btn-futuristic btn-small" onclick="window.location.href='transfer.html'">➕ Rekrut Pemain Baru</button>
+                <button class="btn-futuristic btn-small btn-secondary" onclick="window.location.href='latihan.html'">💪 Latih Tim</button>
+                <button class="btn-futuristic btn-small btn-secondary" onclick="window.location.href='taktik.html'">⭐ Pilih Kapten</button>
             </div>
 
             <!-- Daftar Pemain -->
             <div class="roster-grid" id="rosterGrid">
-                <!-- Pemain akan di-generate oleh JavaScript -->
+                <!-- Pemain akan di-generate oleh JavaScript dari Supabase -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">
+                    Memuat data pemain...
+                </div>
             </div>
 
         </main>
     </div>
 
     <!-- Modal Detail Pemain -->
-    <div class="modal" id="playerModal">
+    <div class="modal" id="playerModal" style="display: none;">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <span class="modal-close" onclick="closeModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="modalBody"></div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="auth-simple.js"></script>
-    <script src="pemain.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
+
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // 1. Cek Login
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // 2. Load Profile & Team
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+                const { data: team } = await supabase.from('teams').select('*').eq('user_id', session.user.id).single();
+
+                // 3. Update Sidebar UI
+                if (profile) {
+                    const username = profile.username || session.user.email.split('@')[0];
+                    document.getElementById('userName').textContent = username;
+                    document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                    document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                    document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
+                    document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+                }
+
+                if (team) {
+                    document.getElementById('clubName').textContent = team.team_name;
+                    document.getElementById('infoTeamName').textContent = team.team_name;
+                    document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                    
+                    document.getElementById('popularityText').textContent = `Popularitas Klub: ${team.popularity}%`;
+                    document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                    
+                    document.getElementById('moralText').textContent = `Moral Tim: ${team.moral}%`;
+                    document.getElementById('moralBar').style.width = `${team.moral}%`;
+                }
+
+                // 4. Load Players dari Supabase
+                const teamId = team ? team.id : null;
+                const { data: players, error } = await supabase
+                    .from('players')
+                    .select('*')
+                    .eq('team_id', teamId)
+                    .order('overall_rating', { ascending: false });
+
+                const rosterGrid = document.getElementById('rosterGrid');
+                const totalPlayersEl = document.getElementById('totalPlayers');
+                
+                if (players && players.length > 0) {
+                    totalPlayersEl.textContent = players.length;
+                    rosterGrid.innerHTML = players.map(player => `
+                        <div class="player-card" onclick="showPlayerDetail('${player.id}', '${player.name}', '${player.position}', ${player.overall_rating}, ${player.market_value})" style="cursor: pointer; background: #1a1a2e; border-radius: 10px; padding: 15px; color: white; text-align: center; border: 1px solid #333; transition: transform 0.2s;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="background: #00d4ff; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${player.position}</span>
+                                <span style="background: #ffd700; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px;">${player.overall_rating}</span>
+                            </div>
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}" alt="${player.name}" style="width: 80px; height: 80px; border-radius: 50%; background: #333; margin-bottom: 10px;">
+                            <h4 style="margin: 5px 0; color: #fff;">${player.name}</h4>
+                            <p style="font-size: 12px; color: #aaa; margin: 0;">${player.nationality || 'ID'} • ${player.age} Thn</p>
+                            <div style="margin-top: 10px; color: #28a745; font-weight: bold;">
+                                💰 ${player.market_value.toLocaleString('id-ID')}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    totalPlayersEl.textContent = '0';
+                    rosterGrid.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; background: #16213e; border-radius: 10px; border: 1px dashed #00d4ff;">
+                            <div style="font-size: 64px; margin-bottom: 15px;">👥</div>
+                            <h3 style="color: #fff; margin-bottom: 10px;">Belum Ada Pemain</h3>
+                            <p style="color: #aaa; margin-bottom: 20px;">Tim Anda masih kosong. Segera rekrut pemain di menu Transfer!</p>
+                            <button class="btn-futuristic" onclick="window.location.href='transfer.html'" style="padding: 10px 20px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Rekrut Pemain</button>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error loading pemain:', error);
+                alert('Gagal memuat data. Silakan refresh halaman.');
+            }
+        });
+
+        function showPlayerDetail(id, name, position, rating, value) {
+            const modal = document.getElementById('playerModal');
+            const body = document.getElementById('modalBody');
+            
+            body.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${name}" style="width: 120px; height: 120px; border-radius: 50%; background: #333; margin-bottom: 15px;">
+                    <h2 style="color: #00d4ff; margin: 0;">${name}</h2>
+                    <p style="color: #aaa; margin-top: 5px;">${position} • Rating: <strong style="color: #ffd700;">${rating}</strong></p>
+                    <hr style="border-color: #333; margin: 20px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                        <div style="background: #1a1a2e; padding: 10px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #aaa;">Nilai Pasar</div>
+                            <div style="font-size: 18px; color: #28a745; font-weight: bold;">💰 ${value.toLocaleString('id-ID')}</div>
+                        </div>
+                        <div style="background: #1a1a2e; padding: 10px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #aaa;">Status</div>
+                            <div style="font-size: 18px; color: #fff; font-weight: bold;">Aktif</div>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" style="margin-top: 20px; padding: 10px 30px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Tutup</button>
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+            modal.style.position = 'fixed';
+            modal.style.top = '0';
+            modal.style.left = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.background = 'rgba(0,0,0,0.8)';
+            modal.style.zIndex = '9999';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+        }
+
+        function closeModal() {
+            document.getElementById('playerModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
