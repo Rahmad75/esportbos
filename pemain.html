@@ -137,9 +137,6 @@ if (window.supabaseClient) {
 
 // Selalu gunakan window.supabaseClient
 const supabase = window.supabaseClient;
-        const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function handleLogout() {
             await supabase.auth.signOut();
