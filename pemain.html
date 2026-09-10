@@ -122,6 +122,20 @@
     <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
 
     <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    // Cek apakah sudah ada supabase client
+if (window.supabaseClient) {
+    // Sudah ada, pakai yang itu
+    console.log('✅ Using existing Supabase client');
+} else {
+    // Belum ada, buat baru
+    const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
+    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Created new Supabase client');
+}
+
+// Selalu gunakan window.supabaseClient
+const supabase = window.supabaseClient;
     <script>
         const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
