@@ -33,7 +33,41 @@
     </nav>
 
     <div class="dashboard-wrapper">
+<div id="jam-server" style="font-size:48px; font-family:monospace;">00:00:00</div>
+<div id="status"></div>
 
+<script>
+let offsetServer = 0; // selisih server vs laptop
+
+async function syncJamServer() {
+  document.getElementById('status').innerText = "Sinkronisasi...";
+  try {
+    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Jakarta');
+    const data = await res.json();
+    const waktuServer = new Date(data.datetime).getTime();
+    const waktuLaptop = Date.now();
+    
+    offsetServer = waktuServer - waktuLaptop; // simpen selisihnya
+    
+    document.getElementById('status').innerText = "Tersinkronisasi ✅";
+  } catch(e) {
+    document.getElementById('status').innerText = "Gagal sync, pakai jam laptop ⚠️";
+  }
+}
+
+function jalaninDetik() {
+  const waktuAsliServer = new Date(Date.now() + offsetServer);
+  const jam = String(waktuAsliServer.getHours()).padStart(2,'0');
+  const menit = String(waktuAsliServer.getMinutes()).padStart(2,'0');
+  const detik = String(waktuAsliServer.getSeconds()).padStart(2,'0');
+  
+  document.getElementById('jam-server').innerText = `${jam}:${menit}:${detik} WIB`;
+}
+
+syncJamServer();
+setInterval(jalaninDetik, 1000); // update detik tiap 1 detik
+setInterval(syncJamServer, 5*60*1000); // sync ulang tiap 5 menit
+</script>
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
             <!-- Info Tim -->
