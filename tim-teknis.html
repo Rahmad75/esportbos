@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Tim Teknis</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,64 +23,55 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
-
             <nav class="sidebar-menu">
-    <a href="pemain.html" class="menu-item active">👥 Pemain</a>
-    <a href="taktik.html" class="menu-item"> Taktik</a>
-    <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
-    <a href="latihan.html" class="menu-item">️ Latihan</a>
-    <a href="transfer.html" class="menu-item">💰 Transfer</a>
-    <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-    <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-    <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
-    <a href="stadion.html" class="menu-item">️ Stadion</a>
-    <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
-    <a href="akun.html" class="menu-item">👤 Akun Saya</a>
-</nav>
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item active">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>👨‍💻 Tim Teknis & Support</span>
                 <span>Rekrut Staff Profesional</span>
@@ -87,41 +80,182 @@
             <div class="panel raised">
                 <h3>📋 Daftar Staff Tersedia</h3>
                 <p class="info-text">Rekrut staff untuk memberikan bonus pasif kepada tim dan pemain. Setiap staff memiliki level yang bisa di-upgrade.</p>
-                
-                <div class="staff-grid" id="staffGrid">
+                <div class="staff-grid" id="staffGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
                     <!-- Diisi JS -->
                 </div>
             </div>
 
             <div class="panel raised" style="margin-top: 20px;">
-                <h3> Efek Bonus Aktif</h3>
-                <div class="bonus-summary" id="bonusSummary">
+                <h3>✨ Efek Bonus Aktif</h3>
+                <div class="bonus-summary" id="bonusSummary" style="margin-top: 15px;">
                     <!-- Diisi JS -->
                 </div>
             </div>
-
         </main>
     </div>
 
     <!-- MODAL REKRUT/UPGRADE -->
-    <div class="modal" id="staffModal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeStaffModal()">&times;</span>
+    <div class="modal" id="staffModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
+            <span class="modal-close" onclick="closeStaffModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="staffModalBody"></div>
         </div>
     </div>
 
-    <script src="auth-simple.js"></script>
-    <script src="tim-teknis.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        // 1. Init Supabase (Aman dari duplikasi)
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
+        let currentTeamId = null;
+        let userGold = 0;
+        let hiredStaff = [];
+
+        const availableStaff = [
+            { id: 'coach', name: 'Head Coach', icon: '📋', desc: 'Meningkatkan Moral Tim', baseCost: 5000, bonus: '+2 Moral Tim' },
+            { id: 'analyst', name: 'Data Analyst', icon: '📊', desc: 'Meningkatkan XP Pertandingan', baseCost: 7500, bonus: '+5% Match XP' },
+            { id: 'physio', name: 'Physiotherapist', icon: '🩺', desc: 'Mempercepat Pemulihan Stamina', baseCost: 6000, bonus: '+10% Stamina Recovery' },
+            { id: 'manager', name: 'Team Manager', icon: '💼', desc: 'Meningkatkan Pendapatan Sponsor', baseCost: 10000, bonus: '+5% Sponsor Income' }
+        ];
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+
+            if (profile) {
+                userGold = profile.gold || 0;
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+            }
+
+            if (team) {
+                currentTeamId = team.id;
+                hiredStaff = team.hired_staff || []; // Array of {id: 'coach', level: 1}
+                
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
+
+            renderStaffGrid();
+            renderBonusSummary();
+        });
+
+        function renderStaffGrid() {
+            const grid = document.getElementById('staffGrid');
+            grid.innerHTML = availableStaff.map(staff => {
+                const hired = hiredStaff.find(h => h.id === staff.id);
+                const level = hired ? hired.level : 0;
+                const cost = staff.baseCost * (level + 1);
+                const isHired = level > 0;
+
+                return `
+                    <div style="background: #16213e; padding: 20px; border-radius: 10px; border: 1px solid ${isHired ? '#28a745' : '#333'}; text-align: center; color: white;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">${staff.icon}</div>
+                        <h4 style="color: #00d4ff; margin: 5px 0;">${staff.name}</h4>
+                        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">${staff.desc}</p>
+                        <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">
+                            ${isHired ? `Level ${level}` : 'Belum Direkrut'}
+                        </p>
+                        <p style="font-size: 12px; color: #28a745; margin: 5px 0;">Bonus: ${staff.bonus}</p>
+                        <button onclick="handleStaffAction('${staff.id}')" style="width: 100%; margin-top: 15px; padding: 10px; background: ${isHired ? '#00d4ff' : '#28a745'}; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                            ${isHired ? `Upgrade (💰 ${cost.toLocaleString('id-ID')})` : `Rekrut (💰 ${cost.toLocaleString('id-ID')})`}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderBonusSummary() {
+            const summaryDiv = document.getElementById('bonusSummary');
+            if (hiredStaff.length === 0) {
+                summaryDiv.innerHTML = '<p style="color: #999; text-align: center;">Belum ada staff yang direkrut. Rekrut staff untuk mendapatkan bonus!</p>';
+                return;
+            }
+
+            summaryDiv.innerHTML = hiredStaff.map(h => {
+                const staff = availableStaff.find(s => s.id === h.id);
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #16213e; border-radius: 8px; margin-bottom: 10px; color: white; border-left: 4px solid #00d4ff;">
+                        <div>
+                            <strong style="color: #00d4ff;">${staff.name}</strong> (Level ${h.level})
+                            <p style="font-size: 12px; color: #aaa; margin: 5px 0 0 0;">${staff.bonus}</p>
+                        </div>
+                        <div style="font-size: 24px;">${staff.icon}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleStaffAction(staffId) {
+            const staff = availableStaff.find(s => s.id === staffId);
+            const hired = hiredStaff.find(h => h.id === staffId);
+            const level = hired ? hired.level : 0;
+            const cost = staff.baseCost * (level + 1);
+
+            if (userGold < cost) {
+                alert(`❌ Gold tidak cukup! Dibutuhkan ${cost.toLocaleString('id-ID')} Gold.`);
+                return;
+            }
+
+            if (!confirm(`${hired ? 'Upgrade' : 'Rekrut'} ${staff.name} ke Level ${level + 1} seharga ${cost.toLocaleString('id-ID')} Gold?`)) return;
+
+            // Kurangi Gold
+            const newGold = userGold - cost;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // Update Hired Staff
+            if (hired) {
+                hired.level += 1;
+            } else {
+                hiredStaff.push({ id: staffId, level: 1 });
+            }
+
+            // Simpan ke Database
+            await supabase.from('teams').update({ hired_staff: hiredStaff }).eq('id', currentTeamId);
+
+            alert(`✅ ${staff.name} berhasil ${hired ? 'di-upgrade' : 'direkrut'} ke Level ${hired ? hired.level : 1}!`);
+            renderStaffGrid();
+            renderBonusSummary();
+        }
+
+        function closeStaffModal() {
+            document.getElementById('staffModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
