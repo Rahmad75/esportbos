@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Transfer Market</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,64 +23,55 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
-
-             <nav class="sidebar-menu">
-    <a href="pemain.html" class="menu-item active">👥 Pemain</a>
-    <a href="taktik.html" class="menu-item"> Taktik</a>
-    <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
-    <a href="latihan.html" class="menu-item">️ Latihan</a>
-    <a href="transfer.html" class="menu-item">💰 Transfer</a>
-    <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-    <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-    <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
-    <a href="stadion.html" class="menu-item">️ Stadion</a>
-    <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
-    <a href="akun.html" class="menu-item">👤 Akun Saya</a>
-</nav>
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item active">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>💰 Transfer Market</span>
                 <span>Pasar Pemain Global</span>
@@ -86,7 +79,7 @@
 
             <!-- TABS -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTransferTab('market')"> Beli Pemain</button>
+                <button class="tab-btn active" onclick="switchTransferTab('market')">🌍 Beli Pemain</button>
                 <button class="tab-btn" onclick="switchTransferTab('myteam')">👕 Jual Pemain Saya</button>
                 <button class="tab-btn" onclick="switchTransferTab('history')">📜 Riwayat</button>
             </div>
@@ -96,8 +89,8 @@
                 <div class="panel raised">
                     <h3>🌍 Pemain Tersedia di Market</h3>
                     <p class="info-text">Pemain ini tersedia untuk dibeli. Harga bisa berubah sewaktu-waktu!</p>
-                    <div class="market-filters">
-                        <select id="filterPosition" onchange="renderMarket()">
+                    <div class="market-filters" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <select id="filterPosition" onchange="renderMarket()" style="padding: 8px; background: #16213e; color: white; border: 1px solid #333; border-radius: 5px;">
                             <option value="all">Semua Posisi</option>
                             <option value="Top">Top</option>
                             <option value="Jungle">Jungle</option>
@@ -105,14 +98,14 @@
                             <option value="ADC">ADC</option>
                             <option value="Support">Support</option>
                         </select>
-                        <select id="filterBudget" onchange="renderMarket()">
+                        <select id="filterBudget" onchange="renderMarket()" style="padding: 8px; background: #16213e; color: white; border: 1px solid #333; border-radius: 5px;">
                             <option value="all">Semua Harga</option>
                             <option value="low">< 5.000 Gold</option>
                             <option value="mid">5.000 - 15.000 Gold</option>
                             <option value="high">> 15.000 Gold</option>
                         </select>
                     </div>
-                    <div class="market-grid" id="marketGrid">
+                    <div class="market-grid" id="marketGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
                         <!-- Diisi JS -->
                     </div>
                 </div>
@@ -122,8 +115,8 @@
             <div id="tab-myteam" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>👕 Daftar Pemain Tim Saya</h3>
-                    <p class="info-text">Pilih pemain untuk dilepas ke pasar transfer.</p>
-                    <div class="market-grid" id="myTeamGrid">
+                    <p class="info-text">Pilih pemain untuk dilepas ke pasar transfer (Dijual dengan harga 80% dari nilai pasar).</p>
+                    <div class="market-grid" id="myTeamGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
                         <!-- Diisi JS -->
                     </div>
                 </div>
@@ -133,34 +126,222 @@
             <div id="tab-history" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>📜 Riwayat Transfer Klub</h3>
-                    <div id="transferHistoryList">
+                    <div id="transferHistoryList" style="margin-top: 20px;">
                         <!-- Diisi JS -->
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
     <!-- MODAL KONFIRMASI -->
-    <div class="modal" id="transferModal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeTransferModal()">&times;</span>
+    <div class="modal" id="transferModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
+            <span class="modal-close" onclick="closeTransferModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="transferModalBody"></div>
         </div>
     </div>
 
-    <script src="auth-simple.js"></script>
-    <script src="transfer.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        // 1. Init Supabase (Aman dari duplikasi)
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentTeamId = null;
+        let currentUserId = null;
+        let userGold = 0;
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+
+            if (profile) {
+                userGold = profile.gold || 0;
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+            }
+
+            if (team) {
+                currentTeamId = team.id;
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
+
+            renderMarket();
+            renderMyTeam();
+            renderHistory();
+        });
+
+        function switchTransferTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        async function renderMarket() {
+            const posFilter = document.getElementById('filterPosition').value;
+            const budgetFilter = document.getElementById('filterBudget').value;
+
+            let query = supabase.from('players').select('*').is('team_id', null);
+            if (posFilter !== 'all') {
+                query = query.eq('position', posFilter);
+            }
+
+            const { data: players } = await query.order('overall_rating', { ascending: false });
+            
+            // Fallback: Jika market kosong, tampilkan dummy player agar fitur bisa ditest
+            let marketPlayers = players || [];
+            if (marketPlayers.length === 0) {
+                marketPlayers = [
+                    { id: 'm1', name: 'Faker Jr.', position: 'Mid', overall_rating: 85, market_value: 12000, nationality: 'KR' },
+                    { id: 'm2', name: 'Jungle King', position: 'Jungle', overall_rating: 82, market_value: 8500, nationality: 'ID' },
+                    { id: 'm3', name: 'Top Gap', position: 'Top', overall_rating: 79, market_value: 6000, nationality: 'ID' },
+                    { id: 'm4', name: 'ADC Carry', position: 'ADC', overall_rating: 88, market_value: 18000, nationality: 'KR' }
+                ];
+            }
+
+            let filtered = marketPlayers;
+            if (budgetFilter === 'low') filtered = filtered.filter(p => p.market_value < 5000);
+            else if (budgetFilter === 'mid') filtered = filtered.filter(p => p.market_value >= 5000 && p.market_value <= 15000);
+            else if (budgetFilter === 'high') filtered = filtered.filter(p => p.market_value > 15000);
+
+            const grid = document.getElementById('marketGrid');
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Tidak ada pemain yang sesuai filter.</p>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => `
+                <div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; color: white;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width: 60px; height: 60px; border-radius: 50%; background: #0f3460; margin-bottom: 10px;">
+                    <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
+                    <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
+                    <p style="font-size: 14px; color: #28a745; font-weight: bold; margin: 10px 0;">💰 ${p.market_value.toLocaleString('id-ID')} Gold</p>
+                    <button onclick="buyPlayer('${p.id}', '${p.name}', ${p.market_value})" style="width: 100%; padding: 8px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Beli Pemain</button>
+                </div>
+            `).join('');
+        }
+
+        async function renderMyTeam() {
+            if (!currentTeamId) return;
+            const { data: players } = await supabase.from('players').select('*').eq('team_id', currentTeamId).order('overall_rating', { ascending: false });
+            
+            const grid = document.getElementById('myTeamGrid');
+            if (!players || players.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">Tim Anda belum memiliki pemain. Beli di Market terlebih dahulu!</p>';
+                return;
+            }
+
+            grid.innerHTML = players.map(p => `
+                <div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; color: white;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width: 60px; height: 60px; border-radius: 50%; background: #0f3460; margin-bottom: 10px;">
+                    <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
+                    <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
+                    <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">Nilai Jual: 💰 ${Math.floor(p.market_value * 0.8).toLocaleString('id-ID')} Gold</p>
+                    <button onclick="sellPlayer('${p.id}', '${p.name}', ${p.market_value})" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
+                </div>
+            `).join('');
+        }
+
+        async function buyPlayer(playerId, playerName, price) {
+            if (userGold < price) {
+                alert('❌ Gold tidak cukup untuk membeli pemain ini!');
+                return;
+            }
+
+            if (!confirm(`Yakin ingin membeli ${playerName} seharga ${price.toLocaleString('id-ID')} Gold?`)) return;
+
+            // 1. Kurangi Gold user
+            const newGold = userGold - price;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // 2. Update player team_id
+            // Jika ID pemain diawali 'm', berarti itu dummy market, kita insert sebagai player baru
+            if (playerId.startsWith('m')) {
+                const newId = crypto.randomUUID();
+                await supabase.from('players').insert({
+                    id: newId,
+                    name: playerName,
+                    position: 'Mid', // Default fallback
+                    overall_rating: 80,
+                    market_value: price,
+                    team_id: currentTeamId
+                });
+            } else {
+                await supabase.from('players').update({ team_id: currentTeamId }).eq('id', playerId);
+            }
+
+            alert(`✅ Berhasil membeli ${playerName}!`);
+            renderMarket();
+            renderMyTeam();
+        }
+
+        async function sellPlayer(playerId, playerName, price) {
+            const sellPrice = Math.floor(price * 0.8); // Jual harga 80% dari nilai pasar
+            
+            if (!confirm(`Yakin ingin menjual ${playerName}? Anda akan mendapat ${sellPrice.toLocaleString('id-ID')} Gold.`)) return;
+
+            // 1. Tambah Gold user
+            const newGold = userGold + sellPrice;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // 2. Update player team_id to null (kembali ke market)
+            await supabase.from('players').update({ team_id: null }).eq('id', playerId);
+
+            alert(`✅ Berhasil menjual ${playerName}!`);
+            renderMarket();
+            renderMyTeam();
+        }
+
+        function renderHistory() {
+            document.getElementById('transferHistoryList').innerHTML = `
+                <div style="padding: 15px; background: #16213e; border-radius: 8px; color: white; text-align: center;">
+                    <p style="color: #aaa;">📜 Belum ada riwayat transfer resmi di musim ini.</p>
+                    <p style="font-size: 12px; color: #666;">Riwayat akan muncul otomatis setelah Anda membeli atau menjual pemain.</p>
+                </div>
+            `;
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
