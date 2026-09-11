@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Pertandingan</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,66 +23,58 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
-        <nav class="sidebar-menu">
-    <a href="pemain.html" class="menu-item active">👥 Pemain</a>
-    <a href="taktik.html" class="menu-item"> Taktik</a>
-    <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
-    <a href="latihan.html" class="menu-item">️ Latihan</a>
-    <a href="transfer.html" class="menu-item">💰 Transfer</a>
-    <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-    <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-    <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
-    <a href="stadion.html" class="menu-item">️ Stadion</a>
-    <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
-    <a href="akun.html" class="menu-item">👤 Akun Saya</a>
-</nav>
+            <nav class="sidebar-menu">
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item active">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
-                <span>️ Pusat Pertandingan</span>
-                <span>Musim 28 / Hari 3</span>
+                <span>⚔️ Pusat Pertandingan</span>
+                <span id="seasonInfo">Musim 1 / Hari 1</span>
             </div>
 
             <!-- TABS -->
@@ -97,20 +91,20 @@
                     <div class="match-vs">
                         <div class="team-side">
                             <div class="team-logo-big">🏆</div>
-                            <h2>RRQ Hoshi</h2>
-                            <p>Rank: #16</p>
-                            <p>Power: <strong id="myPower">0</strong></p>
+                            <h2 id="previewMyTeam">Loading...</h2>
+                            <p id="previewMyRank">Rank: -</p>
+                            <p>Power: <strong id="previewMyPower">0</strong></p>
                         </div>
                         <div class="vs-center">
                             <div class="vs-text">VS</div>
-                            <div class="match-timer" id="matchTimer">12:00:00</div>
-                            <button class="btn-futuristic" id="btnMainMatch" onclick="startLiveMatch()">️ MAINKAN MATCH</button>
+                            <div class="match-timer" id="matchTimer">Loading...</div>
+                            <button class="btn-futuristic" id="btnMainMatch" onclick="startLiveMatch()">⚔️ MAINKAN MATCH</button>
                         </div>
                         <div class="team-side">
                             <div class="team-logo-big">⚽</div>
-                            <h2>Inter FC</h2>
-                            <p>Rank: #14</p>
-                            <p>Power: <strong>2450</strong></p>
+                            <h2 id="previewEnemyTeam">Loading...</h2>
+                            <p id="previewEnemyRank">Rank: -</p>
+                            <p>Power: <strong id="previewEnemyPower">0</strong></p>
                         </div>
                     </div>
 
@@ -121,106 +115,43 @@
                             <div class="tactic-option">
                                 <label>🎯 Gaya Bermain</label>
                                 <select id="strategi">
-                                    <option value="aggressive">⚡ Aggressive (Attack Early)</option>
+                                    <option value="aggressive">⚡ Aggressive</option>
                                     <option value="balanced" selected>⚖️ Balanced</option>
-                                    <option value="defensive">🛡️ Defensive (Late Game)</option>
+                                    <option value="defensive">🛡️ Defensive</option>
                                 </select>
                             </div>
                             <div class="tactic-option">
                                 <label>🎯 Fokus Objective</label>
                                 <select id="objective">
-                                    <option value="early">⏰ Early Game (First Blood)</option>
-                                    <option value="objective" selected> Dragon/Baron</option>
+                                    <option value="early">⏰ Early Game</option>
+                                    <option value="objective" selected>🐉 Dragon/Baron</option>
                                     <option value="teamfight">⚔️ Team Fight</option>
-                                </select>
-                            </div>
-                            <div class="tactic-option">
-                                <label>🎯 Target Pemain</label>
-                                <select id="target">
-                                    <option value="carry">⭐ Protect Carry</option>
-                                    <option value="jungle">🌲 Jungle Control</option>
-                                    <option value="mid"> Mid Lane Dominance</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <!-- LIVE MATCH UI (Hidden by default) -->
-                    <!-- LIVE MATCH UI (Hidden by default) -->
-<div id="liveMatchUI" style="display:none;">
-    <div class="live-match-header">
-        <div class="map-indicator" id="mapIndicator">Map 1/3</div>
-        <div class="map-score" id="mapScore">0 - 0</div>
-    </div>
-    
-    <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
-    
-    <div class="progress-bar-container">
-        <div class="progress-bar" id="matchProgress"></div>
-    </div>
-    
-    <div class="live-score" id="liveScore"></div>
-    
-    <div class="live-stats" id="liveStats"></div>
-    
-    <!-- MINI MAP & GRAPH -->
-    <div class="live-features">
-        <div class="mini-map-container">
-            <h4>📺 Mini Map</h4>
-            <div class="mlbb-minimap">
-    <!-- Background Lanes -->
-    <div class="lane lane-top"></div>
-    <div class="lane lane-mid"></div>
-    <div class="lane lane-bot"></div>
-    
-    <!-- Bases -->
-    <div class="base base-ally"></div>
-    <div class="base base-enemy">🏰</div>
-    
-    <!-- Turrets (Akan di-generate JS) -->
-    <div class="turrets-layer" id="mapTurrets"></div>
-    
-    <!-- Heroes (Akan di-generate JS) -->
-    <div class="heroes-layer" id="mapHeroes"></div>
-</div>
-        </div>
-        
-        <div class="gold-graph-container">
-            <h4> Gold Difference</h4>
-            <canvas id="goldGraph" width="400" height="150"></canvas>
-        </div>
-    </div>
-    
-    <!-- PLAYER PERFORMANCE POPUP -->
-    <div class="player-performance" id="playerPerformance">
-        <div class="performance-header">
-            <h4>⭐ Player Performance</h4>
-            <span class="performance-close" onclick="closePerformancePopup()">&times;</span>
-        </div>
-        <div class="performance-content" id="performanceContent"></div>
-    </div>
-    
-    <div class="live-commentary" id="liveCommentary"></div>
-</div>
-                        
-                        <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
-                        
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="matchProgress"></div>
+                    <div id="liveMatchUI" style="display:none;">
+                        <div class="live-match-header">
+                            <div class="map-indicator" id="mapIndicator">Map 1/3</div>
+                            <div class="map-score" id="mapScore">0 - 0</div>
                         </div>
-                        
-                        <div class="live-score" id="liveScore"></div>
-                        
-                        <div class="live-stats" id="liveStats"></div>
-                        
-                        <div class="live-commentary" id="liveCommentary"></div>
+                        <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="matchProgress" style="width: 0%;"></div>
+                        </div>
+                        <div class="live-score" id="liveScore" style="text-align:center; font-size: 24px; font-weight:bold; margin: 10px 0;">0 - 0</div>
+                        <div class="live-commentary" id="liveCommentary" style="max-height: 150px; overflow-y: auto; background: #111; padding: 10px; border-radius: 5px; font-size: 14px;"></div>
                     </div>
                 </div>
 
                 <!-- Jadwal Minggu Ini -->
                 <div class="panel raised">
                     <h3>📅 Jadwal Minggu Ini</h3>
-                    <div class="schedule-list" id="scheduleList"></div>
+                    <div class="schedule-list" id="scheduleList">
+                        <p style="text-align:center; color:#999;">Memuat jadwal...</p>
+                    </div>
                 </div>
             </div>
 
@@ -229,7 +160,7 @@
                 <div class="panel raised">
                     <h3>📊 Hasil Pertandingan Terakhir</h3>
                     <div id="matchHistory">
-                        <p style="text-align:center; color:#999;">Belum ada pertandingan yang dimainkan.</p>
+                        <p style="text-align:center; color:#999;">Memuat riwayat...</p>
                     </div>
                 </div>
             </div>
@@ -237,53 +168,197 @@
             <!-- TAB: KLASEMEN -->
             <div id="tab-klasemen" class="tab-content" style="display:none;">
                 <div class="panel raised">
-                    <h3>🏆 Klasemen Liga C.4</h3>
-                    <table class="standings-table">
+                    <h3>🏆 Klasemen Liga</h3>
+                    <table class="standings-table" style="width: 100%; border-collapse: collapse; color: white;">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Tim</th>
-                                <th>Main</th>
-                                <th>Menang</th>
-                                <th>Kalah</th>
-                                <th>Poin</th>
+                            <tr style="background: #16213e; text-align: left;">
+                                <th style="padding: 10px;">#</th>
+                                <th style="padding: 10px;">Tim</th>
+                                <th style="padding: 10px;">Main</th>
+                                <th style="padding: 10px;">Menang</th>
+                                <th style="padding: 10px;">Kalah</th>
+                                <th style="padding: 10px;">Poin</th>
                             </tr>
                         </thead>
                         <tbody id="standingsBody"></tbody>
                     </table>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- MODAL MAP RESULT -->
-    <div class="modal" id="mapResultModal">
-        <div class="modal-content">
-            <div id="mapResultBody"></div>
-        </div>
-    </div>
-
-    <!-- MODAL MATCH RESULT -->
-    <div class="modal" id="matchModal">
-        <div class="modal-content match-result-modal">
-            <span class="modal-close" onclick="closeMatchModal()">&times;</span>
-            <div id="matchResultBody"></div>
-        </div>
-    </div>
-
-    <script src="auth-simple.js"></script>
-    <script src="pertandingan-part1.js"></script>
-    <script src="pertandingan-part2.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentTeamId = null;
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', session.user.id).single();
+
+            if (profile) {
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+            }
+
+            if (team) {
+                currentTeamId = team.id;
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+
+                // Update Match Preview
+                document.getElementById('previewMyTeam').textContent = team.team_name;
+                document.getElementById('previewMyRank').textContent = `Rank: #${Math.floor(Math.random() * 20) + 1}`; // Dummy rank for now
+                document.getElementById('previewMyPower').textContent = Math.floor((team.popularity + team.moral) * 15);
+
+                // Load Matches
+                await loadMatches(team.id);
+                await loadStandings();
+            }
+        });
+
+        async function loadMatches(teamId) {
+            // Ambil 5 match terdekat (baik sebagai home atau away)
+            const { data: matches, error } = await supabase
+                .from('matches')
+                .select('*')
+                .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+                .order('match_date', { ascending: true })
+                .limit(5);
+
+            const scheduleList = document.getElementById('scheduleList');
+            const matchHistory = document.getElementById('matchHistory');
+            
+            if (matches && matches.length > 0) {
+                // Update Next Match Preview (Match pertama yang belum finished)
+                const nextMatch = matches.find(m => m.status !== 'finished');
+                if (nextMatch) {
+                    const isHome = nextMatch.home_team_id === teamId;
+                    const enemyId = isHome ? nextMatch.away_team_id : nextMatch.home_team_id;
+                    
+                    // Fetch enemy team name
+                    const { data: enemyTeam } = await supabase.from('teams').select('team_name').eq('id', enemyId).single();
+                    
+                    document.getElementById('previewEnemyTeam').textContent = enemyTeam ? enemyTeam.team_name : 'Unknown';
+                    document.getElementById('previewEnemyRank').textContent = 'Rank: -';
+                    document.getElementById('previewEnemyPower').textContent = '2450'; // Dummy
+                    
+                    const date = new Date(nextMatch.match_date);
+                    document.getElementById('matchTimer').textContent = date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                }
+
+                // Render Schedule & History
+                let scheduleHTML = '';
+                let historyHTML = '';
+
+                matches.forEach(m => {
+                    const isHome = m.home_team_id === teamId;
+                    const myScore = isHome ? m.home_score : m.away_score;
+                    const enemyScore = isHome ? m.away_score : m.home_score;
+                    const dateStr = new Date(m.match_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    
+                    const row = `
+                        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; align-items: center;">
+                            <span style="color: #aaa; font-size: 12px;">${dateStr}</span>
+                            <span style="font-weight: bold;">${isHome ? 'Kandang' : 'Tandang'}</span>
+                            <span style="color: #ffd700; font-weight: bold;">${m.status === 'finished' ? `${myScore} - ${enemyScore}` : 'VS'}</span>
+                            <span style="font-size: 12px; background: ${m.status === 'finished' ? '#28a745' : '#ffc107'}; color: #000; padding: 2px 6px; border-radius: 4px;">${m.status === 'finished' ? 'Selesai' : 'Akan Datang'}</span>
+                        </div>
+                    `;
+                    
+                    if (m.status === 'finished') {
+                        historyHTML += row;
+                    } else {
+                        scheduleHTML += row;
+                    }
+                });
+
+                scheduleList.innerHTML = scheduleHTML || '<p style="text-align:center; color:#999; padding:10px;">Tidak ada jadwal mendatang.</p>';
+                matchHistory.innerHTML = historyHTML || '<p style="text-align:center; color:#999; padding:10px;">Belum ada pertandingan yang dimainkan.</p>';
+            } else {
+                scheduleList.innerHTML = '<p style="text-align:center; color:#999; padding:10px;">Belum ada jadwal. Hubungi Admin Liga.</p>';
+            }
+        }
+
+        async function loadStandings() {
+            // Ambil semua tim, urutkan berdasarkan poin (wins * 3 + draws)
+            const { data: teams } = await supabase.from('teams').select('team_name, wins, draws, losses').order('wins', { ascending: false });
+            
+            const tbody = document.getElementById('standingsBody');
+            if (teams) {
+                tbody.innerHTML = teams.map((t, index) => {
+                    const points = (t.wins * 3) + t.draws;
+                    const played = t.wins + t.draws + t.losses;
+                    const isMyTeam = t.team_name === document.getElementById('clubName').textContent;
+                    const bg = isMyTeam ? 'background: rgba(0, 212, 255, 0.1);' : '';
+                    
+                    return `
+                        <tr style="${bg} border-bottom: 1px solid #333;">
+                            <td style="padding: 10px;">${index + 1}</td>
+                            <td style="padding: 10px; font-weight: bold; color: ${isMyTeam ? '#00d4ff' : 'white'};">${t.team_name}</td>
+                            <td style="padding: 10px;">${played}</td>
+                            <td style="padding: 10px; color: #28a745;">${t.wins}</td>
+                            <td style="padding: 10px; color: #ff6b6b;">${t.losses}</td>
+                            <td style="padding: 10px; font-weight: bold; color: #ffd700;">${points}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // UI Helpers
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function startLiveMatch() {
+            document.getElementById('tacticSetup').style.display = 'none';
+            document.getElementById('btnMainMatch').style.display = 'none';
+            document.getElementById('liveMatchUI').style.display = 'block';
+            
+            // Simulasi Live Match Sederhana
+            let minute = 0;
+            let scoreA = 0, scoreB = 0;
+            const commentary = document.getElementById('liveCommentary');
+            
+            commentary.innerHTML += '<div style="color: #00d4ff;">[00:00] Match dimulai!</div>';
+            
+            const interval = setInterval(() => {
+                minute += 5;
+                document.getElementById('liveTimer')
