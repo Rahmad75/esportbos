@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Kantor Pusat</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
-    <!-- ===== NAVBAR ATAS ===== -->
     <nav class="top-navbar">
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
@@ -19,202 +19,419 @@
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
-            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
+            <div class="stat-badge notif"> Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
-        <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
-        
 
             <nav class="sidebar-menu">
-    <a href="pemain.html" class="menu-item active">👥 Pemain</a>
-    <a href="taktik.html" class="menu-item"> Taktik</a>
-    <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
-    <a href="latihan.html" class="menu-item">️ Latihan</a>
-    <a href="transfer.html" class="menu-item">💰 Transfer</a>
-    <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-    <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-    <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
-    <a href="stadion.html" class="menu-item">️ Stadion</a>
-    <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
-    <a href="akun.html" class="menu-item">👤 Akun Saya</a>
-</nav>
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="akademi.html" class="menu-item"> Akademi Muda</a>
+                <a href="kantor.html" class="menu-item active">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+            </nav>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>🏢 Kantor Pusat & Manajemen</span>
                 <span>Atur Keuangan & Sponsorship</span>
             </div>
 
-            <!-- TABS -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchKantorTab('keuangan')">💵 Keuangan</button>
-                <button class="tab-btn" onclick="switchKantorTab('sponsor')"> Sponsor</button>
+                <button class="tab-btn" onclick="switchKantorTab('sponsor')">🤝 Sponsor</button>
                 <button class="tab-btn" onclick="switchKantorTab('fasilitas')">🏗️ Fasilitas</button>
             </div>
 
-            <!-- TAB: KEUANGAN -->
             <div id="tab-keuangan" class="tab-content">
                 <div class="panel raised">
                     <h3>💵 Laporan Keuangan</h3>
-                    
-                    <div class="finance-overview">
-                        <div class="finance-card balance">
-                            <div class="finance-icon">💰</div>
+                    <div class="finance-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div class="finance-card balance" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="finance-icon" style="font-size: 32px;">💰</div>
                             <div class="finance-info">
-                                <span class="finance-label">Saldo Saat Ini</span>
-                                <span class="finance-value" id="currentBalance">0</span>
+                                <span class="finance-label" style="display: block; color: #aaa; font-size: 12px;">Saldo Saat Ini</span>
+                                <span class="finance-value" id="currentBalance" style="display: block; font-size: 24px; font-weight: bold; color: #00d4ff; margin-top: 5px;">0</span>
                             </div>
                         </div>
-                        <div class="finance-card income">
-                            <div class="finance-icon"></div>
+                        <div class="finance-card income" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="finance-icon" style="font-size: 32px;">📈</div>
                             <div class="finance-info">
-                                <span class="finance-label">Pemasukan / Minggu</span>
-                                <span class="finance-value" id="weeklyIncome">0</span>
+                                <span class="finance-label" style="display: block; color: #aaa; font-size: 12px;">Pemasukan / Minggu</span>
+                                <span class="finance-value" id="weeklyIncome" style="display: block; font-size: 24px; font-weight: bold; color: #28a745; margin-top: 5px;">0</span>
                             </div>
                         </div>
-                        <div class="finance-card expense">
-                            <div class="finance-icon">📉</div>
+                        <div class="finance-card expense" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="finance-icon" style="font-size: 32px;">📉</div>
                             <div class="finance-info">
-                                <span class="finance-label">Pengeluaran / Minggu</span>
-                                <span class="finance-value" id="weeklyExpense">0</span>
+                                <span class="finance-label" style="display: block; color: #aaa; font-size: 12px;">Pengeluaran / Minggu</span>
+                                <span class="finance-value" id="weeklyExpense" style="display: block; font-size: 24px; font-weight: bold; color: #ff6b6b; margin-top: 5px;">0</span>
                             </div>
                         </div>
-                        <div class="finance-card profit">
-                            <div class="finance-icon">💎</div>
+                        <div class="finance-card profit" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="finance-icon" style="font-size: 32px;">💎</div>
                             <div class="finance-info">
-                                <span class="finance-label">Profit Bersih</span>
-                                <span class="finance-value" id="netProfit">0</span>
+                                <span class="finance-label" style="display: block; color: #aaa; font-size: 12px;">Profit Bersih</span>
+                                <span class="finance-value" id="netProfit" style="display: block; font-size: 24px; font-weight: bold; color: #ffd700; margin-top: 5px;">0</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="finance-actions">
-                        <button class="btn-futuristic btn-large" onclick="claimWeeklyIncome()"> Klaim Pendapatan Mingguan</button>
-                        <p class="info-text" style="margin-top: 15px;">Klaim pendapatan dari sponsor dan kurangi biaya operasional tim.</p>
+                    <div class="finance-actions" style="text-align: center; margin-top: 20px;">
+                        <button class="btn-futuristic btn-large" onclick="claimWeeklyIncome()" style="padding: 15px 30px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">💵 Klaim Pendapatan Mingguan</button>
+                        <p class="info-text" style="margin-top: 15px; color: #aaa;">Klaim pendapatan dari sponsor dan kurangi biaya operasional tim.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB: SPONSOR -->
             <div id="tab-sponsor" class="tab-content" style="display:none;">
                 <div class="panel raised">
-                    <h3> Manajemen Sponsor</h3>
-                    <p class="info-text">Tanda tangani sponsor untuk meningkatkan pemasukan mingguan. Beberapa sponsor membutuhkan Popularitas Klub tertentu.</p>
-                    
-                    <div class="sponsor-limit-info">
-                        <span>Slot Sponsor Aktif: <strong id="activeSponsorCount">0</strong> / <strong id="maxSponsorSlots">2</strong></span>
+                    <h3>🤝 Manajemen Sponsor</h3>
+                    <p class="info-text">Tanda tangani sponsor untuk meningkatkan pemasukan mingguan.</p>
+                    <div class="sponsor-limit-info" style="background: #16213e; padding: 15px; border-radius: 8px; color: white; text-align: center; margin: 20px 0;">
+                        <span>Slot Sponsor Aktif: <strong id="activeSponsorCount" style="color: #00d4ff;">0</strong> / <strong id="maxSponsorSlots" style="color: #ffd700;">2</strong></span>
                     </div>
-
-                    <h4 style="margin-top: 20px;">📜 Sponsor Tersedia</h4>
-                    <div class="sponsor-grid" id="availableSponsors">
-                        <!-- Diisi JS -->
-                    </div>
-
-                    <h4 style="margin-top: 30px;">✅ Sponsor Aktif</h4>
-                    <div class="sponsor-grid" id="activeSponsors">
-                        <!-- Diisi JS -->
-                    </div>
+                    <h4 style="margin-top: 20px; color: white;"> Sponsor Tersedia</h4>
+                    <div class="sponsor-grid" id="availableSponsors" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;"></div>
+                    <h4 style="margin-top: 30px; color: white;">✅ Sponsor Aktif</h4>
+                    <div class="sponsor-grid" id="activeSponsors" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;"></div>
                 </div>
             </div>
 
-            <!-- TAB: FASILITAS -->
             <div id="tab-fasilitas" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>🏗️ Upgrade Fasilitas Kantor</h3>
-                    <p class="info-text">Upgrade kantor untuk membuka slot sponsor lebih banyak dan meningkatkan reputasi klub.</p>
-                    
-                    <div class="facility-current">
-                        <div class="facility-icon-large">🏢</div>
-                        <h2 id="currentFacilityName">Ruko Sederhana</h2>
-                        <p>Level <span id="currentFacilityLevel">1</span></p>
-                        <div class="facility-stats">
-                            <p>✅ Slot Sponsor Maksimal: <strong id="currentMaxSlots">2</strong></p>
-                            <p>✅ Bonus Popularitas: <strong>+0%</strong></p>
+                    <p class="info-text">Upgrade kantor untuk membuka slot sponsor lebih banyak.</p>
+                    <div class="facility-current" style="background: #16213e; padding: 30px; border-radius: 10px; text-align: center; color: white; margin: 20px 0;">
+                        <div class="facility-icon-large" style="font-size: 64px; margin-bottom: 15px;">🏢</div>
+                        <h2 id="currentFacilityName" style="color: #00d4ff; margin: 10px 0;">Ruko Sederhana</h2>
+                        <p>Level <span id="currentFacilityLevel" style="font-size: 24px; font-weight: bold; color: #ffd700;">1</span></p>
+                        <div class="facility-stats" style="margin-top: 20px;">
+                            <p style="margin: 10px 0;">✅ Slot Sponsor Maksimal: <strong id="currentMaxSlots">2</strong></p>
+                            <p style="margin: 10px 0;">✅ Bonus Popularitas: <strong id="currentBonusPop">+0%</strong></p>
                         </div>
                     </div>
-
-                    <div class="facility-upgrade-box">
-                        <h3>Upgrade ke Level Berikutnya</h3>
-                        <div class="upgrade-details">
-                            <div class="upgrade-item">
-                                <span>Level Baru:</span>
-                                <strong id="nextFacilityName">Gedung Bertingkat</strong>
-                            </div>
-                            <div class="upgrade-item">
-                                <span>Slot Sponsor:</span>
-                                <strong id="nextMaxSlots">4</strong>
-                            </div>
-                            <div class="upgrade-item">
-                                <span>Biaya Upgrade:</span>
-                                <strong class="price" id="upgradeCost">10.000 Gold</strong>
-                            </div>
+                    <div class="facility-upgrade-box" style="background: #16213e; padding: 30px; border-radius: 10px; text-align: center; color: white; border: 1px dashed #00d4ff;">
+                        <h3 style="color: #28a745; margin-bottom: 20px;">Upgrade ke Level Berikutnya</h3>
+                        <div class="upgrade-details" style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                            <div class="upgrade-item"><span style="display: block; color: #aaa; font-size: 12px;">Level Baru:</span><strong id="nextFacilityName" style="font-size: 18px;">Gedung Bertingkat</strong></div>
+                            <div class="upgrade-item"><span style="display: block; color: #aaa; font-size: 12px;">Slot Sponsor:</span><strong id="nextMaxSlots" style="font-size: 18px; color: #ffd700;">4</strong></div>
+                            <div class="upgrade-item"><span style="display: block; color: #aaa; font-size: 12px;">Biaya Upgrade:</span><strong class="price" id="upgradeCost" style="font-size: 18px; color: #ff6b6b;">10.000 Gold</strong></div>
                         </div>
-                        <button class="btn-futuristic btn-large" id="btnUpgradeFacility" onclick="upgradeFacility()">🏗️ Upgrade Sekarang</button>
+                        <button class="btn-futuristic btn-large" id="btnUpgradeFacility" onclick="upgradeFacility()" style="padding: 12px 30px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">🏗️ Upgrade Sekarang</button>
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- MODAL NOTIFIKASI -->
-    <div class="modal" id="kantorModal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeKantorModal()">&times;</span>
+    <div class="modal" id="kantorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
+            <span class="modal-close" onclick="closeKantorModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="kantorModalBody"></div>
         </div>
     </div>
 
-    <script src="auth-simple.js"></script>
-    <script src="kantor.js"></script>
-    <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
-    <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <script>
+        // 1. Init Supabase (Aman dari duplikasi)
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
+        let currentTeamId = null;
+        let userCurrency = 0;
+        let userGold = 0;
+        let teamData = null;
+        let playerCount = 0;
+
+        const facilityLevels = {
+            1: { name: "Ruko Sederhana", maxSlots: 2, cost: 10000, bonusPop: 0 },
+            2: { name: "Gedung Bertingkat", maxSlots: 4, cost: 25000, bonusPop: 5 },
+            3: { name: "Kantor Mewah", maxSlots: 6, cost: 50000, bonusPop: 10 },
+            4: { name: "Markas Esports", maxSlots: 8, cost: 100000, bonusPop: 15 }
+        };
+
+        const availableSponsorsList = [
+            { id: 'sp1', name: 'Red Bull Esports', income: 1500, reqPop: 50, icon: '🐂' },
+            { id: 'sp2', name: 'Logitech G', income: 2000, reqPop: 60, icon: '🖱️' },
+            { id: 'sp3', name: 'Razer', income: 2500, reqPop: 70, icon: '🐍' },
+            { id: 'sp4', name: 'Intel', income: 3000, reqPop: 80, icon: '💻' },
+            { id: 'sp5', name: 'NVIDIA', income: 4000, reqPop: 90, icon: '💚' }
+        ];
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
+
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+            
+            const { count } = await supabase.from('players').select('*', { count: 'exact', head: true }).eq('team_id', team?.id);
+            playerCount = count || 0;
+
+            if (profile) {
+                userCurrency = profile.currency || 0;
+                userGold = profile.gold || 0;
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = userCurrency.toLocaleString('id-ID');
+            }
+
+            if (team) {
+                currentTeamId = team.id;
+                teamData = team;
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+
+                updateFinanceUI();
+                renderSponsors();
+                updateFacilityUI();
+            }
+        });
+
+        function switchKantorTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function updateFinanceUI() {
+            const activeSponsors = teamData.active_sponsors || [];
+            const weeklyIncome = activeSponsors.reduce((sum, spId) => {
+                const sp = availableSponsorsList.find(s => s.id === spId);
+                return sum + (sp ? sp.income : 0);
+            }, 0);
+            
+            const weeklyExpense = 1000 + (playerCount * 200);
+            const netProfit = weeklyIncome - weeklyExpense;
+
+            document.getElementById('currentBalance').textContent = userCurrency.toLocaleString('id-ID');
+            document.getElementById('weeklyIncome').textContent = `+${weeklyIncome.toLocaleString('id-ID')}`;
+            document.getElementById('weeklyExpense').textContent = `-${weeklyExpense.toLocaleString('id-ID')}`;
+            
+            const profitEl = document.getElementById('netProfit');
+            profitEl.textContent = (netProfit >= 0 ? '+' : '') + netProfit.toLocaleString('id-ID');
+            profitEl.style.color = netProfit >= 0 ? '#28a745' : '#ff6b6b';
+        }
+
+        async function claimWeeklyIncome() {
+            const activeSponsors = teamData.active_sponsors || [];
+            const weeklyIncome = activeSponsors.reduce((sum, spId) => {
+                const sp = availableSponsorsList.find(s => s.id === spId);
+                return sum + (sp ? sp.income : 0);
+            }, 0);
+            
+            const weeklyExpense = 1000 + (playerCount * 200);
+            const netProfit = weeklyIncome - weeklyExpense;
+
+            if (netProfit <= 0 && weeklyIncome === 0) {
+                alert('Tidak ada pendapatan untuk diklaim! Dapatkan sponsor terlebih dahulu.');
+                return;
+            }
+
+            const newCurrency = userCurrency + netProfit;
+            await supabase.from('profiles').update({ currency: newCurrency }).eq('id', currentUserId);
+            userCurrency = newCurrency;
+            
+            document.getElementById('currencyBalance').textContent = userCurrency.toLocaleString('id-ID');
+            document.getElementById('currentBalance').textContent = userCurrency.toLocaleString('id-ID');
+            
+            showKantorModal('💵 Klaim Berhasil!', `Anda mendapatkan profit bersih sebesar <strong style="color: #28a745;">${netProfit.toLocaleString('id-ID')} Currency</strong>.`);
+        }
+
+        function renderSponsors() {
+            const activeSponsors = teamData.active_sponsors || [];
+            const currentLevel = teamData.facility_level || 1;
+            const maxSlots = facilityLevels[currentLevel].maxSlots;
+
+            document.getElementById('activeSponsorCount').textContent = activeSponsors.length;
+            document.getElementById('maxSponsorSlots').textContent = maxSlots;
+
+            const availableDiv = document.getElementById('availableSponsors');
+            const availableToRender = availableSponsorsList.filter(sp => !activeSponsors.includes(sp.id));
+            
+            availableDiv.innerHTML = availableToRender.length === 0 ? 
+                '<p style="color: #aaa; grid-column: 1/-1; text-align: center;">Semua sponsor telah diambil!</p>' :
+                availableToRender.map(sp => {
+                    const canAfford = teamData.popularity >= sp.reqPop;
+                    return `<div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid ${canAfford ? '#333' : '#ff6b6b'}; text-align: center; color: white; opacity: ${canAfford ? 1 : 0.6};">
+                        <div style="font-size: 32px; margin-bottom: 10px;">${sp.icon}</div>
+                        <h4 style="margin: 5px 0; color: #00d4ff;">${sp.name}</h4>
+                        <p style="font-size: 12px; color: #28a745; margin: 5px 0;">💰 +${sp.income.toLocaleString('id-ID')} / minggu</p>
+                        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Syarat: Popularitas ${sp.reqPop}%</p>
+                        <button onclick="signSponsor('${sp.id}')" ${!canAfford ? 'disabled' : ''} style="width: 100%; margin-top: 10px; padding: 8px; background: ${canAfford ? '#00d4ff' : '#666'}; color: #000; border: none; border-radius: 5px; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-weight: bold;">
+                            ${canAfford ? 'Tanda Tangani' : 'Popularitas Kurang'}
+                        </button>
+                    </div>`;
+                }).join('');
+
+            const activeDiv = document.getElementById('activeSponsors');
+            activeDiv.innerHTML = activeSponsors.length === 0 ? 
+                '<p style="color: #aaa; grid-column: 1/-1; text-align: center;">Belum ada sponsor aktif.</p>' :
+                activeSponsors.map(spId => {
+                    const sp = availableSponsorsList.find(s => s.id === spId);
+                    return `<div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #28a745; text-align: center; color: white;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">${sp.icon}</div>
+                        <h4 style="margin: 5px 0; color: #28a745;">${sp.name}</h4>
+                        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">💰 +${sp.income.toLocaleString('id-ID')} / minggu</p>
+                        <button onclick="cancelSponsor('${sp.id}')" style="width: 100%; margin-top: 10px; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Batalkan</button>
+                    </div>`;
+                }).join('');
+        }
+
+        async function signSponsor(spId) {
+            const activeSponsors = teamData.active_sponsors || [];
+            const currentLevel = teamData.facility_level || 1;
+            const maxSlots = facilityLevels[currentLevel].maxSlots;
+
+            if (activeSponsors.length >= maxSlots) {
+                alert('❌ Slot sponsor penuh! Upgrade fasilitas kantor untuk menambah slot.');
+                return;
+            }
+
+            activeSponsors.push(spId);
+            await supabase.from('teams').update({ active_sponsors: activeSponsors }).eq('id', currentTeamId);
+            teamData.active_sponsors = activeSponsors;
+            
+            renderSponsors();
+            updateFinanceUI();
+            showKantorModal('✅ Sponsor Didapat!', 'Sponsor baru telah ditandatangani dan akan menambah pendapatan mingguan Anda.');
+        }
+
+        async function cancelSponsor(spId) {
+            if (!confirm('Yakin ingin membatalkan sponsor ini?')) return;
+            let activeSponsors = teamData.active_sponsors || [];
+            activeSponsors = activeSponsors.filter(id => id !== spId);
+            await supabase.from('teams').update({ active_sponsors: activeSponsors }).eq('id', currentTeamId);
+            teamData.active_sponsors = activeSponsors;
+            renderSponsors();
+            updateFinanceUI();
+        }
+
+        function updateFacilityUI() {
+            const currentLevel = teamData.facility_level || 1;
+            const currentData = facilityLevels[currentLevel];
+            const nextData = facilityLevels[currentLevel + 1];
+
+            document.getElementById('currentFacilityName').textContent = currentData.name;
+            document.getElementById('currentFacilityLevel').textContent = currentLevel;
+            document.getElementById('currentMaxSlots').textContent = currentData.maxSlots;
+            document.getElementById('currentBonusPop').textContent = `+${currentData.bonusPop}%`;
+
+            if (nextData) {
+                document.getElementById('nextFacilityName').textContent = nextData.name;
+                document.getElementById('nextMaxSlots').textContent = nextData.maxSlots;
+                document.getElementById('upgradeCost').textContent = `${nextData.cost.toLocaleString('id-ID')} Gold`;
+                document.getElementById('btnUpgradeFacility').disabled = false;
+            } else {
+                document.getElementById('nextFacilityName').textContent = 'MAKSIMUM';
+                document.getElementById('nextMaxSlots').textContent = '-';
+                document.getElementById('upgradeCost').textContent = '-';
+                document.getElementById('btnUpgradeFacility').textContent = 'Level Maksimum';
+                document.getElementById('btnUpgradeFacility').disabled = true;
+                document.getElementById('btnUpgradeFacility').style.background = '#666';
+            }
+        }
+
+        async function upgradeFacility() {
+            const currentLevel = teamData.facility_level || 1;
+            const nextData = facilityLevels[currentLevel + 1];
+            if (!nextData) return;
+
+            if (userGold < nextData.cost) {
+                alert(`❌ Gold tidak cukup! Dibutuhkan ${nextData.cost.toLocaleString('id-ID')} Gold.`);
+                return;
+            }
+
+            if (!confirm(`Yakin ingin upgrade fasilitas ke "${nextData.name}" seharga ${nextData.cost.toLocaleString('id-ID')} Gold?`)) return;
+
+            const newGold = userGold - nextData.cost;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            await supabase.from('teams').update({ facility_level: currentLevel + 1 }).eq('id', currentTeamId);
+            teamData.facility_level = currentLevel + 1;
+
+            alert(`✅ Fasilitas berhasil di-upgrade ke ${nextData.name}!`);
+            updateFacilityUI();
+            renderSponsors();
+        }
+
+        function showKantorModal(title, message) {
+            const modal = document.getElementById('kantorModal');
+            const body = document.getElementById('kantorModalBody');
+            body.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+                <h3 style="color: #00d4ff; margin-bottom: 10px;">${title}</h3>
+                <p style="color: #aaa; margin-bottom: 20px;">${message}</p>
+                <button onclick="closeKantorModal()" style="padding: 10px 30px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Tutup</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeKantorModal() {
+            document.getElementById('kantorModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
