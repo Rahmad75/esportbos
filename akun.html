@@ -34,6 +34,39 @@
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
+            <div class="jam-sidebar-box">
+  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+</div>
+
+<script>
+// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
+let offset = 0;
+
+function tampilJam() {
+  const waktu = new Date(Date.now() + offset);
+  const j = String(waktu.getHours()).padStart(2,'0');
+  const m = String(waktu.getMinutes()).padStart(2,'0');
+  const d = String(waktu.getSeconds()).padStart(2,'0');
+  const el = document.getElementById('jamServerFinal');
+  if(el) el.innerText = j+":"+m+":"+d+" WIB";
+}
+
+// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
+setInterval(tampilJam, 1000);
+
+// 2. Coba sync ke server diam-diam
+async function sync() {
+  try {
+    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+    const data = await r.json();
+    const server = new Date(data.dateTime).getTime();
+    offset = server - Date.now();
+  } catch(e) {
+    console.log("Gagal sync server, pakai jam laptop dulu Bray");
+  }
+}
+sync();
+</script>
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
                 <h3 class="team-name" id="clubName">My Club</h3>
