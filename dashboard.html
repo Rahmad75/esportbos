@@ -36,37 +36,50 @@
 <div id="jam-server" style="font-size:48px; font-family:monospace;">00:00:00</div>
 <div id="status"></div>
 
+<!-- TARO PALING ATAS SIDEBAR LU -->
+<div class="jam-sidebar-box">
+  <div class="label">JAM SERVER</div>
+  <div id="jamServer">00:00:00</div>
+  <div class="wib">WIB</div>
+</div>
+
+<style>
+.jam-sidebar-box {
+  width: 100%; /* jangan lebih dari sidebar */
+  box-sizing: border-box; /* PENTING! biar padding gak bikin luber */
+  background: #1a2332;
+  border: 1px solid #00d9ff;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  margin-bottom: 15px;
+  overflow: hidden; /* potong kalau masih luber */
+}
+
+.jam-sidebar-box .label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.jam-sidebar-box #jamServer {
+  font-size: 22px; /* JANGAN 30px+, di sidebar 22px udah gede */
+  font-weight: bold;
+  font-family: monospace;
+  color: #00d9ff;
+  text-shadow: 0 0 10px #00d9ff;
+  white-space: nowrap; /* biar gak turun ke bawah */
+}
+
+.jam-sidebar-box .wib {
+  font-size: 11px;
+  color: #ccc;
+}
+</style>
+
 <script>
-let offsetServer = 0; // selisih server vs laptop
-
-async function syncJamServer() {
-  document.getElementById('status').innerText = "Sinkronisasi...";
-  try {
-    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Jakarta');
-    const data = await res.json();
-    const waktuServer = new Date(data.datetime).getTime();
-    const waktuLaptop = Date.now();
-    
-    offsetServer = waktuServer - waktuLaptop; // simpen selisihnya
-    
-    document.getElementById('status').innerText = "Tersinkronisasi ✅";
-  } catch(e) {
-    document.getElementById('status').innerText = "Gagal sync, pakai jam laptop ⚠️";
-  }
-}
-
-function jalaninDetik() {
-  const waktuAsliServer = new Date(Date.now() + offsetServer);
-  const jam = String(waktuAsliServer.getHours()).padStart(2,'0');
-  const menit = String(waktuAsliServer.getMinutes()).padStart(2,'0');
-  const detik = String(waktuAsliServer.getSeconds()).padStart(2,'0');
-  
-  document.getElementById('jam-server').innerText = `${jam}:${menit}:${detik} WIB`;
-}
-
-syncJamServer();
-setInterval(jalaninDetik, 1000); // update detik tiap 1 detik
-setInterval(syncJamServer, 5*60*1000); // sync ulang tiap 5 menit
+// pakai script jam server yang kemarin ya Bray
 </script>
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
