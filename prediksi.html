@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Liga Prediksi</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,129 +23,114 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
             <div class="jam-sidebar-box">
-  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-</div>
+                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+            </div>
 
-<script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
+            <script>
+                let offset = 0;
+                function tampilJam() {
+                    const waktu = new Date(Date.now() + offset);
+                    const j = String(waktu.getHours()).padStart(2,'0');
+                    const m = String(waktu.getMinutes()).padStart(2,'0');
+                    const d = String(waktu.getSeconds()).padStart(2,'0');
+                    const el = document.getElementById('jamServerFinal');
+                    if(el) el.innerText = j+":"+m+":"+d+" WIB";
+                }
+                setInterval(tampilJam, 1000);
+                async function sync() {
+                    try {
+                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+                        const data = await r.json();
+                        const server = new Date(data.dateTime).getTime();
+                        offset = server - Date.now();
+                    } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
+                }
+                sync();
+            </script>
 
-function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
-  const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
-}
-
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
-setInterval(tampilJam, 1000);
-
-// 2. Coba sync ke server diam-diam
-async function sync() {
-  try {
-    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-    const data = await r.json();
-    const server = new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
-  }
-}
-sync();
-</script>
-            <!-- Info Tim -->
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                 </div>
                 <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
                 <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
-                <a href="latihan.html" class="menu-item">️ Latihan</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
                 <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
                 <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">👨💻 Tim Teknis</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item active"> Liga Prediksi</a>
-                <a href="akun.html" class="menu-item"> Akun Saya</a>
+                <a href="prediksi.html" class="menu-item active">🎯 Liga Prediksi</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
-                <span> Liga Prediksi Musim 28</span>
-                <span>Peringkatmu: <strong id="userRank">#77</strong> / 498</span>
+                <span>🎯 Liga Prediksi Musim 28</span>
+                <span>Peringkatmu: <strong id="userRankDisplay">#--</strong> / <span id="totalPlayers">0</span></span>
             </div>
 
             <!-- STATS OVERVIEW -->
-            <div class="prediction-stats">
-                <div class="stat-card">
-                    <div class="stat-icon"></div>
+            <div class="prediction-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="stat-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                    <div class="stat-icon" style="font-size: 32px;">🏆</div>
                     <div class="stat-info">
-                        <span class="stat-label">Peringkatmu</span>
-                        <span class="stat-value" id="myRank">#77</span>
+                        <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Peringkatmu</span>
+                        <span class="stat-value" id="myRank" style="display: block; font-size: 24px; font-weight: bold; color: #ffd700; margin-top: 5px;">#--</span>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎯</div>
+                <div class="stat-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                    <div class="stat-icon" style="font-size: 32px;">🎯</div>
                     <div class="stat-info">
-                        <span class="stat-label">Skormu</span>
-                        <span class="stat-value" id="myScore">56</span>
+                        <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Skormu</span>
+                        <span class="stat-value" id="myScore" style="display: block; font-size: 24px; font-weight: bold; color: #00d4ff; margin-top: 5px;">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🔮</div>
+                <div class="stat-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                    <div class="stat-icon" style="font-size: 32px;">🔮</div>
                     <div class="stat-info">
-                        <span class="stat-label">Pilihan Dibuat</span>
-                        <span class="stat-value" id="myPredictions">26</span>
+                        <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Pilihan Dibuat</span>
+                        <span class="stat-value" id="myPredictions" style="display: block; font-size: 24px; font-weight: bold; color: #fff; margin-top: 5px;">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
+                <div class="stat-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                    <div class="stat-icon" style="font-size: 32px;">✅</div>
                     <div class="stat-info">
-                        <span class="stat-label">Benar</span>
-                        <span class="stat-value" id="myCorrect">18 (69%)</span>
+                        <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Benar</span>
+                        <span class="stat-value" id="myCorrect" style="display: block; font-size: 24px; font-weight: bold; color: #28a745; margin-top: 5px;">0 (0%)</span>
                     </div>
                 </div>
             </div>
@@ -158,11 +145,10 @@ sync();
             <!-- TAB: TODAY -->
             <div id="tab-today" class="tab-content">
                 <div class="panel raised">
-                    <h3>⭐ Laga Unggulan Hari Ini (5)</h3>
-                    <p class="info-text">Prediksi skor pertandingan Top ELO untuk dapat poin!</p>
-                    
-                    <div class="matches-list" id="todayMatches">
-                        <!-- Diisi JS -->
+                    <h3>⭐ Laga Unggulan Hari Ini</h3>
+                    <p class="info-text">Prediksi skor pertandingan untuk dapat poin!</p>
+                    <div class="matches-list" id="todayMatches" style="margin-top: 20px;">
+                        <p style="text-align: center; color: #999;">Memuat pertandingan...</p>
                     </div>
                 </div>
             </div>
@@ -171,8 +157,8 @@ sync();
             <div id="tab-all" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>📋 Semua Pertandingan Musim Ini</h3>
-                    <div class="matches-list" id="allMatches">
-                        <!-- Diisi JS -->
+                    <div class="matches-list" id="allMatches" style="margin-top: 20px;">
+                        <p style="text-align: center; color: #999;">Memuat pertandingan...</p>
                     </div>
                 </div>
             </div>
@@ -181,46 +167,260 @@ sync();
             <div id="tab-leaderboard" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>🏆 Papan Peringkat Musim (Top 50)</h3>
-                    <table class="leaderboard-table">
+                    <table class="leaderboard-table" style="width: 100%; border-collapse: collapse; color: white; margin-top: 20px;">
                         <thead>
-                            <tr>
-                                <th>Peringkat</th>
-                                <th>Δ</th>
-                                <th>Manager</th>
-                                <th>Pilihan</th>
-                                <th>Benar</th>
-                                <th>Skor</th>
+                            <tr style="background: #16213e; text-align: left;">
+                                <th style="padding: 12px;">Peringkat</th>
+                                <th style="padding: 12px;">Manager</th>
+                                <th style="padding: 12px;">Pilihan</th>
+                                <th style="padding: 12px;">Benar</th>
+                                <th style="padding: 12px;">Skor</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboardBody">
-                            <!-- Diisi JS -->
+                            <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Memuat leaderboard...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-
         </main>
     </div>
 
     <!-- MODAL PREDIKSI -->
-    <div class="modal" id="predictionModal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closePredictionModal()">&times;</span>
+    <div class="modal" id="predictionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
+            <span class="modal-close" onclick="closePredictionModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="predictionModalBody"></div>
         </div>
     </div>
 
-    <script src="auth-simple.js"></script>
-    <script src="prediksi.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
+        let userProfile = null;
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+            userProfile = profile;
+
+            if (profile) {
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+                
+                // Update Prediction Stats (Fallback to 0 if columns don't exist yet)
+                const predScore = profile.prediction_score || 0;
+                const predTotal = profile.prediction_total || 0;
+                const predCorrect = profile.prediction_correct || 0;
+                const accuracy = predTotal > 0 ? Math.round((predCorrect / predTotal) * 100) : 0;
+
+                document.getElementById('myScore').textContent = predScore;
+                document.getElementById('myPredictions').textContent = predTotal;
+                document.getElementById('myCorrect').textContent = `${predCorrect} (${accuracy}%)`;
+            }
+
+            if (team) {
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
+
+            // Load Data
+            await loadMatches();
+            await loadLeaderboard();
+        });
+
+        function switchPrediksiTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        async function loadMatches() {
+            // Ambil semua match yang belum 'finished' atau match terbaru
+            const { data: matches, error } = await supabase
+                .from('matches')
+                .select('*, home_team:home_team_id(team_name), away_team:away_team_id(team_name)')
+                .order('match_date', { ascending: true })
+                .limit(10);
+
+            if (error || !matches) {
+                document.getElementById('todayMatches').innerHTML = '<p style="text-align:center; color:#999;">Belum ada data pertandingan.</p>';
+                document.getElementById('allMatches').innerHTML = '<p style="text-align:center; color:#999;">Belum ada data pertandingan.</p>';
+                return;
+            }
+
+            // Render Today (ambil 5 pertama)
+            const todayHTML = matches.slice(0, 5).map(m => renderMatchCard(m)).join('');
+            document.getElementById('todayMatches').innerHTML = todayHTML || '<p style="text-align:center; color:#999;">Tidak ada laga unggulan hari ini.</p>';
+
+            // Render All
+            const allHTML = matches.map(m => renderMatchCard(m)).join('');
+            document.getElementById('allMatches').innerHTML = allHTML || '<p style="text-align:center; color:#999;">Belum ada jadwal pertandingan.</p>';
+        }
+
+        function renderMatchCard(m) {
+            const homeName = m.home_team?.team_name || 'Tim A';
+            const awayName = m.away_team?.team_name || 'Tim B';
+            const dateStr = new Date(m.match_date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+            return `
+                <div style="background: #16213e; padding: 15px; border-radius: 8px; margin-bottom: 15px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="flex: 1; text-align: right; font-weight: bold; font-size: 16px;">${homeName}</div>
+                    <div style="text-align: center; color: #aaa; font-size: 12px;">VS<br><span style="color: #00d4ff;">${dateStr}</span></div>
+                    <div style="flex: 1; text-align: left; font-weight: bold; font-size: 16px;">${awayName}</div>
+                    <button onclick="openPredictionModal('${m.id}', '${homeName}', '${awayName}')" style="padding: 8px 16px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Prediksi</button>
+                </div>
+            `;
+        }
+
+        async function loadLeaderboard() {
+            // Coba ambil dari profiles, urutkan berdasarkan prediction_score
+            const { data: users, error } = await supabase
+                .from('profiles')
+                .select('username, prediction_score, prediction_total, prediction_correct')
+                .order('prediction_score', { ascending: false })
+                .limit(50);
+
+            const tbody = document.getElementById('leaderboardBody');
+            document.getElementById('totalPlayers').textContent = users ? users.length : 0;
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Belum ada data peringkat. Jadilah yang pertama!</td></tr>';
+                document.getElementById('myRank').textContent = '#--';
+                document.getElementById('userRankDisplay').textContent = '#--';
+                return;
+            }
+
+            // Cari rank user saat ini
+            const myRankIndex = users.findIndex(u => u.username === userProfile?.username);
+            const myRank = myRankIndex !== -1 ? `#${myRankIndex + 1}` : '#--';
+            document.getElementById('myRank').textContent = myRank;
+            document.getElementById('userRankDisplay').textContent = myRank;
+
+            tbody.innerHTML = users.map((u, index) => {
+                const isMe = u.username === userProfile?.username;
+                const accuracy = u.prediction_total > 0 ? Math.round((u.prediction_correct / u.prediction_total) * 100) : 0;
+                
+                return `
+                    <tr style="background: ${isMe ? 'rgba(0, 212, 255, 0.1)' : 'transparent'}; border-bottom: 1px solid #333;">
+                        <td style="padding: 12px; font-weight: bold; color: ${index < 3 ? '#ffd700' : 'white'};">#${index + 1}</td>
+                        <td style="padding: 12px; color: ${isMe ? '#00d4ff' : 'white'}; font-weight: bold;">${u.username || 'Anonim'}</td>
+                        <td style="padding: 12px;">${u.prediction_total || 0}</td>
+                        <td style="padding: 12px; color: #28a745;">${u.prediction_correct || 0} (${accuracy}%)</td>
+                        <td style="padding: 12px; font-weight: bold; color: #ffd700;">${u.prediction_score || 0}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openPredictionModal(matchId, homeName, awayName) {
+            const modal = document.getElementById('predictionModal');
+            const body = document.getElementById('predictionModalBody');
+            
+            body.innerHTML = `
+                <h3 style="color: #00d4ff; margin-bottom: 20px;">Buat Prediksi</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 18px; font-weight: bold;">
+                    <span>${homeName}</span>
+                    <span style="color: #aaa;">VS</span>
+                    <span>${awayName}</span>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+                    <input type="number" id="predHome" min="0" placeholder="0" style="width: 60px; padding: 10px; text-align: center; font-size: 20px; background: #16213e; color: white; border: 1px solid #00d4ff; border-radius: 5px;">
+                    <span style="font-size: 24px; align-self: center;">-</span>
+                    <input type="number" id="predAway" min="0" placeholder="0" style="width: 60px; padding: 10px; text-align: center; font-size: 20px; background: #16213e; color: white; border: 1px solid #00d4ff; border-radius: 5px;">
+                </div>
+                <button onclick="submitPrediction('${matchId}')" style="width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">Kirim Prediksi</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        async function submitPrediction(matchId) {
+            const homeScore = parseInt(document.getElementById('predHome').value);
+            const awayScore = parseInt(document.getElementById('predAway').value);
+
+            if (isNaN(homeScore) || isNaN(awayScore)) {
+                alert('❌ Harap isi kedua skor prediksi!');
+                return;
+            }
+
+            // CATATAN: Ini akan mencoba menyimpan ke tabel 'predictions'. 
+            // Jika tabel belum dibuat di Supabase, akan muncul error. 
+            // Saya sertakan SQL untuk membuat tabelnya di instruksi bawah.
+            try {
+                const { error } = await supabase.from('predictions').upsert({
+                    user_id: currentUserId,
+                    match_id: matchId,
+                    home_score: homeScore,
+                    away_score: awayScore
+                }, { onConflict: 'user_id, match_id' });
+
+                if (error) throw error;
+
+                // Simulasi update stats (Di produksi, ini sebaiknya dihandle oleh Database Trigger)
+                const newTotal = (userProfile.prediction_total || 0) + 1;
+                const newScore = (userProfile.prediction_score || 0) + 3; // Misal 3 poin per prediksi
+                
+                await supabase.from('profiles').update({
+                    prediction_total: newTotal,
+                    prediction_score: newScore
+                }).eq('id', currentUserId);
+
+                userProfile.prediction_total = newTotal;
+                userProfile.prediction_score = newScore;
+
+                alert('✅ Prediksi berhasil disimpan!');
+                closePredictionModal();
+                
+                // Refresh UI stats
+                document.getElementById('myPredictions').textContent = newTotal;
+                document.getElementById('myScore').textContent = newScore;
+                await loadLeaderboard();
+
+            } catch (err) {
+                console.error(err);
+                alert('⚠️ Gagal menyimpan prediksi. Pastikan tabel "predictions" sudah dibuat di Supabase (lihat instruksi).');
+            }
+        }
+
+        function closePredictionModal() {
+            document.getElementById('predictionModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
