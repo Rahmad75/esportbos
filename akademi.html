@@ -1,383 +1,375 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Akademi Muda</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
 </head>
 <body class="dashboard-body">
-
-    <!-- ===== NAVBAR ATAS ===== -->
     <nav class="top-navbar">
         <div class="navbar-left">
-            <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
-            <div class="search-box">
-                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
-            </div>
+            <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
+            <div class="search-box"><input type="text" placeholder="🔍 Cari Pemain/Manager/Tim..."></div>
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
-            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
-            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
+            <a href="dana-klub.html" class="stat-badge notif"> Dana Klub</a>
+            <div class="stat-badge notif"> Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
             <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
                 <span id="userName">Loading...</span>
-                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+                <button onclick="handleLogout()" style="margin-left:10px;padding:5px 10px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-        <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <div class="jam-sidebar-box">
-  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-</div>
-
-<script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
-
-function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
-  const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
-}
-
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
-setInterval(tampilJam, 1000);
-
-// 2. Coba sync ke server diam-diam
-async function sync() {
-  try {
-    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-    const data = await r.json();
-    const server = new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
-  }
-}
-sync();
-</script>
+            <div class="jam-sidebar-box"><div id="jamServerFinal" style="font-family:monospace;font-size:22px;color:#00d9ff;font-weight:bold;">--:--:--</div></div>
+            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
+            
             <div class="team-info-panel">
-                <div class="team-logo">🏆</div>
-                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-logo"></div>
+                <h3 class="team-name" id="clubName">My Club</h3>
                 <div class="team-rank" id="clubRank">-</div>
-                <div class="team-popularity">
-                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
-                    <span id="popularityText">Popularitas Klub: 0%</span>
-                </div>
-                <div class="team-moral">
-                    <span id="moralText">Moral Tim: 0%</span>
-                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
-                </div>
+                <div class="team-popularity"><span id="popularityText">Popularitas Klub: 0%</span><div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width:0%;"></div></div></div>
+                <div class="team-moral"><span id="moralText">Moral Tim: 0%</span><div class="moral-bar"><div class="moral-fill" id="moralBar" style="width:0%;"></div></div></div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
                     <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                    <div class="stat-row">️ Currency: <strong id="currencyBalance">0</strong></div>
                 </div>
                 <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
-                <a href="pemain.html" class="menu-item">👥 Pemain</a>
-                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
-                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
+                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
+                <a href="pemain.html" class="menu-item"> Pemain</a>
+                <a href="taktik.html" class="menu-item"> Taktik</a>
+                <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
                 <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item active">🎓 Akademi Muda</a>
                 <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">👨💻 Tim Teknis</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item"> Liga Prediksi</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
+            <div class="social-icons"><a href="#">📘</a><a href="#">💬</a><a href="#">📷</a></div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <div class="info-bar">
-                <span>🎓 Akademi Muda</span>
-                <span>Cetak Bintang Masa Depan</span>
-            </div>
-
-            <!-- TABS -->
+            <div class="info-bar"><span>Akademi Muda</span><span>Kembangkan bakat-bakat baru untuk tim Anda</span></div>
+            
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchAkademiTab('scout')"> Scout Pemain</button>
-                <button class="tab-btn" onclick="switchAkademiTab('academy')">🏫 Upgrade Akademi</button>
-                <button class="tab-btn" onclick="switchAkademiTab('history')">📜 Riwayat Rekrut</button>
+                <button class="tab-btn active" onclick="switchAkademiTab('scout',this)">🔍 Scout Pemain</button>
+                <button class="tab-btn" onclick="switchAkademiTab('upgrade',this)">⚡ Upgrade Akademi</button>
+                <button class="tab-btn" onclick="switchAkademiTab('riwayat',this)">📜 Riwayat Rekrut</button>
             </div>
 
-            <!-- TAB: SCOUT -->
-            <div id="tab-scout" class="tab-content">
+            <div id="tab-scout" class="tab-content" style="display:block;">
                 <div class="panel raised">
                     <h3>🔍 Scout Pemain Muda</h3>
-                    <p class="info-text">Cari bakat tersembunyi dengan potensi tinggi. Semakin tinggi level akademi, semakin bagus pemain yang ditemukan!</p>
+                    <p style="color:#999;margin-bottom:20px;">Cari bakat tersembunyi dengan potensi tinggi. Semakin tinggi level akademi, semakin bagus pemain yang ditemukan.</p>
                     
-                    <div class="scout-info" style="display: flex; justify-content: space-around; align-items: center; padding: 20px; background: #16213e; border-radius: 10px; margin: 20px 0;">
-                        <div class="scout-stats" style="text-align: center;">
-                            <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Level Akademi</span>
-                            <span class="stat-value" id="academyLevel" style="display: block; font-size: 24px; font-weight: bold; color: #00d4ff;">1</span>
+                    <div id="scoutSection" style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:30px;border-radius:12px;text-align:center;color:white;margin-bottom:20px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                            <div>
+                                <div style="color:#999;font-size:14px;">Level Akademi</div>
+                                <div id="academyLevelDisplay" style="font-size:32px;font-weight:bold;color:#00d4ff;">1</div>
+                            </div>
+                            <div>
+                                <div style="color:#999;font-size:14px;">Biaya Scout</div>
+                                <div id="scoutCostDisplay" style="font-size:28px;font-weight:bold;color:#ffd700;">500 Gold</div>
+                            </div>
                         </div>
-                        <div class="scout-stats" style="text-align: center;">
-                            <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Biaya Scout</span>
-                            <span class="stat-value" id="scoutCost" style="display: block; font-size: 24px; font-weight: bold; color: #ffd700;">500 Gold</span>
-                        </div>
-                        <div class="scout-stats" style="text-align: center;">
-                            <span class="stat-label" style="display: block; color: #aaa; font-size: 12px;">Kualitas Scout</span>
-                            <span class="stat-value" id="scoutQuality" style="display: block; font-size: 24px; font-weight: bold; color: #28a745;">Basic</span>
-                        </div>
-                        <button class="btn-futuristic btn-large" onclick="doScout()" style="padding: 15px 30px; background: #00d4ff; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">🔍 Scout Sekarang!</button>
+                        <button onclick="scoutPlayer()" id="scoutButton" style="width:100%;padding:15px;background:#00d4ff;color:#1a1a2e;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;">🔍 SCOUT SEKARANG!</button>
                     </div>
 
-                    <div class="scouted-players" id="scoutedPlayers">
-                        <p style="text-align:center; color:#999; padding: 20px;">Belum ada pemain yang di-scout. Klik tombol di atas untuk mulai mencari!</p>
+                    <div id="scoutedPlayersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;"></div>
+                </div>
+            </div>
+
+            <div id="tab-upgrade" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>⚡ Upgrade Akademi</h3>
+                    <p style="color:#999;margin-bottom:20px;">Tingkatkan level akademi untuk mendapatkan pemain dengan potensi lebih tinggi.</p>
+                    
+                    <div id="upgradeAcademyContent">
+                        <div style="background:#16213e;padding:25px;border-radius:12px;border:2px solid #00d4ff;margin-bottom:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                                <div>
+                                    <h4 style="margin:0;color:#00d4ff;">Level <span id="currentAcademyLevel">1</span>: <span id="currentAcademyQuality">Basic</span></h4>
+                                    <p style="margin:5px 0;color:#999;font-size:14px;">Max Potential: <span id="currentMaxPotential">75</span></p>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="color:#ffd700;font-weight:bold;">Upgrade Cost: <span id="upgradeCost">5000</span> Gold</div>
+                                    <button onclick="upgradeAcademy()" id="upgradeButton" style="margin-top:10px;padding:10px 20px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;">⚡ UPGRADE</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="academyLevels" style="display:grid;gap:10px;"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB: ACADEMY -->
-            <div id="tab-academy" class="tab-content" style="display:none;">
+            <div id="tab-riwayat" class="tab-content" style="display:none;">
                 <div class="panel raised">
-                    <h3>🏫 Upgrade Fasilitas Akademi</h3>
-                    <p class="info-text">Tingkatkan level akademi untuk mendapatkan pemain muda dengan potensi lebih tinggi.</p>
-                    
-                    <div class="academy-upgrade" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                        <div class="upgrade-current" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
-                            <h4 style="color: #00d4ff; margin-bottom: 15px;">Level Saat Ini</h4>
-                            <div class="level-display">
-                                <span class="level-number" id="currentLevel" style="display: block; font-size: 48px; font-weight: bold; color: #ffd700;">1</span>
-                                <span class="level-label" style="color: #aaa;">Level Akademi</span>
-                            </div>
-                            <div class="level-benefits" style="margin-top: 15px; text-align: left;">
-                                <p style="margin: 5px 0;">✅ Biaya Scout: <strong id="currentScoutCost">500</strong> Gold</p>
-                                <p style="margin: 5px 0;">✅ Kualitas Scout: <strong id="currentQuality">Basic</strong></p>
-                                <p style="margin: 5px 0;">✅ Potensi Max Pemain: <strong id="currentMaxPotential">75</strong></p>
-                            </div>
-                        </div>
-                        
-                        <div class="upgrade-next" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
-                            <h4 style="color: #28a745; margin-bottom: 15px;">Level Berikutnya</h4>
-                            <div class="level-display">
-                                <span class="level-number next" id="nextLevel" style="display: block; font-size: 48px; font-weight: bold; color: #ffd700;">2</span>
-                                <span class="level-label" style="color: #aaa;">Level Akademi</span>
-                            </div>
-                            <div class="level-benefits" style="margin-top: 15px; text-align: left;">
-                                <p style="margin: 5px 0;">✅ Biaya Scout: <strong id="nextScoutCost">800</strong> Gold</p>
-                                <p style="margin: 5px 0;">✅ Kualitas Scout: <strong id="nextQuality">Advanced</strong></p>
-                                <p style="margin: 5px 0;">✅ Potensi Max Pemain: <strong id="nextMaxPotential">85</strong></p>
-                            </div>
-                            <button class="btn-futuristic btn-large" id="upgradeBtn" onclick="upgradeAcademy()" style="margin-top: 15px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%;">
-                                ️ Upgrade (<span id="upgradeCost">5000</span> Gold)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: HISTORY -->
-            <div id="tab-history" class="tab-content" style="display:none;">
-                <div class="panel raised">
-                    <h3>📜 Riwayat Rekrutan Akademi</h3>
-                    <div id="academyHistory" style="margin-top: 20px;">
-                        <p style="text-align:center; color:#999; padding: 20px;">Memuat riwayat...</p>
+                    <h3>📜 Riwayat Rekrut</h3>
+                    <p style="color:#999;margin-bottom:20px;">Daftar pemain yang pernah di-recruit dari akademi.</p>
+                    <div id="recruitmentHistory" style="text-align:center;padding:40px;color:#999;">
+                        <div style="font-size:48px;margin-bottom:15px;">📜</div>
+                        <p>Belum ada riwayat rekrutmen.</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- MODAL REKRUT -->
-    <div class="modal" id="recruitModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
-            <span class="modal-close" onclick="closeRecruitModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
-            <div id="recruitModalBody"></div>
-        </div>
-    </div>
-
-    <!-- ADSTERRA NATIVE BANNER -->
-    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-    </div>
-    <!-- ADSTERRA SOCIAL BAR -->
-    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-
-    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <!-- [BERSAMBUNG KE PART 2 - SCRIPT] -->
     <script>
-        // 1. Init Supabase (Aman dari duplikasi)
-        if (!window.supabaseClient) {
-            window.supabaseClient = window.supabase.createClient(
-                'https://xvnmpbmyxphrddjjldbt.supabase.co',
-                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
-            );
+    // 1. Init Supabase (Aman dari duplikasi)
+    if (!window.supabaseClient) {
+        window.supabaseClient = window.supabase.createClient(
+            'https://xvnmpbmyxphrddjjldbt.supabase.co',
+            'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+        );
+    }
+    var supabase = window.supabaseClient;
+
+    // 2. Fungsi Logout
+    function handleLogout() {
+        supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
+    }
+
+    // 3. Fungsi Ganti Tab
+    function switchAkademiTab(tabName, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const target = document.getElementById('tab-' + tabName);
+        if (target) target.style.display = 'block';
+        if (btnElement) btnElement.classList.add('active');
+    }
+
+    // 4. Variabel Global
+    var currentTeamId = null;
+    var currentUserId = null;
+    var userGold = 0;
+    var academyLevel = 1;
+
+    // 5. Data Level Akademi
+    var academyData = {
+        1: { cost: 500, quality: 'Basic', maxPotential: 75, upgradeCost: 5000 },
+        2: { cost: 800, quality: 'Advanced', maxPotential: 85, upgradeCost: 10000 },
+        3: { cost: 1200, quality: 'Elite', maxPotential: 92, upgradeCost: 20000 },
+        4: { cost: 1800, quality: 'Master', maxPotential: 97, upgradeCost: 40000 },
+        5: { cost: 2500, quality: 'Legendary', maxPotential: 99, upgradeCost: null }
+    };
+
+    // 6. Nama Pemain Dummy
+    var playerNames = ['Rizky','Bagus','Dimas','Fajar','Galih','Hendra','Irfan','Joko','Kevin','Lukman','Maulana','Naufal','Omar','Putra','Raka','Sandi','Taufik','Umar','Vino','Wahyu','Yoga','Zidan','Aldi','Bayu','Candra','Dwiki','Eka','Firman','Gilang','Hafiz'];
+    var positions = ['Top','Jungle','Mid','ADC','Support'];
+
+    // 7. Fungsi Scout Pemain
+    async function scoutPlayer() {
+        if (userGold < academyData[academyLevel].cost) {
+            alert('Gold tidak cukup! Butuh ' + academyData[academyLevel].cost + ' Gold.');
+            return;
         }
-        var supabase = window.supabaseClient;
-        function switchAkademiTab(tabName, btnElement) {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    const target = document.getElementById('tab-' + tabName);
-    if (target) target.style.display = 'block';
-    if (btnElement) btnElement.classList.add('active');
-}
-        let currentTeamId = null;
-        let currentUserId = null;
-        let userGold = 0;
-        let academyLevel = 1;
 
-        // Data level akademi
-        const academyData = {
-            1: { cost: 500, quality: 'Basic', maxPotential: 75, upgradeCost: 5000 },
-            2: { cost: 800, quality: 'Advanced', maxPotential: 85, upgradeCost: 10000 },
-            3: { cost: 1200, quality: 'Elite', maxPotential: 92, upgradeCost: 20000 },
-            4: { cost: 1800, quality: 'Master', maxPotential: 97, upgradeCost: 40000 },
-            5: { cost: 2500, quality: 'Legendary', maxPotential: 99, upgradeCost: null }
-        };
-
-        // Nama-nama pemain dummy untuk scout
-        const playerNames = ['Rizky', 'Bagus', 'Dimas', 'Fajar', 'Galih', 'Hendra', 'Irfan', 'Joko', 'Kevin', 'Lukman', 'Maulana', 'Naufal', 'Oscar', 'Putra', 'Raka', 'Satria', 'Tama', 'Umar', 'Vino', 'Wahyu'];
-        const positions = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
-        const nationalities = ['ID', 'MY', 'SG', 'TH', 'PH', 'VN'];
-
-        async function handleLogout() {
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
+        if (!confirm('Scout pemain muda seharga ' + academyData[academyLevel].cost + ' Gold?')) {
+            return;
         }
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 2. Cek Auth
+        try {
+            // Kurangi gold user
+            userGold -= academyData[academyLevel].cost;
+            await supabase.from('profiles').update({ gold: userGold }).eq('id', currentUserId);
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // Generate pemain random
+            const name = playerNames[Math.floor(Math.random() * playerNames.length)];
+            const position = positions[Math.floor(Math.random() * positions.length)];
+            const potential = Math.floor(Math.random() * (academyData[academyLevel].maxPotential - 60)) + 60;
+            const overall = Math.floor(Math.random() * 20) + 50;
+
+            // Insert ke tabel players
+            const { data: newPlayer, error } = await supabase.from('players').insert({
+                team_id: currentTeamId,
+                name: name,
+                position: position,
+                overall_rating: overall,
+                potential: potential,
+                age: Math.floor(Math.random() * 5) + 16,
+                is_academy: true,
+                recruited_at: new Date().toISOString()
+            }).select().single();
+
+            if (error) throw error;
+
+            alert('Berhasil scout pemain!\n\nNama: ' + name + '\nPosisi: ' + position + '\nOverall: ' + overall + '\nPotensi: ' + potential);
+
+            // Refresh tampilan
+            loadScoutedPlayers();
+
+        } catch (err) {
+            console.error('Error scouting:', err);
+            alert('Gagal scout pemain. Coba lagi.');
+        }
+    }
+
+    // 8. Fungsi Upgrade Akademi
+    async function upgradeAcademy() {
+        const nextLevel = academyLevel + 1;
+        if (!academyData[nextLevel]) {
+            alert('Akademi sudah level maksimal!');
+            return;
+        }
+
+        const cost = academyData[academyLevel].upgradeCost;
+        if (userGold < cost) {
+            alert('Gold tidak cukup! Butuh ' + cost + ' Gold.');
+            return;
+        }
+
+        if (!confirm('Upgrade akademi ke level ' + nextLevel + ' seharga ' + cost + ' Gold?')) {
+            return;
+        }
+
+        try {
+            userGold -= cost;
+            academyLevel = nextLevel;
+
+            await supabase.from('profiles').update({ gold: userGold }).eq('id', currentUserId);
+            await supabase.from('teams').update({ academy_level: academyLevel }).eq('id', currentTeamId);
+
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            alert('Akademi berhasil di-upgrade ke level ' + academyLevel + '!');
+            renderAcademyLevels();
+            updateAcademyDisplay();
+
+        } catch (err) {
+            console.error('Error upgrading:', err);
+            alert('Gagal upgrade akademi.');
+        }
+    }
+
+    // 9. Render Level Akademi
+    function renderAcademyLevels() {
+        const container = document.getElementById('academyLevels');
+        let html = '';
+
+        for (var i = 1; i <= 5; i++) {
+            const data = academyData[i];
+            const isCurrent = i === academyLevel;
+            const status = isCurrent ? '<span style="background:#00d4ff;color:#1a1a2e;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:bold;">LEVEL SEKARANG</span>' : (i < academyLevel ? '<span style="color:#28a745;">✓ Selesai</span>' : '<span style="color:#999;">Terkunci</span>');
+
+            html += '<div style="background:#16213e;padding:15px;border-radius:8px;border:' + (isCurrent ? '2px solid #00d4ff' : '1px solid #333') + ';">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+            html += '<div><strong style="color:#00d4ff;">Level ' + i + ': ' + data.quality + '</strong><br><small style="color:#999;">Max Potential: ' + data.maxPotential + '</small></div>';
+            html += '<div>' + status + '</div>';
+            html += '</div></div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    // 10. Update Tampilan Akademi
+    function updateAcademyDisplay() {
+        document.getElementById('academyLevelDisplay').textContent = academyLevel;
+        document.getElementById('scoutCostDisplay').textContent = academyData[academyLevel].cost + ' Gold';
+        document.getElementById('currentAcademyLevel').textContent = academyLevel;
+        document.getElementById('currentAcademyQuality').textContent = academyData[academyLevel].quality;
+        document.getElementById('currentMaxPotential').textContent = academyData[academyLevel].maxPotential;
+
+        const upgradeCostEl = document.getElementById('upgradeCost');
+        const upgradeBtn = document.getElementById('upgradeButton');
+        if (academyData[academyLevel].upgradeCost) {
+            upgradeCostEl.textContent = academyData[academyLevel].upgradeCost;
+            upgradeBtn.style.display = 'inline-block';
+        } else {
+            upgradeCostEl.textContent = 'MAX';
+            upgradeBtn.style.display = 'none';
+        }
+    }
+
+    // 11. Load Pemain yang Sudah Di-Scout
+    async function loadScoutedPlayers() {
+        try {
+            const { data: players } = await supabase.from('players').select('*').eq('team_id', currentTeamId).eq('is_academy', true).order('recruited_at', { ascending: false });
+            const grid = document.getElementById('scoutedPlayersGrid');
+
+            if (!players || players.length === 0) {
+                grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;">Belum ada pemain yang di-scout. Klik tombol di atas untuk mulai!</p>';
+                return;
+            }
+
+            grid.innerHTML = players.map(p => {
+                const date = new Date(p.recruited_at).toLocaleDateString('id-ID');
+                return '<div style="background:#16213e;padding:15px;border-radius:8px;border:1px solid #333;color:white;">' +
+                    '<img src="https://api.dicebear.com/7.x/avataaars/svg?seed=' + p.name + '" style="width:50px;height:50px;border-radius:50%;">' +
+                    '<h4 style="margin:10px 0 5px;color:#00d4ff;">' + p.name + '</h4>' +
+                    '<p style="font-size:12px;color:#aaa;margin:2px 0;">' + p.position + ' • Usia: ' + p.age + '</p>' +
+                    '<p style="font-size:12px;color:#aaa;margin:2px 0;">Overall: <strong style="color:#ffd700;">' + p.overall_rating + '</strong></p>' +
+                    '<p style="font-size:12px;color:#aaa;margin:2px 0;">Potensi: <strong style="color:#28a745;">' + p.potential + '</strong></p>' +
+                    '<p style="font-size:10px;color:#666;margin-top:8px;">Di-scout: ' + date + '</p>' +
+                    '</div>';
+            }).join('');
+
+        } catch (err) {
+            console.error('Error loading players:', err);
+        }
+    }
+
+    // 12. Main Logic Saat Halaman Load
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             currentUserId = session.user.id;
 
-            // 3. Load Profile & Team
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
-            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
-
             if (profile) {
-                userGold = profile.gold || 0;
                 const username = profile.username || session.user.email.split('@')[0];
                 document.getElementById('userName').textContent = username;
-                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
                 document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                userGold = profile.gold || 0;
                 document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
                 document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
             }
 
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
             if (team) {
                 currentTeamId = team.id;
-                academyLevel = team.academy_level || 1; // Default 1 jika belum ada
-                
-                document.getElementById('clubName').textContent = team.team_name;
-                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
-                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
-                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
-                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
-                document.getElementById('moralBar').style.width = `${team.moral}%`;
-                
-                updateAcademyUI();
-                renderHistory();
+                document.getElementById('clubName').textContent = team.team_name || 'My Club';
+                document.getElementById('clubRank').textContent = (team.wins || 0) + 'W-' + (team.draws || 0) + 'D-' + (team.losses || 0) + 'L';
+                document.getElementById('popularityText').textContent = 'Popularitas Klub: ' + (team.popularity || 0) + '%';
+                document.getElementById('popularityBar').style.width = (team.popularity || 0) + '%';
+                document.getElementById('moralText').textContent = 'Moral Tim: ' + (team.moral || 0) + '%';
+                document.getElementById('moralBar').style.width = (team.moral || 0) + '%';
+                academyLevel = team.academy_level || 1;
             }
-        });
 
-        function updateAcademyUI() {
-            const currentData = academyData[academyLevel];
-            const nextData = academyData[academyLevel + 1];
-            
-            document.getElementById('academyLevel').textContent = academyLevel;
-            document.getElementById('scoutCost').textContent = `${currentData.cost} Gold`;
-            document.getElementById('scoutQuality').textContent = currentData.quality;
-            
-            document.getElementById('currentLevel').textContent = academyLevel;
-            document.getElementById('currentScoutCost').textContent = currentData.cost;
-            document.getElementById('currentQuality').textContent = currentData.quality;
-            document.getElementById('currentMaxPotential').textContent = currentData.maxPotential;
-            
-            if (nextData) {
-                document.getElementById('nextLevel').textContent = academyLevel + 1;
-                document.getElementById('nextScoutCost').textContent = nextData.cost;
-                document.getElementById('nextQuality').textContent = nextData.quality;
-                document.getElementById('nextMaxPotential').textContent = nextData.maxPotential;
-                document.getElementById('upgradeCost').textContent = nextData.upgradeCost.toLocaleString('id-ID');
-                document.getElementById('upgradeBtn').disabled = false;
-            } else {
-                document.getElementById('nextLevel').textContent = 'MAX';
-                document.getElementById('upgradeBtn').textContent = 'Level Maksimum';
-                document.getElementById('upgradeBtn').disabled = true;
-                document.getElementById('upgradeBtn').style.background = '#666';
-            }
+            updateAcademyDisplay();
+            renderAcademyLevels();
+            await loadScoutedPlayers();
+
+        } catch (error) {
+            console.error('Akademi error:', error);
         }
-
-        function switchAkademiTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).style.display = 'block';
-            event.target.classList.add('active');
-        }
-
-        async function doScout() {
-            const currentData = academyData[academyLevel];
-            
-            if (userGold < currentData.cost) {
-                alert(`❌ Gold tidak cukup! Dibutuhkan ${currentData.cost} Gold untuk scout.`);
-                return;
-            }
-
-            if (!confirm(`Yakin ingin scout pemain seharga ${currentData.cost} Gold?`)) return;
-
-            // Generate pemain baru dengan rating acak berdasarkan level akademi
-            const minRating = 60;
-            const maxRating = currentData.maxPotential;
-            const rating = Math.floor(Math.random() * (maxRating - minRating + 1)) + minRating;
-            const name = playerNames[Math.floor(Math.random() * playerNames.length)] + ' ' + Math.floor(Math.random() * 100);
-            const position = positions[Math.floor(Math.random() * positions.length)];
-            const nationality = nationalities[Math.floor(Math.random() * nationalities.length)];
-            const marketValue = rating * 100; // Nilai pasar = rating * 100
-
-            // Kurangi Gold user
-            const newGold = userGold - currentData.cost;
-            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
-            userGold = newGold;
-            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
-
-            // Insert pemain baru ke database dengan team_id = tim user
-            const { data: newPlayer, error } = await supabase
-                .from('players')
-                .insert({
-                    name: name,
-                    position: position,
-                    overall_rating: rating,
-                    market_value: marketValue,
-                    nationality: nationality,
-                    team_id: currentTeamId,
-                    is_youth_academy: true
-                })
-                .select()
-                .single();
-
-            if (error) {
-                alert(' Gagal merekrut pemain: ' + error.message);
-                return;
-            }
-
-            // Tampilkan modal sukses
-            showRecruitModal(name, position, rating, marketValue);
-            renderHistory();
-        }
-
-        function showRecruitModal(name, position, rating, value) {
-            const modal = document.getElementById('recruitModal');
-            const body = document.getElementById('recruitModalBody');
+    });
+    </script>
+</body>
+</html>
