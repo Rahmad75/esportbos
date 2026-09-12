@@ -150,83 +150,175 @@
         if (btnElement) btnElement.classList.add('active');
     }
 
-    // 5. Fungsi Simulasi Pertandingan
-    async function simulateMatch() {
-        const btn = document.getElementById('simulateButton');
-        btn.disabled = true;
-        btn.textContent = "⚽ Sedang Bertanding...";
-        btn.style.background = "#555";
+    // 5. Fungsi Simulasi Pertandingan (SISTEM WORKER - MPL STYLE)
+async function simulateMatch() {
+    const btn = document.getElementById('simulateButton');
+    
+    // === CEK KUOTA HARIAN (Max 3 match/hari) ===
+    const { data: team } = await supabase
+        .from('teams')
+        .select('last_match_at, matches_played_today, last_daily_reset')
+        .eq('id', currentTeamId)
+        .single();
 
-        // Simulasi loading 2 detik biar terasa seru
-        await new Promise(r => setTimeout(r, 2000));
-
-        // Generate Skor Random (0 - 5)
-        const homeScore = Math.floor(Math.random() * 6);
-        const awayScore = Math.floor(Math.random() * 6);
-        
-        // Tentukan Lawan (Random nama buat simulasi)
-        const opponents = ["Garuda Esports", "Naga Merah", "Banteng FC", "Elang Jawa", "Harimau Sumatra"];
-        const randomOpponent = opponents[Math.floor(Math.random() * opponents.length)];
-
-        document.getElementById('awayTeamName').textContent = randomOpponent;
-
-        // Tentukan Hasil
-        let result = 'lose';
-        let resultText = 'KALAH';
-        let resultColor = '#ff6b6b';
-
-        if (homeScore > awayScore) {
-            result = 'win';
-            resultText = 'MENANG';
-            resultColor = '#28a745';
-        } else if (homeScore === awayScore) {
-            result = 'draw';
-            resultText = 'SERI';
-            resultColor = '#ffc107';
-        }
-
-        // Tampilkan Hasil di UI
-        const resultDiv = document.getElementById('matchResult');
-        const resultContent = document.getElementById('matchResultContent');
-        
-        resultDiv.style.display = 'block';
-        resultContent.innerHTML = `
-            <div style="text-align:center; margin-bottom:20px;">
-                <h2 style="color:${resultColor}; font-size:32px; margin:0;">${resultText}</h2>
-                <div style="font-size:48px; font-weight:bold; color:white; margin:10px 0;">
-                    ${homeScore} - ${awayScore}
-                </div>
-                <p style="color:#999;">${currentTeamName} vs ${randomOpponent}</p>
-            </div>
-        `;
-
-        // Berikan Reward
-        await giveMatchReward(result);
-
-        // Simpan ke Database (Riwayat)
-        try {
-            await supabase.from('matches').insert({
-                home_team_id: currentTeamId,
-                away_team_name: randomOpponent, // Simpan nama aja kalau belum ada tabel lawan
-                home_score: homeScore,
-                away_score: awayScore,
-                status: 'finished',
-                match_date: new Date().toISOString(),
-                user_id: currentUserId
-            });
-        } catch (err) {
-            console.log("Gagal simpan riwayat (mungkin schema belum lengkap), tapi reward tetap cair!");
-        }
-
-        // Reset Tombol
-        btn.disabled = false;
-        btn.textContent = "⚽ MAIN LAGI!";
-        btn.style.background = "#28a745";
-        
-        // Refresh Riwayat
-        loadMatchHistory();
+    // Reset counter jika sudah ganti hari (berdasarkan waktu server)
+    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    
+    let matchesToday = 0;
+    if (team && team.last_daily_reset !== today) {
+        // Reset ke 0 karena sudah hari baru
+        matchesToday = 0;
+        await supabase.from('teams').update({
+            matches_played_today: 0,
+            last_daily_reset: today
+        }).eq('id', currentTeamId);
+    } else if (team) {
+        matchesToday = team.matches_played_today || 0;
     }
 
+    // Cek apakah sudah mencapai batas 3 match
+    if (matchesToday >= 3) {
+        alert('⚠️ Batas harian tercapai!\nAnda sudah memainkan 3 pertandingan hari ini.\nKembali besok untuk match selanjutnya.\n\nJadwal reset: 00:00 WIB');
+        return;
+    }
+
+    // === CEK COOLDOWN 4 JAM ===
+    if (team && team.last_match_at) {
+        const lastMatch = new Date(team.last_match_at).getTime();
+        const now = Date.now();
+        const diffHours = (now - lastMatch) / (1000 * 60 * 60);
+        
+        if (diffHours < 4) {
+            const sisaJam = Math.ceil(4 - diffHours);
+            const nextMatchTime = new Date(lastMatch + (4 * 60 * 60 * 1000));
+            const jamNext = nextMatchTime.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            
+            alert(` Mohon tunggu ${sisaJam} jam lagi.\n\nJadwal match berikutnya: ${jamNext} WIB\n(Cooldown 4 jam antar match)`);
+            return;
+        }
+    }
+
+    // === MULAI PERTANDINGAN (Durasi 30 menit) ===
+    btn.disabled = true;
+    btn.textContent = "⚽ Bertanding (30 menit)...";
+    btn.style.background = "#555";
+
+    // Simulasi durasi 30 menit = 1800000 ms
+    // Untuk testing, bisa diganti jadi 3000 (3 detik) dulu
+    const matchDuration = 30 * 60 * 1000; // 30 menit
+    
+    // Tampilkan countdown
+    const countdownDiv = document.createElement('div');
+    countdownDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;padding:40px;border-radius:16px;border:3px solid #00d4ff;text-align:center;color:white;z-index:9999;';
+    countdownDiv.innerHTML = `
+        <div style="font-size:24px;margin-bottom:20px;"> Pertandingan Sedang Berlangsung</div>
+        <div style="font-size:48px;font-weight:bold;color:#00d4ff;" id="countdownTimer">30:00</div>
+        <div style="margin-top:20px;color:#999;">${currentTeamName} vs ${document.getElementById('awayTeamName').textContent}</div>
+    `;
+    document.body.appendChild(countdownDiv);
+
+    // Update countdown setiap detik
+    let remainingSeconds = 30 * 60; // 30 menit
+    const countdownInterval = setInterval(() => {
+        remainingSeconds--;
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        const timerEl = document.getElementById('countdownTimer');
+        if (timerEl) {
+            timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        }
+        
+        if (remainingSeconds <= 0) {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+
+    // Tunggu sampai match selesai (30 menit)
+    await new Promise(r => setTimeout(r, matchDuration));
+
+    // Hapus countdown
+    if (countdownDiv) countdownDiv.remove();
+
+    // Generate Skor (berdasarkan durasi 30 menit)
+    const homeScore = Math.floor(Math.random() * 6);
+    const awayScore = Math.floor(Math.random() * 6);
+    
+    const opponents = ["Garuda Esports", "Naga Merah", "Banteng FC", "Elang Jawa", "Harimau Sumatra", "Satria Muda", "Bima Sakti", "Persija Jakarta", "Persib Bandung"];
+    const randomOpponent = opponents[Math.floor(Math.random() * opponents.length)];
+
+    document.getElementById('awayTeamName').textContent = randomOpponent;
+
+    // Tentukan Hasil
+    let result = 'lose';
+    let resultText = 'KALAH';
+    let resultColor = '#ff6b6b';
+
+    if (homeScore > awayScore) {
+        result = 'win';
+        resultText = 'MENANG';
+        resultColor = '#28a745';
+    } else if (homeScore === awayScore) {
+        result = 'draw';
+        resultText = 'SERI';
+        resultColor = '#ffc107';
+    }
+
+    // Tampilkan Hasil
+    const resultDiv = document.getElementById('matchResult');
+    const resultContent = document.getElementById('matchResultContent');
+    
+    resultDiv.style.display = 'block';
+    resultContent.innerHTML = `
+        <div style="text-align:center; margin-bottom:20px;">
+            <h2 style="color:${resultColor}; font-size:32px; margin:0;">${resultText}</h2>
+            <div style="font-size:48px; font-weight:bold; color:white; margin:10px 0;">
+                ${homeScore} - ${awayScore}
+            </div>
+            <p style="color:#999;">${currentTeamName} vs ${randomOpponent}</p>
+            <p style="color:#999;font-size:14px;">Durasi: 30 menit</p>
+        </div>
+    `;
+
+    // Berikan Reward
+    await giveMatchReward(result);
+
+    // Update Database
+    try {
+        const newMatchCount = matchesToday + 1;
+        
+        await supabase.from('teams').update({
+            last_match_at: new Date().toISOString(),
+            matches_played_today: newMatchCount,
+            last_daily_reset: today
+        }).eq('id', currentTeamId);
+
+        // Simpan riwayat
+        await supabase.from('matches').insert({
+            home_team_id: currentTeamId,
+            away_team_name: randomOpponent,
+            home_score: homeScore,
+            away_score: awayScore,
+            status: 'finished',
+            match_date: new Date().toISOString(),
+            user_id: currentUserId,
+            result: result,
+            duration_minutes: 30
+        });
+
+        alert(`✅ Pertandingan Selesai!\n\nReward: ${result === 'win' ? '10,000' : result === 'draw' ? '2,000' : '500'} Currency\nMatch ke-${newMatchCount}/3 hari ini\nSisa match: ${3 - newMatchCount}\n\nMatch berikutnya: ${(new Date(Date.now() + 4*60*60*1000)).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'})} WIB`);
+
+    } catch (err) {
+        console.error('Error saving match:', err);
+        alert('Match selesai tapi gagal simpan data. Reward tetap diberikan!');
+    }
+
+    // Reset tombol
+    btn.disabled = false;
+    btn.textContent = " MAIN LAGI!";
+    btn.style.background = "#28a745";
+    
+    loadMatchHistory();
+}
     // 6. Fungsi Bagi Reward (Sesuai Skema MPL)
     async function giveMatchReward(result) {
         let reward = 0;
