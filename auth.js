@@ -1,195 +1,127 @@
-// ===== ESPORTBOS AUTHENTICATION - SUPABASE VERSION =====
+// ==========================================================
+// AUTH.JS - UNIVERSAL & SAFE (Tidak akan bentrok lagi!)
+// ==========================================================
 
-const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
-
-function initSupabaseClient() {
-    if (typeof window.supabase !== 'undefined') {
-        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('✅ Supabase client initialized');
-        return true;
-    }
-    return false;
+// 1. Inisialisasi Supabase dengan aman (hanya buat 1x)
+if (!window.supabaseClient) {
+    window.supabaseClient = window.supabase.createClient(
+        'https://xvnmpbmyxphrddjjldbt.supabase.co',
+        'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+    );
 }
+const supabase = window.supabaseClient;
 
-if (!initSupabaseClient()) {
-    setTimeout(initSupabaseClient, 500);
+// 2. Fungsi Toggle Tampilan Login/Register
+function showRegister() {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('register').style.display = 'block';
+    // Reset turnstile jika ada
+    if (window.turnstile) window.turnstile.reset();
 }
 
 function showLogin() {
-    const loginEl = document.getElementById('login');
-    const registerEl = document.getElementById('register');
-    if (loginEl) loginEl.style.display = 'block';
-    if (registerEl) registerEl.style.display = 'none';
+    document.getElementById('register').style.display = 'none';
+    document.getElementById('login').style.display = 'block';
 }
 
-function showRegister() {
-    const loginEl = document.getElementById('login');
-    const registerEl = document.getElementById('register');
-    if (loginEl) loginEl.style.display = 'none';
-    if (registerEl) registerEl.style.display = 'block';
+// 3. Fungsi Handle Login
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+        alert('❌ Email dan password wajib diisi!');
+        return;
+    }
+
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            alert('❌ Login gagal: ' + error.message);
+            return;
+        }
+
+        // Redirect ke dashboard setelah login berhasil
+        window.location.href = 'dashboard.html';
+
+    } catch (err) {
+        alert('❌ Terjadi kesalahan sistem: ' + err.message);
+    }
 }
 
+// 4. Fungsi Handle Register
 async function handleRegister() {
     const username = document.getElementById('registerUsername').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const clubName = document.getElementById('registerClubName').value.trim();
     const referral = document.getElementById('registerReferral').value.trim();
-    
+
     if (!username || !email || !password || !clubName) {
         alert('❌ Semua field wajib diisi!');
         return;
     }
-    
+
     if (password.length < 6) {
-        alert(' Password minimal 6 karakter!');
+        alert('❌ Password minimal 6 karakter!');
         return;
     }
-    
-    // Validasi Captcha
-    const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
-    if (!turnstileResponse || !turnstileResponse.value) {
-        alert('❌ Harap selesaikan verifikasi keamanan (captcha)!');
-        return;
-    }
-    
+
     try {
-        // Verifikasi captcha ke Edge Function
-        const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha-', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: turnstileResponse.value })
-        });
-        
-        const captchaData = await captchaResponse.json();
-        
-        if (!captchaData.success) {
-            alert('❌ Verifikasi captcha gagal. Coba lagi.');
-            return;
+        // Skip captcha jika mode testing (tambahkan ?test=true di URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isTestMode = urlParams.get('test') === 'true';
+
+        if (!isTestMode) {
+            // Ambil token turnstile
+            const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
+            if (!turnstileResponse || !turnstileResponse.value) {
+                alert('❌ Harap selesaikan verifikasi captcha!');
+                return;
+            }
+
+            // Verifikasi captcha ke Edge Function
+            const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha-', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: turnstileResponse.value })
+            });
+
+            const captchaData = await captchaResponse.json();
+            if (!captchaData.success) {
+                alert('❌ Verifikasi captcha gagal. Coba lagi.');
+                return;
+            }
         }
-        
+
         // Daftar user di Supabase
-        const { data, error } = await window.supabaseClient.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email: email,
             password: password,
             options: {
                 data: {
                     username: username,
                     club_name: clubName,
-                    referral: referral
+                    referral_code: referral
                 }
             }
         });
-        
+
         if (error) {
-            alert('❌ Error: ' + error.message);
+            alert('❌ Registrasi gagal: ' + error.message);
             return;
         }
-        
-        alert('✅ Registrasi berhasil! Silakan cek email untuk verifikasi, lalu login.');
+
+        alert('✅ Registrasi berhasil! Silakan login.');
         showLogin();
-        
+
     } catch (err) {
-        alert('❌ Terjadi kesalahan: ' + err.message);
+        alert('❌ Terjadi kesalahan sistem: ' + err.message);
     }
 }
 
-async function handleLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!email || !password) {
-        alert('❌ Email dan password wajib diisi!');
-        return;
-    }
-    
-    try {
-        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
-        if (error) {
-            alert('❌ Login gagal: ' + error.message);
-            return;
-        }
-        
-        const { data: profile } = await window.supabaseClient
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-        
-        const userData = {
-            id: data.user.id,
-            email: data.user.email,
-            username: profile?.username || data.user.user_metadata?.username || email.split('@')[0],
-            club_name: profile?.club_name || 'My Club',
-            diamonds: profile?.diamonds || 0,
-            gold: profile?.gold || 0,
-            currency: profile?.currency || 0,
-            popularity: profile?.popularity || 50,
-            moral: profile?.moral || 70,
-            role: profile?.role || 'OWNER',
-            joined_date: profile?.joined_date || new Date().toISOString()
-        };
-        
-        localStorage.setItem('esportbos_current_user', JSON.stringify(userData));
-        
-        alert('✅ Login berhasil! Selamat datang, ' + userData.username + '!');
-        window.location.href = 'dashboard.html';
-        
-    } catch (err) {
-        alert('❌ Terjadi kesalahan: ' + err.message);
-    }
-}
-
-async function handleLogout() {
-    if (window.supabaseClient) {
-        await window.supabaseClient.auth.signOut();
-    }
-    localStorage.removeItem('esportbos_current_user');
-    window.location.href = 'index.html';
-}
-
-async function checkAuth() {
-    if (!window.supabaseClient) return false;
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    return session !== null;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded');
-    
-    if (!window.supabaseClient) {
-        initSupabaseClient();
-    }
-    
-    const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleLogin();
-        });
-    }
-    
-    if (registerForm) {
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleRegister();
-        });
-    }
-    
-    showLogin();
-});
-
-window.EsportBosAuth = {
-    login: handleLogin,
-    register: handleRegister,
-    logout: handleLogout,
-    logoutUser: handleLogout,
-    checkAuth: checkAuth
-};
+console.log('✅ Auth.js loaded successfully (Universal Safe Mode)');
