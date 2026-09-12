@@ -19,10 +19,10 @@
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
-            <a href="dana-klub.html" class="stat-badge notif"> Dana Klub</a>
-            <div class="stat-badge notif"> Pembaruan (0)</div>
+            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
+            <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
                 <span id="userName">Loading...</span>
@@ -37,7 +37,7 @@
             <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
             
             <div class="team-info-panel">
-                <div class="team-logo"></div>
+                <div class="team-logo">🏆</div>
                 <h3 class="team-name" id="clubName">My Club</h3>
                 <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity"><span id="popularityText">Popularitas Klub: 0%</span><div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width:0%;"></div></div></div>
@@ -47,23 +47,23 @@
                     <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
                     <div class="stat-row">️ Currency: <strong id="currencyBalance">0</strong></div>
                 </div>
-                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'"> Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
-                <a href="pemain.html" class="menu-item"> Pemain</a>
-                <a href="taktik.html" class="menu-item"> Taktik</a>
-                <a href="pertandingan.html" class="menu-item">️ Pertandingan</a>
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
+                <a href="taktik.html" class="menu-item">🧠 Taktik</a>
+                <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
                 <a href="transfer.html" class="menu-item">💰 Transfer</a>
-                <a href="akademi.html" class="menu-item"> Akademi Muda</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
                 <a href="kantor.html" class="menu-item">🏢 Kantor</a>
                 <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item active">👤 Akun Saya</a>
             </nav>
-            <div class="social-icons"><a href="#">📘</a><a href="#"></a><a href="#">📷</a></div>
+            <div class="social-icons"><a href="#">📘</a><a href="#">💬</a><a href="#">📷</a></div>
         </aside>
 
         <main class="main-content">
@@ -79,56 +79,56 @@
                 <div class="panel raised">
                     <h3>👤 Informasi Profil</h3>
                     
-                    <!-- Upload Foto Profil -->
+                    <!-- Upload Foto Profil via Cloudinary -->
                     <div style="text-align:center;margin-bottom:30px;">
                         <div style="position:relative;display:inline-block;">
-                            <img id="profileAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" style="width:150px;height:150px;border-radius:50%;border:4px solid #00d4ff;">
-                            <label for="avatarUpload" style="position:absolute;bottom:0;right:0;background:#00d4ff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
-                                📷
-                            </label>
+                            <img id="profileAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" style="width:150px;height:150px;border-radius:50%;border:4px solid #00d4ff;object-fit:cover;">
+                            <label for="avatarUpload" style="position:absolute;bottom:5px;right:5px;background:#00d4ff;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;"></label>
                             <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="uploadAvatar(this)">
                         </div>
-                        <p style="color:#999;margin-top:10px;">Klik ikon kamera untuk upload foto profil</p>
-                        <button onclick="removeAvatar()" style="margin-top:10px;padding:8px 16px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Hapus Foto</button>
+                        <p style="color:#999;margin-top:10px;font-size:14px;">Klik ikon kamera untuk upload foto profil (Max 2MB)</p>
+                        <p id="uploadStatus" style="color:#00d4ff;font-size:12px;margin-top:5px;min-height:15px;"></p>
+                        <button onclick="removeAvatar()" style="margin-top:10px;padding:8px 16px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;font-size:13px;">️ Hapus Foto</button>
                     </div>
 
                     <form id="profileForm" onsubmit="event.preventDefault(); updateProfile();">
                         <div style="display:grid;gap:20px;max-width:600px;margin:0 auto;">
                             <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Username</label>
-                                <input type="text" id="usernameInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" required>
+                                <input type="text" id="usernameInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;" required>
                             </div>
 
                             <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Email</label>
-                                <input type="email" id="emailInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" required>
+                                <input type="email" id="emailInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;" readonly>
+                                <small style="color:#999;">Email tidak dapat diubah</small>
                             </div>
 
                             <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Nama Klub</label>
-                                <input type="text" id="clubNameInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" required>
+                                <input type="text" id="clubNameInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;" required>
                             </div>
 
                             <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Bio/Deskripsi</label>
-                                <textarea id="bioInput" rows="4" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;resize:vertical;" placeholder="Ceritakan tentang tim Anda..."></textarea>
+                                <textarea id="bioInput" rows="4" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;resize:vertical;box-sizing:border-box;" placeholder="Ceritakan tentang tim Anda..."></textarea>
                             </div>
 
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
                                 <div>
                                     <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Negara</label>
-                                    <select id="countryInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;">
+                                    <select id="countryInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;">
                                         <option value="ID">🇮🇩 Indonesia</option>
-                                        <option value="MY">🇲🇾 Malaysia</option>
+                                        <option value="MY">🇲 Malaysia</option>
                                         <option value="SG">🇸🇬 Singapura</option>
-                                        <option value="TH">🇹🇭 Thailand</option>
+                                        <option value="TH">🇹 Thailand</option>
                                         <option value="PH">🇵🇭 Filipina</option>
                                         <option value="VN">🇻🇳 Vietnam</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Kota</label>
-                                    <input type="text" id="cityInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;">
+                                    <input type="text" id="cityInput" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;">
                                 </div>
                             </div>
 
@@ -144,19 +144,14 @@
                     <form id="passwordForm" onsubmit="event.preventDefault(); changePassword();">
                         <div style="display:grid;gap:20px;max-width:600px;margin:0 auto;">
                             <div>
-                                <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Password Lama</label>
-                                <input type="password" id="oldPassword" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" required>
-                            </div>
-
-                            <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Password Baru</label>
-                                <input type="password" id="newPassword" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" minlength="6" required>
+                                <input type="password" id="newPassword" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;" minlength="6" required>
                                 <small style="color:#999;">Minimal 6 karakter</small>
                             </div>
 
                             <div>
                                 <label style="display:block;margin-bottom:8px;color:#fff;font-weight:bold;">Konfirmasi Password Baru</label>
-                                <input type="password" id="confirmPassword" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;" required>
+                                <input type="password" id="confirmPassword" style="width:100%;padding:12px;border:2px solid #333;border-radius:8px;background:#16213e;color:#fff;font-size:14px;box-sizing:border-box;" required>
                             </div>
 
                             <button type="submit" style="padding:15px;background:#ffc107;color:#1a1a2e;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px;">🔑 Ubah Password</button>
@@ -175,16 +170,10 @@
                             <button onclick="enable2FA()" style="padding:10px 20px;background:#00d4ff;color:#1a1a2e;border:none;border-radius:5px;cursor:pointer;">Aktifkan 2FA</button>
                         </div>
 
-                        <div style="background:#16213e;padding:20px;border-radius:8px;margin-bottom:20px;">
+                        <div style="background:#16213e;padding:20px;border-radius:8px;">
                             <h4 style="margin:0 0 10px;color:#ff6b6b;">🚫 Session Aktif</h4>
                             <p style="color:#999;margin-bottom:15px;">Kelola perangkat yang login ke akun Anda.</p>
                             <button onclick="logoutAllDevices()" style="padding:10px 20px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Logout Semua Perangkat</button>
-                        </div>
-
-                        <div style="background:#16213e;padding:20px;border-radius:8px;">
-                            <h4 style="margin:0 0 10px;color:#ff4757;">⚠️ Hapus Akun</h4>
-                            <p style="color:#999;margin-bottom:15px;">Perhatian! Tindakan ini tidak dapat dibatalkan.</p>
-                            <button onclick="deleteAccount()" style="padding:10px 20px;background:#ff4757;color:white;border:none;border-radius:5px;cursor:pointer;">Hapus Akun Permanen</button>
                         </div>
                     </div>
                 </div>
@@ -203,16 +192,21 @@
     }
     var supabase = window.supabaseClient;
 
-    // 2. Variabel Global
+    // 2. Konfigurasi Cloudinary
+    var CLOUDINARY_CLOUD_NAME = 'cyfedom8';
+    var CLOUDINARY_UPLOAD_PRESET = 'esportbos_avatar';
+    var CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/image/upload';
+
+    // 3. Variabel Global
     var currentUserId = null;
     var currentTeamId = null;
 
-    // 3. Fungsi Logout
+    // 4. Fungsi Logout
     function handleLogout() {
         supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
     }
 
-    // 4. Fungsi Ganti Tab
+    // 5. Fungsi Ganti Tab
     function switchAkunTab(tabName, btnElement) {
         document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -221,66 +215,76 @@
         if (btnElement) btnElement.classList.add('active');
     }
 
-    // 5. Upload Foto Profil
+    // 6. Upload Foto ke Cloudinary
     async function uploadAvatar(input) {
         const file = input.files[0];
+        const statusEl = document.getElementById('uploadStatus');
+        
         if (!file) return;
 
         // Validasi ukuran (max 2MB)
         if (file.size > 2 * 1024 * 1024) {
             alert('Ukuran file terlalu besar! Maksimal 2MB.');
+            input.value = ''; // Reset input
             return;
         }
 
         // Validasi tipe file
         if (!file.type.startsWith('image/')) {
             alert('File harus berupa gambar!');
+            input.value = '';
             return;
         }
 
         try {
-            const fileName = currentUserId + '/' + Date.now() + '.jpg';
-            
-            const { data, error } = await supabase.storage
-                .from('avatars')
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: true
-                });
+            statusEl.textContent = '⏳ Mengupload foto...';
+            statusEl.style.color = '#ffc107';
 
-            if (error) throw error;
+            // Siapkan data untuk Cloudinary
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-            // Dapatkan URL public
-            const { data: urlData } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(fileName);
+            // Upload ke Cloudinary
+            const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                method: 'POST',
+                body: formData
+            });
 
-            const avatarUrl = urlData.publicUrl;
+            const data = await response.json();
 
-            // Update di database
-            await supabase.from('profiles')
-                .update({ avatar_url: avatarUrl })
-                .eq('id', currentUserId);
+            if (data.secure_url) {
+                const avatarUrl = data.secure_url;
 
-            // Update tampilan
-            document.getElementById('profileAvatar').src = avatarUrl;
-            document.getElementById('navAvatar').src = avatarUrl;
+                // Simpan URL ke Supabase
+                await supabase.from('profiles')
+                    .update({ avatar_url: avatarUrl })
+                    .eq('id', currentUserId);
 
-            alert('Foto profil berhasil diupload!');
+                // Update tampilan
+                document.getElementById('profileAvatar').src = avatarUrl;
+                document.getElementById('navAvatar').src = avatarUrl;
+
+                statusEl.textContent = '✅ Upload berhasil!';
+                statusEl.style.color = '#28a745';
+                
+                setTimeout(() => { statusEl.textContent = ''; }, 3000);
+            } else {
+                throw new Error(data.error ? data.error.message : 'Upload gagal');
+            }
 
         } catch (err) {
             console.error('Error upload avatar:', err);
-            
-            // Jika bucket belum ada, kasih instruksi
-            if (err.message.includes('not found')) {
-                alert('Storage bucket "avatars" belum dibuat di Supabase. Silakan buat dulu di Dashboard Supabase > Storage > New Bucket (nama: avatars, public: yes).');
-            } else {
-                alert('Gagal upload foto: ' + err.message);
-            }
+            statusEl.textContent = '❌ Gagal upload. Coba lagi.';
+            statusEl.style.color = '#ff6b6b';
+            alert('Gagal upload foto: ' + err.message);
         }
+        
+        // Reset input file agar bisa upload file yang sama lagi jika perlu
+        input.value = '';
     }
 
-    // 6. Hapus Foto Profil
+    // 7. Hapus Foto Profil
     async function removeAvatar() {
         if (!confirm('Yakin ingin menghapus foto profil?')) return;
 
@@ -289,7 +293,9 @@
                 .update({ avatar_url: null })
                 .eq('id', currentUserId);
 
-            const defaultAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUserId;
+            const username = document.getElementById('usernameInput').value || 'default';
+            const defaultAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
+            
             document.getElementById('profileAvatar').src = defaultAvatar;
             document.getElementById('navAvatar').src = defaultAvatar;
 
@@ -299,7 +305,7 @@
         }
     }
 
-    // 7. Update Profil
+    // 8. Update Profil
     async function updateProfile() {
         const username = document.getElementById('usernameInput').value.trim();
         const clubName = document.getElementById('clubNameInput').value.trim();
@@ -328,16 +334,15 @@
             document.getElementById('userName').textContent = username;
             document.getElementById('clubName').textContent = clubName;
 
-            alert('Profil berhasil diupdate!');
+            alert('✅ Profil berhasil diupdate!');
         } catch (err) {
             console.error('Error update profile:', err);
             alert('Gagal update profil: ' + err.message);
         }
     }
 
-    // 8. Ganti Password
+    // 9. Ganti Password
     async function changePassword() {
-        const oldPass = document.getElementById('oldPassword').value;
         const newPass = document.getElementById('newPassword').value;
         const confirmPass = document.getElementById('confirmPassword').value;
 
@@ -358,7 +363,7 @@
 
             if (error) throw error;
 
-            alert('Password berhasil diubah!');
+            alert('✅ Password berhasil diubah!');
             document.getElementById('passwordForm').reset();
 
         } catch (err) {
@@ -366,15 +371,13 @@
         }
     }
 
-    // 9. Aktifkan 2FA (Placeholder)
+    // 10. Fitur Keamanan (Placeholder & Logout Global)
     function enable2FA() {
         alert('Fitur 2FA akan segera hadir! Untuk sekarang, gunakan password yang kuat.');
     }
 
-    // 10. Logout Semua Perangkat
     async function logoutAllDevices() {
         if (!confirm('Yakin ingin logout dari semua perangkat?')) return;
-
         try {
             await supabase.auth.signOut({ scope: 'global' });
             window.location.href = 'index.html';
@@ -383,34 +386,8 @@
         }
     }
 
-    // 11. Hapus Akun
-    async function deleteAccount() {
-        const confirmText = prompt('Ketik "HAPUS" untuk mengkonfirmasi penghapusan akun:');
-        if (confirmText !== 'HAPUS') {
-            alert('Penghapusan dibatalkan.');
-            return;
-        }
-
-        try {
-            // Hapus data terkait
-            await supabase.from('teams').delete().eq('user_id', currentUserId);
-            await supabase.from('profiles').delete().eq('id', currentUserId);
-            
-            // Hapus user auth
-            const { error } = await supabase.auth.admin.deleteUser(currentUserId);
-            
-            if (error) throw error;
-
-            alert('Akun berhasil dihapus.');
-            window.location.href = 'index.html';
-
-        } catch (err) {
-            alert('Gagal menghapus akun: ' + err.message);
-        }
-    }
-
-    // 12. Load Data Profil
-    async function loadProfile() {
+    // 11. Load Data Profil Saat Halaman Dibuka
+    document.addEventListener('DOMContentLoaded', async function() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
@@ -427,7 +404,8 @@
                 document.getElementById('countryInput').value = profile.country || 'ID';
                 document.getElementById('cityInput').value = profile.city || '';
 
-                const avatarUrl = profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
+                // Set Avatar
+                const avatarUrl = profile.avatar_url || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + username);
                 document.getElementById('profileAvatar').src = avatarUrl;
                 document.getElementById('navAvatar').src = avatarUrl;
 
@@ -448,12 +426,9 @@
             }
 
         } catch (error) {
-            console.error('Error loading profile:', error);
+            console.error('Akun error:', error);
         }
-    }
-
-    // Jalankan saat halaman load
-    document.addEventListener('DOMContentLoaded', loadProfile);
+    });
     </script>
 </body>
 </html>
