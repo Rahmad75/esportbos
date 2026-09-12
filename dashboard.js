@@ -152,5 +152,92 @@ function checkAndGiveFirstMatchBonus() {
 // Tambahkan ke event listener yang udah ada
 document.addEventListener('DOMContentLoaded', function() {
     checkAndGiveFirstMatchBonus();
+    // Fungsi untuk load transfer data
+async function loadTransferData() {
+    try {
+        // Load completed transfers
+        const { data: transfers, error } = await supabase
+            .from('transfers')
+            .select('*')
+            .eq('status', 'completed')
+            .eq('transfer_type', 'transfer')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        const transfersTable = document.getElementById('latestTransfersTable');
+        if (!transfers || transfers.length === 0) {
+            transfersTable.innerHTML = `
+                <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
+                <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada transfer</div>
+            `;
+        } else {
+            const transfersHtml = transfers.map(t => {
+                const posMap = { 'Top': 'GT', 'Jungle': 'JG', 'Mid': 'MID', 'ADC': 'ADC', 'Support': 'SUP' };
+                const posCode = posMap[t.player_position] || t.player_position?.substring(0, 2).toUpperCase() || 'P';
+                const posColor = posCode === 'GT' || posCode === 'GK' ? '#ff6b6b' : '#28a745';
+                
+                return `
+                    <div class="table-row">
+                        <span class="pos" style="background:${posColor}; color:white; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${posCode}</span>
+                        <span>${t.player_name || '-'}</span>
+                        <span>${t.to_team_name || '-'}</span>
+                        <span class="bid" style="color:#28a745; font-weight:bold;">💰 ${parseFloat(t.bid_amount || 0).toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            transfersTable.innerHTML = `
+                <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
+                ${transfersHtml}
+            `;
+        }
+
+        // Load bids
+        const { data: bids, error: bidsError } = await supabase
+            .from('transfers')
+            .select('*')
+            .eq('status', 'pending')
+            .eq('transfer_type', 'bid')
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        const bidsTable = document.getElementById('latestBidsTable');
+        if (!bids || bids.length === 0) {
+            bidsTable.innerHTML = `
+                <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
+                <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada bid</div>
+            `;
+        } else {
+            const bidsHtml = bids.map(b => {
+                const posMap = { 'Top': 'BT', 'Jungle': 'JG', 'Mid': 'MID', 'ADC': 'ADC', 'Support': 'SUP' };
+                const posCode = posMap[b.player_position] || b.player_position?.substring(0, 2).toUpperCase() || 'P';
+                const posColor = posCode === 'BT' || posCode === 'GK' ? '#3498db' : '#9b59b6';
+                
+                const minutesAgo = Math.floor((new Date() - new Date(b.created_at)) / (1000 * 60));
+                const timeText = minutesAgo < 60 ? `${minutesAgo} Menit` : `${Math.floor(minutesAgo / 60)} Jam`;
+                
+                return `
+                    <div class="table-row">
+                        <span class="pos" style="background:${posColor}; color:white; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${posCode}</span>
+                        <span>${b.to_team_name || b.from_team_name || '-'}</span>
+                        <span class="bid" style="color:#28a745; font-weight:bold;">💰 ${parseFloat(b.bid_amount || 0).toFixed(2)}</span>
+                        <span style="color:#999; font-size:12px;">${timeText}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            bidsTable.innerHTML = `
+                <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
+                ${bidsHtml}
+            `;
+        }
+    } catch (err) {
+        console.error('Error loading transfers:', err);
+    }
+}
+
+// Panggil loadTransferData saat halaman load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTransferData();
 });
 });
