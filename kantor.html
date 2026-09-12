@@ -311,30 +311,59 @@ sync();
         }
 
         async function claimWeeklyIncome() {
-            const activeSponsors = teamData.active_sponsors || [];
-            const weeklyIncome = activeSponsors.reduce((sum, spId) => {
-                const sp = availableSponsorsList.find(s => s.id === spId);
-                return sum + (sp ? sp.income : 0);
-            }, 0);
-            
-            const weeklyExpense = 1000 + (playerCount * 200);
-            const netProfit = weeklyIncome - weeklyExpense;
+    try {
+        // Cek kapan terakhir klaim
+        const { data: team } = await supabase
+            .from('teams')
+            .select('last_claim_at')
+            .eq('id', currentTeamId)
+            .single();
 
-            if (netProfit <= 0 && weeklyIncome === 0) {
-                alert('Tidak ada pendapatan untuk diklaim! Dapatkan sponsor terlebih dahulu.');
+        if (team && team.last_claim_at) {
+            const lastClaim = new Date(team.last_claim_at);
+            const now = new Date();
+            const diffDays = (now - lastClaim) / (1000 * 60 * 60 * 24);
+
+            // Harus tunggu 7 hari (1 minggu)
+            if (diffDays < 7) {
+                const sisaHari = Math.ceil(7 - diffDays);
+                alert(' Anda sudah klaim minggu ini! Tunggu ' + sisaHari + ' hari lagi.');
                 return;
             }
-
-            const newCurrency = userCurrency + netProfit;
-            await supabase.from('profiles').update({ currency: newCurrency }).eq('id', currentUserId);
-            userCurrency = newCurrency;
-            
-            document.getElementById('currencyBalance').textContent = userCurrency.toLocaleString('id-ID');
-            document.getElementById('currentBalance').textContent = userCurrency.toLocaleString('id-ID');
-            
-            showKantorModal('💵 Klaim Berhasil!', `Anda mendapatkan profit bersih sebesar <strong style="color: #28a745;">${netProfit.toLocaleString('id-ID')} Currency</strong>.`);
         }
 
+        // Hitung profit (sesuaikan dengan logic lo)
+        const income = 4500;
+        const expense = 1000;
+        const profit = income - expense;
+
+        // Update saldo user
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('currency')
+            .eq('id', currentUserId)
+            .single();
+
+        const newCurrency = (profile.currency || 0) + profit;
+        await supabase
+            .from('profiles')
+            .update({ currency: newCurrency })
+            .eq('id', currentUserId);
+
+        // Update waktu klaim terakhir
+        await supabase
+            .from('teams')
+            .update({ last_claim_at: new Date().toISOString() })
+            .eq('id', currentTeamId);
+
+        alert('✅ Klaim Berhasil!\nAnda mendapatkan profit bersih sebesar ' + profit.toLocaleString('id-ID') + ' Currency.');
+        location.reload();
+
+    } catch (err) {
+        console.error('Error claiming:', err);
+        alert('Gagal klaim. Coba lagi.');
+    }
+}
         function renderSponsors() {
             const activeSponsors = teamData.active_sponsors || [];
             const currentLevel = teamData.facility_level || 1;
