@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Stadion</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -13,7 +15,7 @@
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
             <div class="search-box">
-                <input type="text" placeholder=" Cari Pemain/Manager/Tim...">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
             </div>
         </div>
         <div class="navbar-right">
@@ -21,97 +23,82 @@
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
-            <div class="stat-badge message">️ Pesan (0)</div>
-            <script src="auth-simple.js"></script>
+            <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
-    <span id="userName">Loading...</span>
-    <button onclick="window.EsportBosAuth.logoutUser()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
-</div>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <span id="userName">Loading...</span>
+                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
             <div class="jam-sidebar-box">
-  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-</div>
-
-<script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
-
-function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
-  const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
-}
-
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
-setInterval(tampilJam, 1000);
-
-// 2. Coba sync ke server diam-diam
-async function sync() {
-  try {
-    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-    const data = await r.json();
-    const server = new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
-  }
-}
-sync();
-</script>
-            <!-- Info Tim -->
-            <div class="team-info-panel">
-                <div class="team-logo">🏆</div>
-                <h3 class="team-name">RRQ Hoshi</h3>
-                <div class="team-rank">16th in C.4 🇮</div>
-                <div class="team-popularity">
-                    <div class="pop-bar">
-                        <div class="pop-fill" style="width: 76%;"></div>
-                    </div>
-                    <span>Popularitas Klub: 76%</span>
-                </div>
-                <div class="team-moral">
-                    <span>Moral Tim: 78%</span>
-                    <div class="moral-bar">
-                        <div class="moral-fill" style="width: 78%;"></div>
-                    </div>
-                </div>
-                <div class="team-stats">
-    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
-</div>
-                <button class="btn-pendanaan">💼 Pendanaan Klub</button>
+                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
             </div>
 
+            <script>
+                let offset = 0;
+                function tampilJam() {
+                    const waktu = new Date(Date.now() + offset);
+                    const j = String(waktu.getHours()).padStart(2,'0');
+                    const m = String(waktu.getMinutes()).padStart(2,'0');
+                    const d = String(waktu.getSeconds()).padStart(2,'0');
+                    const el = document.getElementById('jamServerFinal');
+                    if(el) el.innerText = j+":"+m+":"+d+" WIB";
+                }
+                setInterval(tampilJam, 1000);
+                async function sync() {
+                    try {
+                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+                        const data = await r.json();
+                        const server = new Date(data.dateTime).getTime();
+                        offset = server - Date.now();
+                    } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
+                }
+                sync();
+            </script>
+
+            <div class="team-info-panel">
+                <div class="team-logo">🏆</div>
+                <h3 class="team-name" id="clubName">Loading...</h3>
+                <div class="team-rank" id="clubRank">-</div>
+                <div class="team-popularity">
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
+                </div>
+                <div class="team-moral">
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
+                </div>
+                <div class="team-stats">
+                    <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
+                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
+                </div>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
+            </div>
 
             <nav class="sidebar-menu">
+                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
                 <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
-                <a href="latihan.html" class="menu-item">🏋️ Latihan</a>
-                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="latihan.html" class="menu-item">💪 Latihan</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-                <a href="kantor.html" class="menu-item"> Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item active">🏟️ Stadion</a>
-                <a href="prediksi.html" class="menu-item active">Liga Prediksi</a>
+                <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>🏟️ Manajemen Stadion</span>
                 <span>Upgrade Infrastruktur Klub</span>
@@ -120,37 +107,34 @@ sync();
             <!-- TABS -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchStadionTab('overview')">🏟️ Overview</button>
-                <button class="tab-btn" onclick="switchStadionTab('upgrade')">️ Upgrade</button>
+                <button class="tab-btn" onclick="switchStadionTab('upgrade')">🛠️ Upgrade</button>
                 <button class="tab-btn" onclick="switchStadionTab('income')">💵 Pendapatan</button>
             </div>
 
             <!-- TAB: OVERVIEW -->
             <div id="tab-overview" class="tab-content">
                 <div class="panel raised">
-                    <h3>🏟️ Stadion RRQ Hoshi</h3>
-                    
-                    <div class="stadion-visual">
-                        <div class="stadion-art" id="stadionArt">
-                            <!-- Visual stadion akan di-render JS -->
-                        </div>
-                        <div class="stadion-info-panel">
-                            <h2 id="stadionName">Gaming House Sederhana</h2>
-                            <p>Level <span id="stadionLevel">1</span></p>
-                            <div class="stadion-stats">
-                                <div class="stat-box">
-                                    <span class="stat-icon"></span>
-                                    <span class="stat-value" id="capacity">100</span>
-                                    <span class="stat-label">Kapasitas</span>
+                    <h3>🏟️ Stadion Klub</h3>
+                    <div class="stadion-visual" style="display: flex; gap: 20px; align-items: center; margin-top: 20px; flex-wrap: wrap;">
+                        <div class="stadion-art" id="stadionArt" style="font-size: 80px; flex: 1; text-align: center;">🏠</div>
+                        <div class="stadion-info-panel" style="flex: 2;">
+                            <h2 id="stadionName" style="color: #00d4ff; margin-bottom: 5px;">Gaming House Sederhana</h2>
+                            <p style="color: #aaa; margin-bottom: 15px;">Level <span id="stadionLevel" style="color: #ffd700; font-weight: bold;">1</span></p>
+                            <div class="stadion-stats" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="stat-box" style="background: #16213e; padding: 15px; border-radius: 8px; text-align: center; flex: 1; color: white;">
+                                    <span class="stat-icon" style="font-size: 24px;">👥</span>
+                                    <span class="stat-value" id="capacity" style="display: block; font-size: 20px; font-weight: bold; color: #00d4ff; margin: 5px 0;">100</span>
+                                    <span class="stat-label" style="font-size: 12px; color: #aaa;">Kapasitas</span>
                                 </div>
-                                <div class="stat-box">
-                                    <span class="stat-icon">🎟️</span>
-                                    <span class="stat-value" id="ticketPrice">50</span>
-                                    <span class="stat-label">Harga Tiket</span>
+                                <div class="stat-box" style="background: #16213e; padding: 15px; border-radius: 8px; text-align: center; flex: 1; color: white;">
+                                    <span class="stat-icon" style="font-size: 24px;">🎟️</span>
+                                    <span class="stat-value" id="ticketPrice" style="display: block; font-size: 20px; font-weight: bold; color: #ffd700; margin: 5px 0;">50</span>
+                                    <span class="stat-label" style="font-size: 12px; color: #aaa;">Harga Tiket</span>
                                 </div>
-                                <div class="stat-box">
-                                    <span class="stat-icon">💰</span>
-                                    <span class="stat-value" id="matchIncome">5,000</span>
-                                    <span class="stat-label">Income/Match</span>
+                                <div class="stat-box" style="background: #16213e; padding: 15px; border-radius: 8px; text-align: center; flex: 1; color: white;">
+                                    <span class="stat-icon" style="font-size: 24px;">💰</span>
+                                    <span class="stat-value" id="matchIncome" style="display: block; font-size: 20px; font-weight: bold; color: #28a745; margin: 5px 0;">5,000</span>
+                                    <span class="stat-label" style="font-size: 12px; color: #aaa;">Income/Match</span>
                                 </div>
                             </div>
                         </div>
@@ -161,44 +145,10 @@ sync();
             <!-- TAB: UPGRADE -->
             <div id="tab-upgrade" class="tab-content" style="display:none;">
                 <div class="panel raised">
-                    <h3>️ Upgrade Stadion</h3>
+                    <h3>🛠️ Upgrade Stadion</h3>
                     <p class="info-text">Tingkatkan level stadion untuk menambah kapasitas dan pendapatan tiket.</p>
-                    
-                    <div class="upgrade-stages">
-                        <div class="stage-card completed" id="stage1">
-                            <div class="stage-number">1</div>
-                            <h4>Gaming House</h4>
-                            <p>Kapasitas: 100</p>
-                            <p>Income: 5,000/match</p>
-                            <div class="stage-status">✅ Selesai</div>
-                        </div>
-                        
-                        <div class="stage-card current" id="stage2">
-                            <div class="stage-number">2</div>
-                            <h4>Arena Esport</h4>
-                            <p>Kapasitas: 500</p>
-                            <p>Income: 25,000/match</p>
-                            <div class="stage-status">📍 Saat Ini</div>
-                            <button class="btn-upgrade" onclick="upgradeStadion(2)">Upgrade (15,000 G)</button>
-                        </div>
-                        
-                        <div class="stage-card locked" id="stage3">
-                            <div class="stage-number">3</div>
-                            <h4>Stadion Nasional</h4>
-                            <p>Kapasitas: 2,000</p>
-                            <p>Income: 100,000/match</p>
-                            <div class="stage-status">🔒 Terkunci</div>
-                            <button class="btn-upgrade" onclick="upgradeStadion(3)" disabled>Upgrade (50,000 G)</button>
-                        </div>
-                        
-                        <div class="stage-card locked" id="stage4">
-                            <div class="stage-number">4</div>
-                            <h4>Super Arena</h4>
-                            <p>Kapasitas: 10,000</p>
-                            <p>Income: 500,000/match</p>
-                            <div class="stage-status">🔒 Terkunci</div>
-                            <button class="btn-upgrade" onclick="upgradeStadion(4)" disabled>Upgrade (200,000 G)</button>
-                        </div>
+                    <div class="upgrade-stages" id="upgradeStages" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <!-- Diisi oleh JS -->
                     </div>
                 </div>
             </div>
@@ -208,59 +158,264 @@ sync();
                 <div class="panel raised">
                     <h3>💵 Pendapatan Tiket</h3>
                     <p class="info-text">Klaim pendapatan tiket dari pertandingan kandang.</p>
-                    
-                    <div class="income-overview">
-                        <div class="income-card">
-                            <div class="income-icon">🎟️</div>
+                    <div class="income-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                        <div class="income-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="income-icon" style="font-size: 32px;">🎟️</div>
                             <div class="income-info">
-                                <span class="income-label">Pendapatan Tertunda</span>
-                                <span class="income-value" id="pendingIncome">0</span>
+                                <span class="income-label" style="display: block; color: #aaa; font-size: 12px;">Pendapatan Tertunda</span>
+                                <span class="income-value" id="pendingIncome" style="display: block; font-size: 24px; font-weight: bold; color: #ffd700; margin-top: 5px;">0</span>
                             </div>
                         </div>
-                        <div class="income-card">
-                            <div class="income-icon"></div>
+                        <div class="income-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="income-icon" style="font-size: 32px;">⚽</div>
                             <div class="income-info">
-                                <span class="income-label">Total Match Kandang</span>
-                                <span class="income-value" id="totalHomeMatches">0</span>
+                                <span class="income-label" style="display: block; color: #aaa; font-size: 12px;">Total Match Kandang</span>
+                                <span class="income-value" id="totalHomeMatches" style="display: block; font-size: 24px; font-weight: bold; color: #00d4ff; margin-top: 5px;">0</span>
                             </div>
                         </div>
-                        <div class="income-card">
-                            <div class="income-icon">💰</div>
+                        <div class="income-card" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                            <div class="income-icon" style="font-size: 32px;">💰</div>
                             <div class="income-info">
-                                <span class="income-label">Total Pendapatan</span>
-                                <span class="income-value" id="totalIncome">0</span>
+                                <span class="income-label" style="display: block; color: #aaa; font-size: 12px;">Total Pendapatan</span>
+                                <span class="income-value" id="totalIncome" style="display: block; font-size: 24px; font-weight: bold; color: #28a745; margin-top: 5px;">0</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="income-actions">
-                        <button class="btn-futuristic btn-large" onclick="claimTicketIncome()">💰 Klaim Pendapatan Tiket</button>
+                    <div class="income-actions" style="text-align: center; margin-top: 20px;">
+                        <button class="btn-futuristic btn-large" onclick="claimTicketIncome()" style="padding: 15px 30px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">💰 Klaim Pendapatan Tiket</button>
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
     <!-- MODAL -->
-    <div class="modal" id="stadionModal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeStadionModal()">&times;</span>
+    <div class="modal" id="stadionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: #1a1a2e; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center; color: white; border: 1px solid #00d4ff;">
+            <span class="modal-close" onclick="closeStadionModal()" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
             <div id="stadionModalBody"></div>
         </div>
     </div>
 
-    <script src="auth-simple.js"></script>
-    <script src="stadion.js"></script>
     <!-- ADSTERRA NATIVE BANNER -->
-<div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-    <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-    <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-</div>
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
     <!-- ADSTERRA SOCIAL BAR -->
-<script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-<script src="common.js"></script>
-</body>
-</html>
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <script>
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
+        let currentTeamId = null;
+        let userGold = 0;
+        let stadiumData = {};
+
+        const stadiumLevels = {
+            1: { name: "Gaming House Sederhana", capacity: 100, ticketPrice: 50, income: 5000, upgradeCost: 15000, icon: "🏠" },
+            2: { name: "Arena Esport", capacity: 500, ticketPrice: 50, income: 25000, upgradeCost: 50000, icon: "🏟️" },
+            3: { name: "Stadion Nasional", capacity: 2000, ticketPrice: 50, income: 100000, upgradeCost: 200000, icon: "🏛️" },
+            4: { name: "Super Arena", capacity: 10000, ticketPrice: 100, income: 500000, upgradeCost: null, icon: "🌌" }
+        };
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+
+            if (profile) {
+                userGold = profile.gold || 0;
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+            }
+
+            if (team) {
+                currentTeamId = team.id;
+                stadiumData = {
+                    level: team.stadium_level || 1,
+                    pendingIncome: team.pending_stadium_income || 0,
+                    totalHomeMatches: team.total_home_matches || 0,
+                    totalIncome: team.total_stadium_income || 0
+                };
+
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
+
+            renderStadionOverview();
+            renderUpgradeStages();
+            renderIncomeTab();
+        });
+
+        function switchStadionTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function renderStadionOverview() {
+            const current = stadiumLevels[stadiumData.level];
+            document.getElementById('stadionArt').textContent = current.icon;
+            document.getElementById('stadionName').textContent = current.name;
+            document.getElementById('stadionLevel').textContent = stadiumData.level;
+            document.getElementById('capacity').textContent = current.capacity.toLocaleString('id-ID');
+            document.getElementById('ticketPrice').textContent = current.ticketPrice.toLocaleString('id-ID');
+            document.getElementById('matchIncome').textContent = current.income.toLocaleString('id-ID');
+        }
+
+        function renderUpgradeStages() {
+            const container = document.getElementById('upgradeStages');
+            let html = '';
+
+            for (let i = 1; i <= 4; i++) {
+                const levelData = stadiumLevels[i];
+                let statusClass = '';
+                let statusText = '';
+                let btnDisabled = '';
+                let btnText = '';
+
+                if (i < stadiumData.level) {
+                    statusClass = 'completed';
+                    statusText = '✅ Selesai';
+                    btnText = 'Sudah Dimiliki';
+                    btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+                } else if (i === stadiumData.level) {
+                    statusClass = 'current';
+                    statusText = '📍 Saat Ini';
+                    if (levelData.upgradeCost === null) {
+                        btnText = 'Level Maksimum';
+                        btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+                    } else {
+                        btnText = `Upgrade (${levelData.upgradeCost.toLocaleString('id-ID')} G)`;
+                    }
+                } else {
+                    statusClass = 'locked';
+                    statusText = '🔒 Terkunci';
+                    btnText = levelData.upgradeCost ? `Upgrade (${levelData.upgradeCost.toLocaleString('id-ID')} G)` : 'Maksimum';
+                    btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+                }
+
+                html += `
+                    <div class="stage-card ${statusClass}" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white; border: 1px solid ${i === stadiumData.level ? '#00d4ff' : '#333'};">
+                        <div class="stage-number" style="font-size: 24px; font-weight: bold; color: #ffd700; margin-bottom: 10px;">${i}</div>
+                        <h4 style="margin: 5px 0; color: #00d4ff;">${levelData.name}</h4>
+                        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Kapasitas: ${levelData.capacity.toLocaleString('id-ID')}</p>
+                        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Income: ${levelData.income.toLocaleString('id-ID')}/match</p>
+                        <div class="stage-status" style="margin: 10px 0; font-weight: bold; color: ${i < stadiumData.level ? '#28a745' : (i === stadiumData.level ? '#00d4ff' : '#ff6b6b')}">${statusText}</div>
+                        <button class="btn-upgrade" onclick="upgradeStadion(${i})" ${btnDisabled} style="width: 100%; padding: 10px; background: ${i === stadiumData.level && levelData.upgradeCost ? '#28a745' : '#666'}; color: white; border: none; border-radius: 5px; cursor: ${i === stadiumData.level && levelData.upgradeCost ? 'pointer' : 'not-allowed'}; font-weight: bold; margin-top: 10px;">
+                            ${btnText}
+                        </button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderIncomeTab() {
+            document.getElementById('pendingIncome').textContent = stadiumData.pendingIncome.toLocaleString('id-ID');
+            document.getElementById('totalHomeMatches').textContent = stadiumData.totalHomeMatches.toLocaleString('id-ID');
+            document.getElementById('totalIncome').textContent = stadiumData.totalIncome.toLocaleString('id-ID');
+        }
+
+        async function upgradeStadion(targetLevel) {
+            const currentLevel = stadiumData.level;
+            if (targetLevel !== currentLevel + 1) return; // Hanya bisa upgrade 1 level
+
+            const nextLevelData = stadiumLevels[targetLevel];
+            if (!nextLevelData || !nextLevelData.upgradeCost) return;
+
+            if (userGold < nextLevelData.upgradeCost) {
+                alert(`❌ Gold tidak cukup! Dibutuhkan ${nextLevelData.upgradeCost.toLocaleString('id-ID')} Gold.`);
+                return;
+            }
+
+            if (!confirm(`Yakin ingin upgrade ke ${nextLevelData.name} seharga ${nextLevelData.upgradeCost.toLocaleString('id-ID')} Gold?`)) return;
+
+            // Kurangi Gold
+            const newGold = userGold - nextLevelData.upgradeCost;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // Update Stadium Level
+            stadiumData.level = targetLevel;
+            await supabase.from('teams').update({ stadium_level: targetLevel }).eq('id', currentTeamId);
+
+            alert(`✅ Stadion berhasil di-upgrade ke ${nextLevelData.name}!`);
+            renderStadionOverview();
+            renderUpgradeStages();
+        }
+
+        async function claimTicketIncome() {
+            if (stadiumData.pendingIncome <= 0) {
+                alert('Tidak ada pendapatan tiket yang tertunda untuk diklaim.');
+                return;
+            }
+
+            const incomeToClaim = stadiumData.pendingIncome;
+            
+            // Tambah Gold (karena tiket menggunakan Gold di UI)
+            const newGold = userGold + incomeToClaim;
+            await supabase.from('profiles').update({ gold: newGold }).eq('id', currentUserId);
+            userGold = newGold;
+            document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+            // Reset pending income & tambah total income di database
+            stadiumData.pendingIncome = 0;
+            stadiumData.totalIncome += incomeToClaim;
+            
+            await supabase.from('teams').update({ 
+                pending_stadium_income: 0,
+                total_stadium_income: stadiumData.totalIncome
+            }).eq('id', currentTeamId);
+
+            showStadionModal('💵 Klaim Berhasil!', `Anda berhasil mengklaim <strong style="color: #28a745;">${incomeToClaim.toLocaleString('id-ID')} Gold</strong> dari penjualan tiket.`);
+            renderIncomeTab();
+        }
+
+        function showStadionModal(title, message) {
+            const modal = document.getElementById('stadionModal');
+            const body = document.getElementById('stadionModalBody');
+            body.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+                <h3 style="color: #00d4ff; margin-bottom: 10px;">${title}</h3>
+                <p style="color: #aaa; margin-bottom: 20px;">${message}</p>
+                <button onclick="closeStadionModal()" style="padding: 10px 30px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Tutup</button>
+            `;
+            modal.style.display = 'flex';
+        }
+
+        function closeStadionModal() {
+            document.getElementById('stadionModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
