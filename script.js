@@ -1,30 +1,25 @@
-// ===== ESPORTBOS MAIN SCRIPT =====
-// File ini untuk fitur-fitur umum (bukan auth)
+// script.js - Hanya untuk UI Interactions di Landing Page
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ EsportBos script loaded');
+// Auto-fill referral code dari URL jika ada
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
     
-    // Smooth scroll untuk navigasi
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    });
-    
-    // Animasi saat scroll
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
-        });
-    }, { threshold: 0.1 });
-    
-    document.querySelectorAll('.feature-box, .testimonial-box').forEach(el => {
-        observer.observe(el);
+    if (refCode) {
+        const refInput = document.getElementById('registerReferral');
+        if (refInput) {
+            refInput.value = refCode;
+        }
+    }
+});
+
+// Smooth scroll untuk navigasi
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+        }
     });
 });
