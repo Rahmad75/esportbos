@@ -264,7 +264,7 @@
         }
 
         // 3. Panggil Edge Function via Supabase Client (AUTO HANDLE CORS!)
-        const { data, error } = await supabase.functions.invoke('create-payment', {
+        const { data, error } = await supabase.functions.invoke('created-payment', {
             body: {
                 packageId: packageId,
                 packageName: packageName,
