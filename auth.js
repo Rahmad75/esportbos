@@ -1,5 +1,5 @@
 // ==========================================================
-// AUTH.JS - UNIVERSAL & SAFE (Tidak akan bentrok lagi!)
+// AUTH.JS - UNIVERSAL & SAFE
 // ==========================================================
 
 // 1. Inisialisasi Supabase dengan aman (hanya buat 1x)
@@ -15,7 +15,6 @@ const supabase = window.supabaseClient;
 function showRegister() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('register').style.display = 'block';
-    // Reset turnstile jika ada
     if (window.turnstile) window.turnstile.reset();
 }
 
@@ -41,11 +40,10 @@ async function handleLogin() {
         });
 
         if (error) {
-            alert('❌ Login gagal: ' + error.message);
+            alert(' Login gagal: ' + error.message);
             return;
         }
 
-        // Redirect ke dashboard setelah login berhasil
         window.location.href = 'dashboard.html';
 
     } catch (err) {
@@ -72,19 +70,16 @@ async function handleRegister() {
     }
 
     try {
-        // Skip captcha jika mode testing (tambahkan ?test=true di URL)
         const urlParams = new URLSearchParams(window.location.search);
         const isTestMode = urlParams.get('test') === 'true';
 
         if (!isTestMode) {
-            // Ambil token turnstile
             const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
             if (!turnstileResponse || !turnstileResponse.value) {
                 alert('❌ Harap selesaikan verifikasi captcha!');
                 return;
             }
 
-            // Verifikasi captcha ke Edge Function
             const captchaResponse = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/verify-captcha-', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -98,7 +93,6 @@ async function handleRegister() {
             }
         }
 
-        // Daftar user di Supabase
         const { data, error } = await supabase.auth.signUp({
             email: email,
             password: password,
