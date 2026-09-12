@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Dashboard Manager</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
-    <!-- ===== NAVBAR ATAS ===== -->
+    <!-- NAVBAR -->
     <nav class="top-navbar">
         <div class="navbar-left">
             <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
@@ -33,12 +32,11 @@
     </nav>
 
     <div class="dashboard-wrapper">
-        <!-- ===== SIDEBAR KIRI ===== -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="jam-sidebar-box">
                 <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
             </div>
-
             <script>
                 let offset = 0;
                 function tampilJam() {
@@ -56,7 +54,7 @@
                         const data = await r.json();
                         const server = new Date(data.dateTime).getTime();
                         offset = server - Date.now();
-                    } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
+                    } catch(e) { console.log("Gagal sync server"); }
                 }
                 sync();
             </script>
@@ -86,13 +84,13 @@
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
-                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="transfer.html" class="menu-item"> Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="kantor.html" class="menu-item"> Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
-                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+                <a href="akun.html" class="menu-item"> Akun Saya</a>
             </nav>
 
             <div class="social-icons">
@@ -102,7 +100,7 @@
             </div>
         </aside>
 
-        <!-- ===== MAIN CONTENT ===== -->
+        <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="info-bar">
                 <span>Musim 28 / Hari 3</span>
@@ -140,7 +138,7 @@
                 </div>
             </div>
 
-            <!-- Tabs (DIPERBAIKI: Bisa diklik) -->
+            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchDashboardTab('terbaru', this)">Terbaru</button>
                 <button class="tab-btn" onclick="switchDashboardTab('kalender', this)">Kalender</button>
@@ -159,9 +157,7 @@
 
                     <div class="panel raised">
                         <h3>💬 Postingan Forum Terbaru</h3>
-                        <div class="forum-list" id="forumList">
-                            <!-- Diisi otomatis oleh JavaScript -->
-                        </div>
+                        <div class="forum-list" id="forumList"></div>
                     </div>
                 </div>
             </div>
@@ -177,37 +173,37 @@
                 </div>
             </div>
 
-            <!-- ADSTERRA NATIVE BANNER -->
+            <!-- ADSTERRA BANNER -->
             <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
                 <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
                 <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
             </div>
 
-           <!-- Transfer Tables (Static/Dummy for now) -->
-<div class="transfer-grid">
-    <div class="panel raised">
-        <h3>💸 Transfer Pemain Terbaru</h3>
-        <div class="transfer-table">
-            <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
-            <div class="table-row"><span class="pos gt">GT</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid">💰 0.95</span></div>
-            <div class="table-row"><span class="pos p">P</span><span>ZYXTRONZZ</span><span>Sir Alex XI</span><span class="bid">💰 0.30</span></div>
-        </div>
-    </div>
-    <div class="panel raised">
-        <h3>🔨 Bid Transfer Terbaru</h3>
-        <div class="transfer-table">
-            <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
-            <div class="table-row"><span class="pos bt">BT</span><span>Wimbledon</span><span class="bid">💰 0.90</span><span>9 Menit</span></div>
-            <div class="table-row"><span class="pos gki">GKi</span><span>Sir Alex XI</span><span class="bid"> 0.40</span><span>22 Menit</span></div>
-        </div>
-    </div>
-</div>
+            <!-- Transfer Tables -->
+            <div class="transfer-grid">
+                <div class="panel raised">
+                    <h3>💸 Transfer Pemain Terbaru</h3>
+                    <div class="transfer-table" id="latestTransfersTable">
+                        <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
+                        <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Memuat data...</div>
+                    </div>
+                </div>
+                <div class="panel raised">
+                    <h3>🔨 Bid Transfer Terbaru</h3>
+                    <div class="transfer-table" id="latestBidsTable">
+                        <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
+                        <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Memuat data...</div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- ===== SCRIPT UTAMA DASHBOARD - SUPABASE VERSION ===== -->
+    <!-- [BERSAMBUNG KE PART 2 - SCRIPT] -->
+
+    <!-- SCRIPT UTAMA DASHBOARD -->
     <script>
-    // 1. Initialize Supabase (AMAN: Mencegah error "already declared")
+    // 1. Init Supabase (Aman dari bentrok)
     if (!window.supabaseClient) {
         window.supabaseClient = window.supabase.createClient(
             'https://xvnmpbmyxphrddjjldbt.supabase.co',
@@ -217,127 +213,143 @@
     const supabase = window.supabaseClient;
 
     // 2. Fungsi Logout
-    async function handleLogout() {
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
+    function handleLogout() {
+        supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
     }
 
-    // 3. Fungsi Ganti Tab (Memperbaiki tombol Kalender)
+    // 3. Fungsi Ganti Tab
     function switchDashboardTab(tabName, btnElement) {
         document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        
         const target = document.getElementById('tab-' + tabName);
         if (target) target.style.display = 'block';
         if (btnElement) btnElement.classList.add('active');
     }
 
+    // 4. Fungsi Load Transfer Data
+    async function loadTransferData() {
+        try {
+            const { data: transfers } = await supabase.from('transfers').select('*').eq('status', 'completed').eq('transfer_type', 'transfer').order('created_at', { ascending: false }).limit(5);
+            const tTable = document.getElementById('latestTransfersTable');
+            if (!transfers || transfers.length === 0) {
+                tTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div><div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada transfer</div>';
+            } else {
+                tTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>' + transfers.map(t => {
+                    const posCode = t.player_position?.substring(0, 2).toUpperCase() || 'P';
+                    return '<div class="table-row"><span class="pos" style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">' + posCode + '</span><span>' + (t.player_name || '-') + '</span><span>' + (t.to_team_name || '-') + '</span><span class="bid" style="color:#28a745;">💰 ' + parseFloat(t.bid_amount || 0).toFixed(2) + '</span></div>';
+                }).join('');
+            }
+
+            const { data: bids } = await supabase.from('transfers').select('*').eq('status', 'pending').eq('transfer_type', 'bid').order('created_at', { ascending: false }).limit(5);
+            const bTable = document.getElementById('latestBidsTable');
+            if (!bids || bids.length === 0) {
+                bTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div><div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada bid</div>';
+            } else {
+                bTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>' + bids.map(b => {
+                    const mins = Math.floor((new Date() - new Date(b.created_at)) / (1000 * 60));
+                    const timeText = mins < 60 ? mins + ' Menit' : Math.floor(mins / 60) + ' Jam';
+                    const posCode = b.player_position?.substring(0, 2).toUpperCase() || 'P';
+                    return '<div class="table-row"><span class="pos" style="background:#3498db; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">' + posCode + '</span><span>' + (b.to_team_name || '-') + '</span><span class="bid" style="color:#28a745;">💰 ' + parseFloat(b.bid_amount || 0).toFixed(2) + '</span><span style="color:#999; font-size:12px;">' + timeText + '</span></div>';
+                }).join('');
+            }
+        } catch (err) { console.error('Error loading transfers:', err); }
+    }
+
+    // 5. Main Logic Saat Halaman Load
     document.addEventListener('DOMContentLoaded', async function() {
         try {
-            // 4. Cek Login
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError || !session) {
-                window.location.href = 'index.html';
-                return;
-            }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
             const user = session.user;
 
-            // 5. Ambil Data Profile
+            // Load Profile
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
             if (profile) {
                 const username = profile.username || user.email.split('@')[0];
                 document.getElementById('userName').textContent = username;
-                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
                 document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
                 document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
                 document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
             }
 
-            // 6. Ambil Data Tim
+            // Load Team & Matches
             const { data: team } = await supabase.from('teams').select('*').eq('user_id', user.id).single();
             if (team) {
                 document.getElementById('clubName').textContent = team.team_name || 'My Club';
-                document.getElementById('clubRank').textContent = `${team.wins}W-${team.draws}D-${team.losses}L`;
-                document.getElementById('popularityText').textContent = `Popularitas Klub: ${team.popularity || 0}%`;
-                document.getElementById('popularityBar').style.width = `${team.popularity || 0}%`;
-                document.getElementById('moralText').textContent = `Moral Tim: ${team.moral || 0}%`;
-                document.getElementById('moralBar').style.width = `${team.moral || 0}%`;
-            }
+                document.getElementById('clubRank').textContent = (team.wins || 0) + 'W-' + (team.draws || 0) + 'D-' + (team.losses || 0) + 'L';
+                document.getElementById('popularityText').textContent = 'Popularitas Klub: ' + (team.popularity || 0) + '%';
+                document.getElementById('popularityBar').style.width = (team.popularity || 0) + '%';
+                document.getElementById('moralText').textContent = 'Moral Tim: ' + (team.moral || 0) + '%';
+                document.getElementById('moralBar').style.width = (team.moral || 0) + '%';
 
-            // 7. Update Match Data (LIVE dari Supabase dengan Relational Query)
-            if (team?.id) {
-                const { data: allMatches, error: matchError } = await supabase
-                    .from('matches')
-                    .select('*, home_team:home_team_id(team_name), away_team:away_team_id(team_name)')
-                    .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
-                    .order('match_date', { ascending: false });
+                const { data: allMatches } = await supabase.from('matches').select('*, home_team:home_team_id(team_name), away_team:away_team_id(team_name)').or('home_team_id.eq.' + team.id + ',away_team_id.eq.' + team.id).order('match_date', { ascending: false });
 
-                if (!matchError && allMatches) {
+                if (allMatches) {
                     const finishedMatches = allMatches.filter(m => m.status === 'finished');
-                    const scheduledMatches = allMatches.filter(m => m.status === 'scheduled').reverse(); // Urutkan terdekat dulu
+                    const scheduledMatches = allMatches.filter(m => m.status === 'scheduled').reverse();
 
-                    // A. Last Match
+                    // Last Match
                     if (finishedMatches.length > 0) {
                         const last = finishedMatches[0];
                         document.getElementById('lastMatchHome').textContent = last.home_team?.team_name || '-';
                         document.getElementById('lastMatchHomeScore').textContent = last.home_score ?? '-';
                         document.getElementById('lastMatchAwayScore').textContent = last.away_score ?? '-';
                         document.getElementById('lastMatchAway').textContent = last.away_team?.team_name || '-';
-                        document.getElementById('lastMatchInfo').textContent = `${last.competition || 'Friendly'} - ${new Date(last.match_date).toLocaleDateString('id-ID')}`;
+                        document.getElementById('lastMatchInfo').textContent = (last.competition || 'Friendly') + ' - ' + new Date(last.match_date).toLocaleDateString('id-ID');
                     }
 
-                    // B. Next Match
+                    // Next Match
                     if (scheduledMatches.length > 0) {
                         const next = scheduledMatches[0];
                         const isHome = next.home_team_id === team.id;
                         document.getElementById('nextMatchHome').textContent = next.home_team?.team_name || '-';
                         document.getElementById('nextMatchAway').textContent = next.away_team?.team_name || '-';
-                        document.getElementById('nextMatchInfo').textContent = `${next.competition || 'Friendly'} - ${new Date(next.match_date).toLocaleDateString('id-ID')}`;
-                        document.getElementById('infoNextMatch').textContent = `${isHome ? next.away_team?.team_name : next.home_team?.team_name} (${isHome ? 'K' : 'T'})`;
+                        document.getElementById('nextMatchInfo').textContent = (next.competition || 'Friendly') + ' - ' + new Date(next.match_date).toLocaleDateString('id-ID');
+                        document.getElementById('infoNextMatch').textContent = (isHome ? next.away_team?.team_name : next.home_team?.team_name) + ' (' + (isHome ? 'K' : 'T') + ')';
                     }
 
-                    // C. Pertandingan Terbesar yang Akan Datang (Top 4)
+                    // Upcoming Matches (Tab Terbaru)
                     const upcomingTable = document.getElementById('upcomingMatchesTable');
                     const topUpcoming = scheduledMatches.slice(0, 4);
                     const upcomingHtml = topUpcoming.map(m => {
                         const date = new Date(m.match_date);
                         const diffHours = Math.ceil((date - new Date()) / (1000 * 60 * 60));
-                        const timeText = diffHours > 0 ? `dalam ${diffHours} Jam` : date.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-                        return `<div class="table-row"><span>🏠 ${m.home_team?.team_name || 'TBD'}</span><span>✈️ ${m.away_team?.team_name || 'TBD'}</span><span style="color: #00d4ff;">${timeText}</span></div>`;
+                        const timeText = diffHours > 0 ? 'dalam ' + diffHours + ' Jam' : date.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
+                        return '<div class="table-row"><span>🏠 ' + (m.home_team?.team_name || 'TBD') + '</span><span>✈️ ' + (m.away_team?.team_name || 'TBD') + '</span><span style="color: #00d4ff;">' + timeText + '</span></div>';
                     }).join('');
-                    
-                    upcomingTable.innerHTML = `
-                        <div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div>
-                        ${upcomingHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada pertandingan yang dijadwalkan.</div>'}
-                    `;
+                    upcomingTable.innerHTML = '<div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div>' + (upcomingHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada pertandingan yang dijadwalkan.</div>');
 
-                    // D. Kalender Pertandingan (Semua)
+                    // Calendar Matches (Tab Kalender)
                     const calendarTable = document.getElementById('calendarMatchesTable');
                     const calendarMatches = [...allMatches].sort((a,b) => new Date(a.match_date) - new Date(b.match_date));
                     const calendarHtml = calendarMatches.map(m => {
                         const timeText = new Date(m.match_date).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-                        const badge = m.status === 'finished' 
-                            ? '<span style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">Selesai</span>' 
-                            : '<span style="background:#ffc107; color:black; padding:2px 8px; border-radius:4px; font-size:12px;">Akan Datang</span>';
-                        return `<div class="table-row"><span>🏠 ${m.home_team?.team_name || 'TBD'}</span><span>✈️ ${m.away_team?.team_name || 'TBD'}</span><span>${timeText}</span><span>${badge}</span></div>`;
+                        const badge = m.status === 'finished' ? '<span style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">Selesai</span>' : '<span style="background:#ffc107; color:black; padding:2px 8px; border-radius:4px; font-size:12px;">Akan Datang</span>';
+                        return '<div class="table-row"><span>🏠 ' + (m.home_team?.team_name || 'TBD') + '</span><span>✈️ ' + (m.away_team?.team_name || 'TBD') + '</span><span>' + timeText + '</span><span>' + badge + '</span></div>';
                     }).join('');
-
-                    calendarTable.innerHTML = `
-                        <div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span><span>Status</span></div>
-                        ${calendarHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada jadwal pertandingan.</div>'}
-                    `;
+                    calendarTable.innerHTML = '<div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span><span>Status</span></div>' + (calendarHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada jadwal pertandingan.</div>');
                 }
             }
 
-            // 8. Update Forum (Default)
+            // Forum Posts
             const forumList = document.getElementById('forumList');
             forumList.innerHTML = [
                 { topic: "🔥 Selamat datang di EsportBos Manager!", time: "Baru saja" },
                 { topic: "Tips mendapatkan Currency dengan cepat", time: "1 Jam lalu" },
                 { topic: "Strategi taktik 4-3-3 untuk pemula", time: "3 Jam lalu" }
-            ].map(post => `<div class="forum-item"><span class="forum-topic">${post.topic}</span><span class="forum-time">${post.time}</span></div>`).join('');
+            ].map(post => '<div class="forum-item"><span class="forum-topic">' + post.topic + '</span><span class="forum-time">' + post.time + '</span></div>').join('');
 
-            // 9. FIRST MATCH BONUS
-            const { data: firstMatchCheck } = await supabase.from('user_bonus').select('*').eq('user_id', user.id).eq('bonus_type', 'first_match').single();
-            if (!firstMatchCheck && profile) {
-                const newCurrency = (profile.currency || 0) + 500;
+            // Load Transfers
+            loadTransferData();
+
+        } catch (error) {
+            console.error('Dashboard error:', error);
+        }
+    });
+    </script>
+
+    <!-- ADSTERRA SOCIAL BAR -->
+    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
+</body>
+</html>
