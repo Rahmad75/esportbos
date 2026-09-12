@@ -226,6 +226,13 @@ sync();
             );
         }
         var supabase = window.supabaseClient;
+        function switchAkademiTab(tabName, btnElement) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const target = document.getElementById('tab-' + tabName);
+    if (target) target.style.display = 'block';
+    if (btnElement) btnElement.classList.add('active');
+}
         let currentTeamId = null;
         let currentUserId = null;
         let userGold = 0;
