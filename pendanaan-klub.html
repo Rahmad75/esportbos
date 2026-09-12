@@ -263,35 +263,25 @@
             return;
         }
 
-        // 3. Panggil Edge Function dengan Authorization Header
-        const response = await fetch(
-            'https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    packageId: packageId,
-                    packageName: packageName,
-                    amount: amount,
-                    diamonds: diamonds,
-                    gold: gold || 0
-                })
+        // 3. Panggil Edge Function via Supabase Client (AUTO HANDLE CORS!)
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+            body: {
+                packageId: packageId,
+                packageName: packageName,
+                amount: amount,
+                diamonds: diamonds,
+                gold: gold || 0
             }
-        );
+        });
 
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || 'Payment failed');
+        if (error) {
+            throw new Error(error.message || 'Payment failed');
         }
 
         // 4. Redirect ke halaman pembayaran Duitku
-        if (result.paymentUrl) {
+        if (data && data.paymentUrl) {
             alert('Mengalihkan ke halaman pembayaran...');
-            window.location.href = result.paymentUrl;
+            window.location.href = data.paymentUrl;
         } else {
             alert('Payment URL tidak tersedia. Silakan coba lagi.');
         }
