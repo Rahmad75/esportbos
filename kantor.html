@@ -312,7 +312,7 @@ sync();
 
         async function claimWeeklyIncome() {
     try {
-        // Cek kapan terakhir klaim
+        // 1. Cek kapan terakhir klaim (Cooldown 7 hari)
         const { data: team } = await supabase
             .from('teams')
             .select('last_claim_at')
@@ -324,20 +324,19 @@ sync();
             const now = new Date();
             const diffDays = (now - lastClaim) / (1000 * 60 * 60 * 24);
 
-            // Harus tunggu 7 hari (1 minggu)
             if (diffDays < 7) {
                 const sisaHari = Math.ceil(7 - diffDays);
-                alert(' Anda sudah klaim minggu ini! Tunggu ' + sisaHari + ' hari lagi.');
+                alert('⏳ Anda sudah klaim minggu ini! Tunggu ' + sisaHari + ' hari lagi.');
                 return;
             }
         }
 
-        // Hitung profit (sesuaikan dengan logic lo)
-        const income = 4500;
-        const expense = 1000;
-        const profit = income - expense;
+        // 2. Hitung Profit (Sesuai Skema Baru)
+        const income = 5000; // Naik dari 4500
+        const expense = 0;   // Dihapus biar player senang
+        const profit = income - expense; // Hasil bersih: 5000 Currency
 
-        // Update saldo user
+        // 3. Update Saldo User
         const { data: profile } = await supabase
             .from('profiles')
             .select('currency')
@@ -350,18 +349,21 @@ sync();
             .update({ currency: newCurrency })
             .eq('id', currentUserId);
 
-        // Update waktu klaim terakhir
+        // 4. Update Waktu Klaim Terakhir
         await supabase
             .from('teams')
             .update({ last_claim_at: new Date().toISOString() })
             .eq('id', currentTeamId);
 
-        alert('✅ Klaim Berhasil!\nAnda mendapatkan profit bersih sebesar ' + profit.toLocaleString('id-ID') + ' Currency.');
+        // 5. Tampilkan Pesan Sukses
+        alert('✅ Klaim Berhasil!\nAnda mendapatkan gaji mingguan sebesar ' + profit.toLocaleString('id-ID') + ' Currency.');
+        
+        // Refresh halaman biar angka di layar update
         location.reload();
 
     } catch (err) {
         console.error('Error claiming:', err);
-        alert('Gagal klaim. Coba lagi.');
+        alert(' Gagal klaim. Coba lagi.');
     }
 }
         function renderSponsors() {
