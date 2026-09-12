@@ -1,26 +1,21 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Pertandingan</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
 </head>
 <body class="dashboard-body">
-
-    <!-- ===== NAVBAR ATAS ===== -->
     <nav class="top-navbar">
         <div class="navbar-left">
             <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
-            <div class="search-box">
-                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
-            </div>
+            <div class="search-box"><input type="text" placeholder=" Cari Pemain/Manager/Tim..."></div>
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
@@ -31,59 +26,22 @@
             <div class="user-profile">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
                 <span id="userName">Loading...</span>
-                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+                <button onclick="handleLogout()" style="margin-left:10px;padding:5px 10px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-        <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <div class="jam-sidebar-box">
-  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-</div>
-
-<script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
-
-function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
-  const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
-}
-
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
-setInterval(tampilJam, 1000);
-
-// 2. Coba sync ke server diam-diam
-async function sync() {
-  try {
-    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-    const data = await r.json();
-    const server = new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
-  }
-}
-sync();
-</script>
+            <div class="jam-sidebar-box"><div id="jamServerFinal" style="font-family:monospace;font-size:22px;color:#00d9ff;font-weight:bold;">--:--:--</div></div>
+            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
+            
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name" id="clubName">Loading...</h3>
+                <h3 class="team-name" id="clubName">My Club</h3>
                 <div class="team-rank" id="clubRank">-</div>
-                <div class="team-popularity">
-                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
-                    <span id="popularityText">Popularitas Klub: 0%</span>
-                </div>
-                <div class="team-moral">
-                    <span id="moralText">Moral Tim: 0%</span>
-                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
-                </div>
+                <div class="team-popularity"><span id="popularityText">Popularitas Klub: 0%</span><div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width:0%;"></div></div></div>
+                <div class="team-moral"><span id="moralText">Moral Tim: 0%</span><div class="moral-bar"><div class="moral-fill" id="moralBar" style="width:0%;"></div></div></div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
                     <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
@@ -97,305 +55,300 @@ sync();
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item active">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
-                <a href="transfer.html" class="menu-item">💰 Transfer</a>
+                <a href="transfer.html" class="menu-item"> Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
+                <a href="kantor.html" class="menu-item"> Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
-                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
+                <a href="akun.html" class="menu-item"> Akun Saya</a>
             </nav>
+            <div class="social-icons"><a href="#">📘</a><a href="#">💬</a><a href="#">📷</a></div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <div class="info-bar">
-                <span>⚔️ Pusat Pertandingan</span>
-                <span id="seasonInfo">Musim 1 / Hari 1</span>
-            </div>
-
-            <!-- TABS -->
+            <div class="info-bar"><span>⚔️ Pertandingan</span><span>Mainkan pertandingan dan dapatkan reward!</span></div>
+            
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('jadwal')">📅 Jadwal</button>
-                <button class="tab-btn" onclick="switchTab('hasil')">📊 Hasil</button>
-                <button class="tab-btn" onclick="switchTab('klasemen')">🏆 Klasemen</button>
+                <button class="tab-btn active" onclick="switchMatchTab('jadwal',this)">📅 Jadwal</button>
+                <button class="tab-btn" onclick="switchMatchTab('simulasi',this)">🎮 Simulasi</button>
+                <button class="tab-btn" onclick="switchMatchTab('riwayat',this)">📜 Riwayat</button>
             </div>
 
-            <!-- TAB: JADWAL -->
-            <div id="tab-jadwal" class="tab-content">
-                <div class="match-preview panel raised">
-                    <h3>🎯 Pertandingan Selanjutnya</h3>
-                    <div class="match-vs">
-                        <div class="team-side">
-                            <div class="team-logo-big">🏆</div>
-                            <h2 id="previewMyTeam">Loading...</h2>
-                            <p id="previewMyRank">Rank: -</p>
-                            <p>Power: <strong id="previewMyPower">0</strong></p>
-                        </div>
-                        <div class="vs-center">
-                            <div class="vs-text">VS</div>
-                            <div class="match-timer" id="matchTimer">Loading...</div>
-                            <button class="btn-futuristic" id="btnMainMatch" onclick="startLiveMatch()">⚔️ MAINKAN MATCH</button>
-                        </div>
-                        <div class="team-side">
-                            <div class="team-logo-big">⚽</div>
-                            <h2 id="previewEnemyTeam">Loading...</h2>
-                            <p id="previewEnemyRank">Rank: -</p>
-                            <p>Power: <strong id="previewEnemyPower">0</strong></p>
-                        </div>
-                    </div>
+            <div id="tab-jadwal" class="tab-content" style="display:block;">
+                <div class="panel raised">
+                    <h3>📅 Jadwal Pertandingan</h3>
+                    <p style="color:#999;margin-bottom:20px;">Pertandingan yang akan datang untuk tim Anda.</p>
+                    <div id="upcomingMatchesList" style="display:grid;gap:15px;"></div>
+                </div>
+            </div>
 
-                    <!-- Taktik Sebelum Match -->
-                    <div class="tactic-setup wood-panel" id="tacticSetup">
-                        <h3>🧠 Atur Strategi Match</h3>
-                        <div class="tactic-grid">
-                            <div class="tactic-option">
-                                <label>🎯 Gaya Bermain</label>
-                                <select id="strategi">
-                                    <option value="aggressive">⚡ Aggressive</option>
-                                    <option value="balanced" selected>⚖️ Balanced</option>
-                                    <option value="defensive">🛡️ Defensive</option>
-                                </select>
+            <div id="tab-simulasi" class="tab-content" style="display:none;">
+                <div class="panel raised">
+                    <h3>🎮 Simulasi Pertandingan</h3>
+                    <p style="color:#999;margin-bottom:20px;">Simulasikan pertandingan untuk mendapatkan reward!</p>
+                    
+                    <div style="background:#16213e;padding:30px;border-radius:12px;text-align:center;color:white;margin-bottom:20px;">
+                        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;margin-bottom:20px;">
+                            <div>
+                                <div style="font-size:48px;margin-bottom:10px;">🏠</div>
+                                <div id="homeTeamName" style="font-size:18px;font-weight:bold;color:#00d4ff;">My Club</div>
                             </div>
-                            <div class="tactic-option">
-                                <label>🎯 Fokus Objective</label>
-                                <select id="objective">
-                                    <option value="early">⏰ Early Game</option>
-                                    <option value="objective" selected>🐉 Dragon/Baron</option>
-                                    <option value="teamfight">⚔️ Team Fight</option>
-                                </select>
+                            <div style="font-size:32px;font-weight:bold;color:#ffd700;">VS</div>
+                            <div>
+                                <div style="font-size:48px;margin-bottom:10px;">✈️</div>
+                                <div id="awayTeamName" style="font-size:18px;font-weight:bold;color:#00d4ff;">Lawan</div>
                             </div>
                         </div>
+                        <button onclick="simulateMatch()" id="simulateButton" style="padding:15px 40px;background:#28a745;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;">⚽ MULAI PERTANDINGAN!</button>
                     </div>
 
-                    <!-- LIVE MATCH UI (Hidden by default) -->
-                    <div id="liveMatchUI" style="display:none;">
-                        <div class="live-match-header">
-                            <div class="map-indicator" id="mapIndicator">Map 1/3</div>
-                            <div class="map-score" id="mapScore">0 - 0</div>
-                        </div>
-                        <div class="live-timer" id="liveTimer">⏱️ 00:00 | Game Time: 00:00</div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="matchProgress" style="width: 0%;"></div>
-                        </div>
-                        <div class="live-score" id="liveScore" style="text-align:center; font-size: 24px; font-weight:bold; margin: 10px 0;">0 - 0</div>
-                        <div class="live-commentary" id="liveCommentary" style="max-height: 150px; overflow-y: auto; background: #111; padding: 10px; border-radius: 5px; font-size: 14px;"></div>
-                    </div>
-                </div>
-
-                <!-- Jadwal Minggu Ini -->
-                <div class="panel raised">
-                    <h3>📅 Jadwal Minggu Ini</h3>
-                    <div class="schedule-list" id="scheduleList">
-                        <p style="text-align:center; color:#999;">Memuat jadwal...</p>
+                    <div id="matchResult" style="display:none;background:#1a1a2e;padding:20px;border-radius:8px;border:2px solid #00d4ff;">
+                        <h4 style="color:#00d4ff;margin-bottom:15px;">📊 Hasil Pertandingan</h4>
+                        <div id="matchResultContent"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB: HASIL -->
-            <div id="tab-hasil" class="tab-content" style="display:none;">
+            <div id="tab-riwayat" class="tab-content" style="display:none;">
                 <div class="panel raised">
-                    <h3>📊 Hasil Pertandingan Terakhir</h3>
-                    <div id="matchHistory">
-                        <p style="text-align:center; color:#999;">Memuat riwayat...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: KLASEMEN -->
-            <div id="tab-klasemen" class="tab-content" style="display:none;">
-                <div class="panel raised">
-                    <h3>🏆 Klasemen Liga</h3>
-                    <table class="standings-table" style="width: 100%; border-collapse: collapse; color: white;">
-                        <thead>
-                            <tr style="background: #16213e; text-align: left;">
-                                <th style="padding: 10px;">#</th>
-                                <th style="padding: 10px;">Tim</th>
-                                <th style="padding: 10px;">Main</th>
-                                <th style="padding: 10px;">Menang</th>
-                                <th style="padding: 10px;">Kalah</th>
-                                <th style="padding: 10px;">Poin</th>
-                            </tr>
-                        </thead>
-                        <tbody id="standingsBody"></tbody>
-                    </table>
+                    <h3>📜 Riwayat Pertandingan</h3>
+                    <p style="color:#999;margin-bottom:20px;">Daftar pertandingan yang sudah dimainkan.</p>
+                    <div id="matchHistoryList" style="display:grid;gap:15px;"></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- ADSTERRA NATIVE BANNER -->
-    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
-        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
-        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
-    </div>
-    <!-- ADSTERRA SOCIAL BAR -->
-    <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
-
-    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
+    <!-- [BERSAMBUNG KE PART 2 - SCRIPT] -->
     <script>
-        // 1. Init Supabase
-        if (!window.supabaseClient) {
-            window.supabaseClient = window.supabase.createClient(
-                'https://xvnmpbmyxphrddjjldbt.supabase.co',
-                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
-            );
-        }
-        const supabase = window.supabaseClient;
-        let currentTeamId = null;
+    // 1. Init Supabase (Aman dari duplikasi)
+    if (!window.supabaseClient) {
+        window.supabaseClient = window.supabase.createClient(
+            'https://xvnmpbmyxphrddjjldbt.supabase.co',
+            'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+        );
+    }
+    var supabase = window.supabaseClient;
 
-        async function handleLogout() {
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
+    // 2. Variabel Global
+    var currentUserId = null;
+    var currentTeamId = null;
+    var currentTeamName = "My Club";
+
+    // 3. Fungsi Logout
+    function handleLogout() {
+        supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
+    }
+
+    // 4. Fungsi Ganti Tab
+    function switchMatchTab(tabName, btnElement) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        const target = document.getElementById('tab-' + tabName);
+        if (target) target.style.display = 'block';
+        if (btnElement) btnElement.classList.add('active');
+    }
+
+    // 5. Fungsi Simulasi Pertandingan
+    async function simulateMatch() {
+        const btn = document.getElementById('simulateButton');
+        btn.disabled = true;
+        btn.textContent = "⚽ Sedang Bertanding...";
+        btn.style.background = "#555";
+
+        // Simulasi loading 2 detik biar terasa seru
+        await new Promise(r => setTimeout(r, 2000));
+
+        // Generate Skor Random (0 - 5)
+        const homeScore = Math.floor(Math.random() * 6);
+        const awayScore = Math.floor(Math.random() * 6);
+        
+        // Tentukan Lawan (Random nama buat simulasi)
+        const opponents = ["Garuda Esports", "Naga Merah", "Banteng FC", "Elang Jawa", "Harimau Sumatra"];
+        const randomOpponent = opponents[Math.floor(Math.random() * opponents.length)];
+
+        document.getElementById('awayTeamName').textContent = randomOpponent;
+
+        // Tentukan Hasil
+        let result = 'lose';
+        let resultText = 'KALAH';
+        let resultColor = '#ff6b6b';
+
+        if (homeScore > awayScore) {
+            result = 'win';
+            resultText = 'MENANG';
+            resultColor = '#28a745';
+        } else if (homeScore === awayScore) {
+            result = 'draw';
+            resultText = 'SERI';
+            resultColor = '#ffc107';
         }
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 2. Cek Auth
+        // Tampilkan Hasil di UI
+        const resultDiv = document.getElementById('matchResult');
+        const resultContent = document.getElementById('matchResultContent');
+        
+        resultDiv.style.display = 'block';
+        resultContent.innerHTML = `
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2 style="color:${resultColor}; font-size:32px; margin:0;">${resultText}</h2>
+                <div style="font-size:48px; font-weight:bold; color:white; margin:10px 0;">
+                    ${homeScore} - ${awayScore}
+                </div>
+                <p style="color:#999;">${currentTeamName} vs ${randomOpponent}</p>
+            </div>
+        `;
+
+        // Berikan Reward
+        await giveMatchReward(result);
+
+        // Simpan ke Database (Riwayat)
+        try {
+            await supabase.from('matches').insert({
+                home_team_id: currentTeamId,
+                away_team_name: randomOpponent, // Simpan nama aja kalau belum ada tabel lawan
+                home_score: homeScore,
+                away_score: awayScore,
+                status: 'finished',
+                match_date: new Date().toISOString(),
+                user_id: currentUserId
+            });
+        } catch (err) {
+            console.log("Gagal simpan riwayat (mungkin schema belum lengkap), tapi reward tetap cair!");
+        }
+
+        // Reset Tombol
+        btn.disabled = false;
+        btn.textContent = "⚽ MAIN LAGI!";
+        btn.style.background = "#28a745";
+        
+        // Refresh Riwayat
+        loadMatchHistory();
+    }
+
+    // 6. Fungsi Bagi Reward (Sesuai Skema MPL)
+    async function giveMatchReward(result) {
+        let reward = 0;
+        
+        // Skema Reward
+        if (result === 'win') reward = 10000;
+        else if (result === 'draw') reward = 2000;
+        else if (result === 'lose') reward = 500;
+
+        if (reward > 0 && currentUserId) {
+            try {
+                // Ambil saldo saat ini
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('currency')
+                    .eq('id', currentUserId)
+                    .single();
+
+                // Tambahkan reward
+                const newBalance = (profile.currency || 0) + reward;
+                
+                // Update database
+                await supabase
+                    .from('profiles')
+                    .update({ currency: newBalance })
+                    .eq('id', currentUserId);
+
+                // Update tampilan sidebar
+                const saldoEl = document.getElementById('currencyBalance');
+                if (saldoEl) saldoEl.textContent = newBalance.toLocaleString('id-ID');
+
+                alert('💰 Reward Pertandingan!\nAnda mendapatkan ' + reward.toLocaleString('id-ID') + ' Currency.');
+
+            } catch (err) {
+                console.error('Gagal memberi reward:', err);
+            }
+        }
+    }
+
+    // 7. Load Riwayat Pertandingan
+    async function loadMatchHistory() {
+        if (!currentUserId) return;
+        
+        try {
+            const { data: matches } = await supabase
+                .from('matches')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .order('match_date', { ascending: false })
+                .limit(10);
+
+            const list = document.getElementById('matchHistoryList');
+            
+            if (!matches || matches.length === 0) {
+                list.innerHTML = '<p style="text-align:center;color:#999;">Belum ada riwayat pertandingan. Ayo main di tab Simulasi!</p>';
+                return;
+            }
+
+            list.innerHTML = matches.map(m => {
+                const isWin = m.home_score > m.away_score;
+                const isDraw = m.home_score === m.away_score;
+                const statusColor = isWin ? '#28a745' : (isDraw ? '#ffc107' : '#ff6b6b');
+                const statusText = isWin ? 'MENANG' : (isDraw ? 'SERI' : 'KALAH');
+                const date = new Date(m.match_date).toLocaleDateString('id-ID');
+
+                return `
+                <div style="background:#16213e;padding:15px;border-radius:8px;border-left:5px solid ${statusColor};display:flex;justify-content:space-between;align-items:center;color:white;">
+                    <div>
+                        <div style="font-weight:bold;color:#00d4ff;">${currentTeamName} vs ${m.away_team_name || 'Lawan'}</div>
+                        <div style="font-size:12px;color:#999;">${date}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:20px;font-weight:bold;">${m.home_score} - ${m.away_score}</div>
+                        <div style="font-size:12px;color:${statusColor};font-weight:bold;">${statusText}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+        } catch (err) {
+            console.error('Error load history:', err);
+        }
+    }
+
+    // 8. Main Logic Saat Halaman Load
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
+            currentUserId = session.user.id;
 
-            // 3. Load Profile & Team
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-            const { data: team } = await supabase.from('teams').select('*').eq('user_id', session.user.id).single();
+            // Load Data Tim
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+            if (team) {
+                currentTeamId = team.id;
+                currentTeamName = team.team_name || 'My Club';
+                document.getElementById('clubName').textContent = currentTeamName;
+                document.getElementById('homeTeamName').textContent = currentTeamName;
+                document.getElementById('clubRank').textContent = (team.wins || 0) + 'W-' + (team.draws || 0) + 'D-' + (team.losses || 0) + 'L';
+                document.getElementById('popularityText').textContent = 'Popularitas Klub: ' + (team.popularity || 0) + '%';
+                document.getElementById('popularityBar').style.width = (team.popularity || 0) + '%';
+                document.getElementById('moralText').textContent = 'Moral Tim: ' + (team.moral || 0) + '%';
+                document.getElementById('moralBar').style.width = (team.moral || 0) + '%';
+            }
 
+            // Load Saldo User
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
             if (profile) {
                 const username = profile.username || session.user.email.split('@')[0];
                 document.getElementById('userName').textContent = username;
-                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
                 document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
                 document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
                 document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
             }
 
-            if (team) {
-                currentTeamId = team.id;
-                document.getElementById('clubName').textContent = team.team_name;
-                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
-                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
-                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
-                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
-                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            // Load Riwayat
+            loadMatchHistory();
 
-                // Update Match Preview
-                document.getElementById('previewMyTeam').textContent = team.team_name;
-                document.getElementById('previewMyRank').textContent = `Rank: #${Math.floor(Math.random() * 20) + 1}`; // Dummy rank for now
-                document.getElementById('previewMyPower').textContent = Math.floor((team.popularity + team.moral) * 15);
-
-                // Load Matches
-                await loadMatches(team.id);
-                await loadStandings();
-            }
-        });
-
-        async function loadMatches(teamId) {
-            // Ambil 5 match terdekat (baik sebagai home atau away)
-            const { data: matches, error } = await supabase
-                .from('matches')
-                .select('*')
-                .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
-                .order('match_date', { ascending: true })
-                .limit(5);
-
-            const scheduleList = document.getElementById('scheduleList');
-            const matchHistory = document.getElementById('matchHistory');
-            
-            if (matches && matches.length > 0) {
-                // Update Next Match Preview (Match pertama yang belum finished)
-                const nextMatch = matches.find(m => m.status !== 'finished');
-                if (nextMatch) {
-                    const isHome = nextMatch.home_team_id === teamId;
-                    const enemyId = isHome ? nextMatch.away_team_id : nextMatch.home_team_id;
-                    
-                    // Fetch enemy team name
-                    const { data: enemyTeam } = await supabase.from('teams').select('team_name').eq('id', enemyId).single();
-                    
-                    document.getElementById('previewEnemyTeam').textContent = enemyTeam ? enemyTeam.team_name : 'Unknown';
-                    document.getElementById('previewEnemyRank').textContent = 'Rank: -';
-                    document.getElementById('previewEnemyPower').textContent = '2450'; // Dummy
-                    
-                    const date = new Date(nextMatch.match_date);
-                    document.getElementById('matchTimer').textContent = date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-                }
-
-                // Render Schedule & History
-                let scheduleHTML = '';
-                let historyHTML = '';
-
-                matches.forEach(m => {
-                    const isHome = m.home_team_id === teamId;
-                    const myScore = isHome ? m.home_score : m.away_score;
-                    const enemyScore = isHome ? m.away_score : m.home_score;
-                    const dateStr = new Date(m.match_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-                    
-                    const row = `
-                        <div style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; align-items: center;">
-                            <span style="color: #aaa; font-size: 12px;">${dateStr}</span>
-                            <span style="font-weight: bold;">${isHome ? 'Kandang' : 'Tandang'}</span>
-                            <span style="color: #ffd700; font-weight: bold;">${m.status === 'finished' ? `${myScore} - ${enemyScore}` : 'VS'}</span>
-                            <span style="font-size: 12px; background: ${m.status === 'finished' ? '#28a745' : '#ffc107'}; color: #000; padding: 2px 6px; border-radius: 4px;">${m.status === 'finished' ? 'Selesai' : 'Akan Datang'}</span>
-                        </div>
-                    `;
-                    
-                    if (m.status === 'finished') {
-                        historyHTML += row;
-                    } else {
-                        scheduleHTML += row;
-                    }
-                });
-
-                scheduleList.innerHTML = scheduleHTML || '<p style="text-align:center; color:#999; padding:10px;">Tidak ada jadwal mendatang.</p>';
-                matchHistory.innerHTML = historyHTML || '<p style="text-align:center; color:#999; padding:10px;">Belum ada pertandingan yang dimainkan.</p>';
-            } else {
-                scheduleList.innerHTML = '<p style="text-align:center; color:#999; padding:10px;">Belum ada jadwal. Hubungi Admin Liga.</p>';
-            }
+        } catch (error) {
+            console.error('Error loading match page:', error);
         }
-
-        async function loadStandings() {
-            // Ambil semua tim, urutkan berdasarkan poin (wins * 3 + draws)
-            const { data: teams } = await supabase.from('teams').select('team_name, wins, draws, losses').order('wins', { ascending: false });
-            
-            const tbody = document.getElementById('standingsBody');
-            if (teams) {
-                tbody.innerHTML = teams.map((t, index) => {
-                    const points = (t.wins * 3) + t.draws;
-                    const played = t.wins + t.draws + t.losses;
-                    const isMyTeam = t.team_name === document.getElementById('clubName').textContent;
-                    const bg = isMyTeam ? 'background: rgba(0, 212, 255, 0.1);' : '';
-                    
-                    return `
-                        <tr style="${bg} border-bottom: 1px solid #333;">
-                            <td style="padding: 10px;">${index + 1}</td>
-                            <td style="padding: 10px; font-weight: bold; color: ${isMyTeam ? '#00d4ff' : 'white'};">${t.team_name}</td>
-                            <td style="padding: 10px;">${played}</td>
-                            <td style="padding: 10px; color: #28a745;">${t.wins}</td>
-                            <td style="padding: 10px; color: #ff6b6b;">${t.losses}</td>
-                            <td style="padding: 10px; font-weight: bold; color: #ffd700;">${points}</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-        }
-
-        // UI Helpers
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(`tab-${tabName}`).style.display = 'block';
-            event.target.classList.add('active');
-        }
-
-        function startLiveMatch() {
-            document.getElementById('tacticSetup').style.display = 'none';
-            document.getElementById('btnMainMatch').style.display = 'none';
-            document.getElementById('liveMatchUI').style.display = 'block';
-            
-            // Simulasi Live Match Sederhana
-            let minute = 0;
-            let scoreA = 0, scoreB = 0;
-            const commentary = document.getElementById('liveCommentary');
-            
-            commentary.innerHTML += '<div style="color: #00d4ff;">[00:00] Match dimulai!</div>';
-            
-            const interval = setInterval(() => {
-                minute += 5;
-                document.getElementById('liveTimer')
+    });
+    </script>
+</body>
+</html>
