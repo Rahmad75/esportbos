@@ -1,17 +1,16 @@
 // ==========================================================
-// AUTH.JS - UNIVERSAL & SAFE
+// AUTH.JS - FINAL ANTI-BENTROK VERSION
 // ==========================================================
 
-// 1. Inisialisasi Supabase dengan aman (hanya buat 1x)
+// 1. Pastikan Supabase Client ada di window (Hanya dibuat 1x)
 if (!window.supabaseClient) {
     window.supabaseClient = window.supabase.createClient(
         'https://xvnmpbmyxphrddjjldbt.supabase.co',
         'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
     );
 }
-const supabase = window.supabaseClient;
 
-// 2. Fungsi Toggle Tampilan Login/Register
+// 2. Fungsi Toggle Tampilan
 function showRegister() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('register').style.display = 'block';
@@ -34,13 +33,14 @@ async function handleLogin() {
     }
 
     try {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // PAKAI window.supabaseClient LANGSUNG
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
 
         if (error) {
-            alert(' Login gagal: ' + error.message);
+            alert('❌ Login gagal: ' + error.message);
             return;
         }
 
@@ -93,7 +93,8 @@ async function handleRegister() {
             }
         }
 
-        const { data, error } = await supabase.auth.signUp({
+        // PAKAI window.supabaseClient LANGSUNG
+        const { data, error } = await window.supabaseClient.auth.signUp({
             email: email,
             password: password,
             options: {
@@ -118,4 +119,4 @@ async function handleRegister() {
     }
 }
 
-console.log('✅ Auth.js loaded successfully (Universal Safe Mode)');
+console.log('✅ Auth.js loaded successfully (FINAL ANTI-BENTROK)');
