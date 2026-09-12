@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Akun Saya</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -20,7 +22,7 @@
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
-            <a href="financial-market.html" class="stat-badge market-badge"> Market</a>
+            <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
             <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
@@ -31,76 +33,67 @@
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="jam-sidebar-box">
-  <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-</div>
+                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+            </div>
 
-<script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
+            <script>
+                let offset = 0;
+                function tampilJam() {
+                    const waktu = new Date(Date.now() + offset);
+                    const j = String(waktu.getHours()).padStart(2,'0');
+                    const m = String(waktu.getMinutes()).padStart(2,'0');
+                    const d = String(waktu.getSeconds()).padStart(2,'0');
+                    const el = document.getElementById('jamServerFinal');
+                    if(el) el.innerText = j+":"+m+":"+d+" WIB";
+                }
+                setInterval(tampilJam, 1000);
+                async function sync() {
+                    try {
+                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+                        const data = await r.json();
+                        const server = new Date(data.dateTime).getTime();
+                        offset = server - Date.now();
+                    } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
+                }
+                sync();
+            </script>
 
-function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
-  const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
-}
-
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
-setInterval(tampilJam, 1000);
-
-// 2. Coba sync ke server diam-diam
-async function sync() {
-  try {
-    const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-    const data = await r.json();
-    const server = new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
-  }
-}
-sync();
-</script>
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name" id="clubName">My Club</h3>
+                <h3 class="team-name" id="clubName">Loading...</h3>
                 <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <span id="popularityText">Popularitas Klub: -</span>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
                     <div class="pop-bar">
-                        <div class="pop-fill" id="popularityBar" style="width: 50%;"></div>
+                        <div class="pop-fill" id="popularityBar" style="width: 0%;"></div>
                     </div>
                 </div>
                 <div class="team-moral">
-                    <span id="moralText">Moral Tim: -</span>
+                    <span id="moralText">Moral Tim: 0%</span>
                     <div class="moral-bar">
-                        <div class="moral-fill" id="moralBar" style="width: 70%;"></div>
+                        <div class="moral-fill" id="moralBar" style="width: 0%;"></div>
                     </div>
                 </div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
                     <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
-                    <div class="stat-row">️ Currency: <strong id="currencyBalance">0</strong></div>
+                    <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
                 </div>
-                <button class="btn-pendanaan" onclick="window.location.href='financial-market.html'">💼 Pendanaan Klub</button>
+                <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
             </div>
 
             <nav class="sidebar-menu">
-                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
                 <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
                 <a href="transfer.html" class="menu-item">💰 Transfer</a>
-                <a href="akademi.html" class="menu-item"> Akademi Muda</a>
-                <a href="kantor.html" class="menu-item"> Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
                 <a href="akun.html" class="menu-item active">👤 Akun Saya</a>
@@ -115,13 +108,12 @@ sync();
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>👤 Akun Saya</span>
                 <span>Kelola Profil & Referral</span>
             </div>
 
-            <!-- Tabs (HANYA 2: Profil & Referral) -->
+            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="showTab('profil', this)">👤 Profil</button>
                 <button class="tab-btn" onclick="showTab('referral', this)">🎁 Referral</button>
@@ -130,40 +122,39 @@ sync();
             <!-- TAB 1: PROFIL -->
             <div id="tab-profil" class="tab-content">
                 <div class="panel raised">
-                    <h3> Profil Saya</h3>
-                    
-                    <div class="profile-container" style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap;">
+                    <h3>👤 Profil Saya</h3>
+                    <div class="profile-container" style="display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap; margin-top: 20px;">
                         <div class="profile-avatar" style="text-align: center;">
                             <img id="profileAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" 
                                  alt="Avatar" 
-                                 style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #00d4ff; object-fit: cover;">
+                                 style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #00d4ff; object-fit: cover; background: #16213e;">
                             <button class="btn-change-photo" onclick="changePhoto()" 
-                                    style="margin-top: 15px; padding: 8px 16px; background: #00d4ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                                 Ganti Foto
+                                    style="margin-top: 15px; padding: 8px 16px; background: #00d4ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                                📷 Ganti Foto
                             </button>
                             <small style="display: block; margin-top: 8px; color: #999;">Upload foto profil (JPG/PNG, max 2MB)</small>
                         </div>
                         
-                        <div class="profile-info" style="flex: 1; min-width: 300px;">
-                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                                <label style="font-weight: bold; color: #666;">Username:</label>
-                                <span id="profileUsername" style="font-weight: bold;">-</span>
+                        <div class="profile-info" style="flex: 1; min-width: 300px; background: #16213e; padding: 20px; border-radius: 10px; color: white;">
+                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
+                                <label style="font-weight: bold; color: #aaa;">Username:</label>
+                                <span id="profileUsername" style="font-weight: bold; color: #00d4ff;">-</span>
                             </div>
-                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                                <label style="font-weight: bold; color: #666;">Email:</label>
-                                <span id="profileEmail" style="color: #333;">-</span>
+                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
+                                <label style="font-weight: bold; color: #aaa;">Email:</label>
+                                <span id="profileEmail" style="color: #fff;">-</span>
                             </div>
-                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                                <label style="font-weight: bold; color: #666;">Nama Klub:</label>
-                                <span id="profileClubName" style="font-weight: bold; color: #00d4ff;">-</span>
+                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
+                                <label style="font-weight: bold; color: #aaa;">Nama Klub:</label>
+                                <span id="profileClubName" style="font-weight: bold; color: #ffd700;">-</span>
                             </div>
-                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
-                                <label style="font-weight: bold; color: #666;">Role:</label>
+                            <div class="info-row" style="padding: 12px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between;">
+                                <label style="font-weight: bold; color: #aaa;">Role:</label>
                                 <span id="profileRole" style="font-weight: bold; color: #ff9800;">-</span>
                             </div>
                             <div class="info-row" style="padding: 12px 0; display: flex; justify-content: space-between;">
-                                <label style="font-weight: bold; color: #666;">Bergabung:</label>
-                                <span id="profileJoined" style="color: #333;">-</span>
+                                <label style="font-weight: bold; color: #aaa;">Bergabung:</label>
+                                <span id="profileJoined" style="color: #fff;">-</span>
                             </div>
                         </div>
                     </div>
@@ -174,34 +165,34 @@ sync();
             <div id="tab-referral" class="tab-content" style="display: none;">
                 <div class="panel raised">
                     <h3>🎁 Program Referral</h3>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Undang teman dan dapatkan bonus <strong style="color: #ff9800;">100 Gold</strong> untuk setiap teman yang mendaftar menggunakan link Anda!
+                    <p style="color: #aaa; margin-bottom: 20px;">
+                        Undang teman dan dapatkan bonus <strong style="color: #ff9800;">100 Gold + 50 Currency</strong> untuk setiap teman yang mendaftar menggunakan link Anda!
                     </p>
                     
                     <!-- Link Referral -->
-                    <div class="referral-box" style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #00d4ff;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #333;"> Link Referral Anda:</label>
+                    <div class="referral-box" style="background: #16213e; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #00d4ff; color: white;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #fff;">🔗 Link Referral Anda:</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="referralLink" readonly 
                                    value="Loading..." 
-                                   style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white;">
+                                   style="flex: 1; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; background: #0f3460; color: white;">
                             <button onclick="copyReferralLink()" 
-                                    style="padding: 12px 20px; background: #00d4ff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
-                                 Copy Link
+                                    style="padding: 12px 20px; background: #00d4ff; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+                                📋 Copy Link
                             </button>
                         </div>
                         <small style="display: block; margin-top: 8px; color: #999;">💡 Bagikan link ini ke teman-teman Anda via WhatsApp, Telegram, atau media sosial</small>
                     </div>
 
                     <!-- Kode Referral -->
-                    <div class="referral-box" style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #ff9800;">
-                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #333;">🎟️ Kode Referral:</label>
+                    <div class="referral-box" style="background: #16213e; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid #ff9800; color: white;">
+                        <label style="display: block; font-weight: bold; margin-bottom: 10px; color: #fff;">🎟️ Kode Referral:</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="referralCode" readonly 
                                    value="Loading..." 
-                                   style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; background: white; font-weight: bold; letter-spacing: 2px;">
+                                   style="flex: 1; padding: 12px; border: 2px solid #333; border-radius: 8px; font-size: 14px; background: #0f3460; color: white; font-weight: bold; letter-spacing: 2px;">
                             <button onclick="copyReferralCode()" 
-                                    style="padding: 12px 20px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
+                                    style="padding: 12px 20px; background: #ff9800; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; white-space: nowrap;">
                                 📋 Copy Kode
                             </button>
                         </div>
@@ -227,150 +218,113 @@ sync();
                     </div>
 
                     <!-- Cara Kerja -->
-                    <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 12px; border-left: 5px solid #ffc107;">
-                        <h4 style="margin-top: 0; color: #856404;">📖 Cara Kerja Program Referral:</h4>
-                        <ol style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                    <div style="margin-top: 30px; padding: 20px; background: #16213e; border-radius: 12px; border-left: 5px solid #ffc107; color: white;">
+                        <h4 style="margin-top: 0; color: #ffc107;">📖 Cara Kerja Program Referral:</h4>
+                        <ol style="margin: 10px 0; padding-left: 20px; color: #ccc;">
                             <li>Copy link referral Anda di atas</li>
                             <li>Bagikan ke teman-teman Anda</li>
-                            <li>Saat teman mendaftar melalui link Anda, mereka otomatis mendapat <strong>500 Currency bonus</strong></li>
-                            <li>Anda mendapat <strong>100 Gold + 50 Currency</strong> untuk setiap teman yang berhasil mendaftar</li>
+                            <li>Saat teman mendaftar melalui link Anda, mereka otomatis mendapat <strong style="color: #fff;">500 Currency bonus</strong></li>
+                            <li>Anda mendapat <strong style="color: #fff;">100 Gold + 50 Currency</strong> untuk setiap teman yang berhasil mendaftar</li>
                             <li>Tidak ada batas jumlah referral!</li>
                         </ol>
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="auth.js"></script>
-    <script src="app.js"></script>
-    <script src="script.js"></script>
-
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
     <script>
-    // ===== AKUN PAGE SPECIFIC SCRIPT =====
-    
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Tunggu window.currentUser dari app.js
-        await waitForCurrentUser();
-        
-        const user = window.currentUser;
-        if (!user) return;
-        
-        // Update Profil
-        document.getElementById('profileUsername').textContent = user.username || '-';
-        document.getElementById('profileEmail').textContent = user.email || '-';
-        document.getElementById('profileClubName').textContent = user.club_name || 'My Club';
-        document.getElementById('profileRole').textContent = user.role || 'OWNER';
-        document.getElementById('profileJoined').textContent = user.joined_date 
-            ? new Date(user.joined_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-            : '-';
-        document.getElementById('profileAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
-        
-        // Update Referral
-        const referralLink = `https://esportbos.com/?ref=${user.username}`;
-        const referralCode = user.username ? user.username.toUpperCase() : 'UNKNOWN';
-        
-        document.getElementById('referralLink').value = referralLink;
-        document.getElementById('referralCode').value = referralCode;
-        
-        // Load referral stats dari Supabase
-        loadReferralStats(user.id);
-    });
-
-    // Fungsi untuk menunggu currentUser dari app.js
-    function waitForCurrentUser() {
-        return new Promise(resolve => {
-            if (window.currentUser) {
-                resolve();
-            } else {
-                const checkInterval = setInterval(() => {
-                    if (window.currentUser) {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 200);
-                
-                // Timeout setelah 5 detik
-                setTimeout(() => {
-                    clearInterval(checkInterval);
-                    resolve();
-                }, 5000);
-            }
-        });
-    }
-
-    // Load referral stats dari database
-    async function loadReferralStats(userId) {
-        try {
-            const { data, error } = await window.supabaseClient
-                .from('referrals')
-                .select('*')
-                .eq('referrer_id', userId);
-            
-            if (error) {
-                console.log('Referral stats:', 0);
-                return;
-            }
-            
-            const totalReferral = data ? data.length : 0;
-            const bonusGold = totalReferral * 100;
-            const bonusCurrency = totalReferral * 50;
-            
-            document.getElementById('totalReferral').textContent = totalReferral;
-            document.getElementById('referralBonus').textContent = bonusGold.toLocaleString('id-ID');
-            document.getElementById('referralCurrency').textContent = bonusCurrency.toLocaleString('id-ID');
-            
-        } catch (err) {
-            console.error('Error loading referral stats:', err);
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
         }
-    }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
 
-    // Tab switching
-    function showTab(tabName, btnElement) {
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.style.display = 'none';
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { 
+                window.location.href = 'index.html'; 
+                return; 
+            }
+            currentUserId = session.user.id;
+
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+
+            if (profile) {
+                const username = profile.username || session.user.email.split('@')[0];
+                
+                // Update Navbar
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+
+                // Update Profil Tab
+                document.getElementById('profileUsername').textContent = username;
+                document.getElementById('profileEmail').textContent = profile.email || session.user.email;
+                document.getElementById('profileRole').textContent = profile.role || 'OWNER';
+                document.getElementById('profileJoined').textContent = profile.joined_date 
+                    ? new Date(profile.joined_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : '-';
+                document.getElementById('profileAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+
+                // Update Referral Tab
+                const baseUrl = window.location.origin + window.location.pathname.replace('akun.html', '');
+                const referralLink = `${baseUrl}?ref=${username}`;
+                const referralCode = username.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8) || 'UNKNOWN';
+                
+                document.getElementById('referralLink').value = referralLink;
+                document.getElementById('referralCode').value = referralCode;
+
+                // Load referral stats
+                await loadReferralStats(currentUserId);
+            }
+
+            if (team) {
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('profileClubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
         });
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        document.getElementById(`tab-${tabName}`).style.display = 'block';
-        if (btnElement) btnElement.classList.add('active');
-    }
 
-    // Copy referral link
-    function copyReferralLink() {
-        const link = document.getElementById('referralLink').value;
-        navigator.clipboard.writeText(link).then(() => {
-            alert('✅ Link referral berhasil disalin!\n\n' + link + '\n\nBagikan ke teman-teman Anda!');
-        }).catch(() => {
-            // Fallback
-            const el = document.createElement('textarea');
-            el.value = link;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert('✅ Link referral berhasil disalin!');
-        });
-    }
-
-    // Copy referral code
-    function copyReferralCode() {
-        const code = document.getElementById('referralCode').value;
-        navigator.clipboard.writeText(code).then(() => {
-            alert('✅ Kode referral disalin: ' + code);
-        });
-    }
-
-    // Change photo (placeholder)
-    function changePhoto() {
-        alert(' Fitur upload foto profil akan segera hadir!');
-    }
-    </script>
-
-</body>
-</html>
+        // Load referral stats dari database
+        async function loadReferralStats(userId) {
+            try {
+                const { data, error } = await supabase
+                    .from('referrals')
+                    .select('*')
+                    .eq('referrer_id', userId);
+                
+                if (error) {
+                    console.error('Error fetching referrals:', error);
+                    return;
+                }
+                
+                const totalReferral = data ? data.length : 0;
+                const bonusGold = totalReferral * 100;
+                const bonusCurrency = totalReferral * 50;
+                
+                document.getElementById('totalReferral').textContent = totalReferral;
+                document.getElementById('referralBonus').textContent = bonusGold.toLocaleString('id-ID');
+                document.getElementById('referralCurrency').textContent = bonusCurrency.toLocaleString('id-ID');
+                
+            } catch (err) {
+                console.error('Error loading referral s
