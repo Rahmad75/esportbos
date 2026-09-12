@@ -246,44 +246,61 @@
         });
 
         // Fungsi untuk create payment request ke Duitku
-        async function topUp(paket, harga, diamond, gold) {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                    alert('❌ Silakan login terlebih dahulu!');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const response = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.access_token}`
-                    },
-                    body: JSON.stringify({
-                        packageType: paket,
-                        amount: harga,
-                        diamond: diamond,
-                        gold: gold
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('✅ Transaksi dibuat! Mengalihkan ke halaman pembayaran...');
-                    window.location.href = data.paymentUrl;
-                } else {
-                    alert('❌ Gagal: ' + (data.error || 'Terjadi kesalahan'));
-                }
-
-            } catch (error) {
-                console.error('Payment error:', error);
-                alert('❌ Terjadi kesalahan sistem.');
-            }
+        async function topUp(packageId, amount, diamonds, gold) {
+    try {
+        // 1. Cek session user
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+            alert('Silakan login dulu!');
+            window.location.href = 'index.html';
+            return;
         }
 
+        // 2. Konfirmasi pembelian
+        const packageName = packageId.charAt(0).toUpperCase() + packageId.slice(1);
+        if (!confirm(`Beli paket ${packageName}?\n\n💎 ${diamonds} Diamond\n🟡 ${gold || 0} Gold\n💰 Rp ${amount.toLocaleString('id-ID')}`)) {
+            return;
+        }
+
+        // 3. Panggil Edge Function dengan Authorization Header
+        const response = await fetch(
+            'https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    packageId: packageId,
+                    packageName: packageName,
+                    amount: amount,
+                    diamonds: diamonds,
+                    gold: gold || 0
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Payment failed');
+        }
+
+        // 4. Redirect ke halaman pembayaran Duitku
+        if (result.paymentUrl) {
+            alert('Mengalihkan ke halaman pembayaran...');
+            window.location.href = result.paymentUrl;
+        } else {
+            alert('Payment URL tidak tersedia. Silakan coba lagi.');
+        }
+
+    } catch (error) {
+        console.error('Top-up error:', error);
+        alert('Gagal memproses pembayaran: ' + error.message);
+    }
+}
         // Load riwayat transaksi user
         async function loadRiwayatPendanaan() {
             try {
