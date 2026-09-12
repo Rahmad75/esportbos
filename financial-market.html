@@ -1,50 +1,81 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Financial Market</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
 </head>
 <body class="dashboard-body">
+
     <nav class="top-navbar">
         <div class="navbar-left">
-            <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
-            <div class="search-box"><input type="text" placeholder="🔍 Cari Pemain/Manager/Tim..."></div>
+            <img src="logo-esportbos-banner.png" alt="EsportBos" class="top-logo">
+            <div class="search-box">
+                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
+            </div>
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
             <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
-            <a href="financial-market.html" class="stat-badge market-badge active"> Market</a>
-            <div class="stat-badge message">✉️ Pesan (0)</div>
+            <a href="financial-market.html" class="stat-badge market-badge active">📈 Market</a>
             <div class="user-profile">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
+                <img id="navAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User">
                 <span id="userName">Loading...</span>
-                <button onclick="handleLogout()" style="margin-left:10px;padding:5px 10px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
+                <button onclick="handleLogout()" class="btn-logout" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
         <aside class="sidebar">
-            <div class="jam-sidebar-box"><div id="jamServerFinal" style="font-family:monospace;font-size:22px;color:#00d9ff;font-weight:bold;">--:--:--</div></div>
-            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
-            
+            <div class="jam-sidebar-box">
+                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+            </div>
+
+            <script>
+                let offset = 0;
+                function tampilJam() {
+                    const waktu = new Date(Date.now() + offset);
+                    const j = String(waktu.getHours()).padStart(2,'0');
+                    const m = String(waktu.getMinutes()).padStart(2,'0');
+                    const d = String(waktu.getSeconds()).padStart(2,'0');
+                    const el = document.getElementById('jamServerFinal');
+                    if(el) el.innerText = j+":"+m+":"+d+" WIB";
+                }
+                setInterval(tampilJam, 1000);
+                async function sync() {
+                    try {
+                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+                        const data = await r.json();
+                        const server = new Date(data.dateTime).getTime();
+                        offset = server - Date.now();
+                    } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
+                }
+                sync();
+            </script>
+
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name" id="clubName">My Club</h3>
+                <h3 class="team-name" id="clubName">Loading...</h3>
                 <div class="team-rank" id="clubRank">-</div>
-                <div class="team-popularity"><span id="popularityText">Popularitas Klub: 0%</span><div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width:0%;"></div></div></div>
-                <div class="team-moral"><span id="moralText">Moral Tim: 0%</span><div class="moral-bar"><div class="moral-fill" id="moralBar" style="width:0%;"></div></div></div>
+                <div class="team-popularity">
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
+                </div>
+                <div class="team-moral">
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
+                </div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
-                    <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
+                    <div class="stat-row"> Gold: <strong id="goldBalance">0</strong></div>
                     <div class="stat-row">🎟️ Currency: <strong id="currencyBalance">0</strong></div>
                 </div>
                 <button class="btn-pendanaan" onclick="window.location.href='pendanaan-klub.html'">💼 Pendanaan Klub</button>
@@ -61,320 +92,395 @@
                 <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
+                <a href="financial-market.html" class="menu-item active">📈 Financial Market</a>
                 <a href="akun.html" class="menu-item"> Akun Saya</a>
             </nav>
-            <div class="social-icons"><a href="#">📘</a><a href="#">💬</a><a href="#">📷</a></div>
         </aside>
 
         <main class="main-content">
-            <div class="info-bar"><span>📈 Financial Market</span><span>Pasar Transfer Pemain (Pajak Platform 2%)</span></div>
-            
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchMarketTab('beli',this)">🛒 Beli Pemain</button>
-                <button class="tab-btn" onclick="switchMarketTab('jual',this)">💸 Jual Pemain</button>
-                <button class="tab-btn" onclick="switchMarketTab('riwayat',this)">📜 Riwayat</button>
+            <div class="info-bar">
+                <span>📈 Financial Market</span>
+                <span>Pasar Mata Uang EsportBos</span>
             </div>
 
-            <!-- TAB BELI PEMAIN -->
-            <div id="tab-beli" class="tab-content" style="display:block;">
-                <div class="panel raised">
-                    <h3>🛒 Pasar Transfer Pemain</h3>
-                    <p style="color:#999;margin-bottom:20px;">Beli pemain dari klub lain. <strong style="color:#ff6b6b;">Pajak platform 2% akan dipotong dari penjual.</strong></p>
-                    <div id="marketPlayersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;"></div>
+            <div class="balance-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="balance-card diamond" style="background: #16213e; padding: 20px; border-radius: 10px; display: flex; align-items: center; gap: 15px; color: white; border-left: 4px solid #00d4ff;">
+                    <div class="balance-icon" style="font-size: 32px;">💎</div>
+                    <div class="balance-info">
+                        <span class="balance-label" style="display: block; color: #aaa; font-size: 12px;">Diamond</span>
+                        <span class="balance-value" id="diamondBalance" style="display: block; font-size: 24px; font-weight: bold; color: #00d4ff;">0</span>
+                        <span class="balance-sub" style="font-size: 12px; color: #666;">Premium Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card gold" style="background: #16213e; padding: 20px; border-radius: 10px; display: flex; align-items: center; gap: 15px; color: white; border-left: 4px solid #ffd700;">
+                    <div class="balance-icon" style="font-size: 32px;">🟡</div>
+                    <div class="balance-info">
+                        <span class="balance-label" style="display: block; color: #aaa; font-size: 12px;">Gold</span>
+                        <span class="balance-value" id="goldBalance" style="display: block; font-size: 24px; font-weight: bold; color: #ffd700;">0</span>
+                        <span class="balance-sub" style="font-size: 12px; color: #666;">Global Currency</span>
+                    </div>
+                </div>
+                <div class="balance-card currency" style="background: #16213e; padding: 20px; border-radius: 10px; display: flex; align-items: center; gap: 15px; color: white; border-left: 4px solid #28a745;">
+                    <div class="balance-icon" style="font-size: 32px;">🎟️</div>
+                    <div class="balance-info">
+                        <span class="balance-label" style="display: block; color: #aaa; font-size: 12px;">Currency</span>
+                        <span class="balance-value" id="currencyBalance" style="display: block; font-size: 24px; font-weight: bold; color: #28a745;">0</span>
+                        <span class="balance-sub" style="font-size: 12px; color: #666;">Local Currency</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- TAB JUAL PEMAIN -->
-            <div id="tab-jual" class="tab-content" style="display:none;">
-                <div class="panel raised">
-                    <h3>💸 Jual Pemain Saya</h3>
-                    <p style="color:#999;margin-bottom:20px;">Pilih pemain dari tim Anda untuk dijual ke pasar. Anda akan menerima dana bersih setelah dipotong pajak 2%.</p>
-                    <div id="myPlayersGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;"></div>
+            <div class="panel raised" style="background: #1a1a2e; padding: 25px; border-radius: 15px; margin-bottom: 20px; color: white;">
+                <h3>💱 Exchange Mata Uang</h3>
+                <p class="info-text" style="color: #aaa; margin-bottom: 20px;">Tukar mata uang dengan kurs real-time. Biaya konversi: 5%</p>
+                
+                <div class="exchange-box" id="exchangeBox" style="background: #16213e; padding: 20px; border-radius: 10px;">
+                    <div class="exchange-direction-tabs" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <button class="direction-tab active" onclick="setExchangeDirection('diamond-gold', this)" style="padding: 8px 16px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">💎 → </button>
+                        <button class="direction-tab" onclick="setExchangeDirection('gold-diamond', this)" style="padding: 8px 16px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">🟡 → 💎</button>
+                        <button class="direction-tab" onclick="setExchangeDirection('gold-currency', this)" style="padding: 8px 16px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">🟡 → 🎟️</button>
+                        <button class="direction-tab" onclick="setExchangeDirection('currency-gold', this)" style="padding: 8px 16px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">️ → 🟡</button>
+                        <button class="direction-tab" onclick="setExchangeDirection('diamond-currency', this)" style="padding: 8px 16px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">💎 → 🎟️</button>
+                        <button class="direction-tab" onclick="setExchangeDirection('currency-diamond', this)" style="padding: 8px 16px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer;">🎟️ → </button>
+                    </div>
+                    
+                    <div class="exchange-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                        <div class="exchange-input-group">
+                            <label id="fromLabel" style="display: block; color: #aaa; font-size: 12px; margin-bottom: 5px;">Dari (Diamond)</label>
+                            <input type="number" id="exchangeAmount" min="1" placeholder="Jumlah" oninput="calculateExchange()" style="width: 100%; padding: 12px; background: #0f3460; color: white; border: 1px solid #333; border-radius: 5px; font-size: 16px;">
+                            <span class="balance-hint" id="fromBalance" style="display: block; color: #00d4ff; font-size: 12px; margin-top: 5px;">Saldo: 0 Diamond</span>
+                        </div>
+                        
+                        <div style="text-align: center; font-size: 24px; color: #00d4ff;">→</div>
+                        
+                        <div class="exchange-input-group">
+                            <label id="toLabel" style="display: block; color: #aaa; font-size: 12px; margin-bottom: 5px;">Ke (Gold)</label>
+                            <input type="text" id="exchangeResult" readonly placeholder="Hasil" style="width: 100%; padding: 12px; background: #0f3460; color: #ffd700; border: 1px solid #333; border-radius: 5px; font-size: 16px; font-weight: bold;">
+                            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                <span class="rate-info" id="rateInfo" style="color: #aaa; font-size: 12px;">Kurs: 1 Diamond = 20 Gold</span>
+                                <span class="fee-info" id="feeInfo" style="color: #ff6b6b; font-size: 12px;">Biaya: 5%</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-futuristic btn-large" onclick="executeExchange()" style="width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px;"> TUKAR SEKARANG</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- TAB RIWAYAT -->
-            <div id="tab-riwayat" class="tab-content" style="display:none;">
-                <div class="panel raised">
-                    <h3>📜 Riwayat Transaksi</h3>
-                    <p style="color:#999;margin-bottom:20px;">Log pembelian dan penjualan pemain Anda.</p>
-                    <div id="transactionHistoryList" style="display:grid;gap:15px;"></div>
+            <div class="panel raised" style="background: #1a1a2e; padding: 25px; border-radius: 15px; margin-bottom: 20px; color: white;">
+                <h3>📊 Grafik Kurs (Simulasi 24 Jam)</h3>
+                <div class="chart-container" style="background: #16213e; border-radius: 10px; padding: 10px; margin-top: 15px;">
+                    <canvas id="marketChart" width="1000" height="300" style="width: 100%; height: auto;"></canvas>
+                </div>
+                <div class="chart-legend" style="display: flex; gap: 20px; justify-content: center; margin-top: 15px;">
+                    <span class="legend-item" style="display: flex; align-items: center; gap: 5px; color: #aaa;"><span style="width: 12px; height: 12px; background: #00d4ff; border-radius: 50%;"></span> Diamond/Gold</span>
+                    <span class="legend-item" style="display: flex; align-items: center; gap: 5px; color: #aaa;"><span style="width: 12px; height: 12px; background: #ffd700; border-radius: 50%;"></span> Gold/Currency</span>
+                </div>
+            </div>
+
+            <div class="panel raised" style="background: #1a1a2e; padding: 25px; border-radius: 15px; margin-bottom: 20px; color: white;">
+                <h3>📜 Transaksi Terbaru</h3>
+                <div class="transaction-list" id="transactionList" style="margin-top: 15px;">
+                    <p style="text-align:center; color:#999; padding:20px;">Memuat transaksi...</p>
+                </div>
+            </div>
+
+            <div class="panel raised" style="background: #1a1a2e; padding: 25px; border-radius: 15px; color: white;">
+                <h3>💸 Withdraw Diamond</h3>
+                <p class="info-text" style="color: #aaa; margin-bottom: 20px;">Minimum WD: 2,500 Diamonds (net). Pajak platform: 15%</p>
+                
+                <div class="withdraw-box" style="background: #16213e; padding: 20px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between;">
+                    <div class="withdraw-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; flex: 1;">
+                        <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0f3460; border-radius: 5px;">
+                            <span style="color: #aaa;">Saldo Diamond:</span>
+                            <strong id="withdrawBalance" style="color: #00d4ff;">0</strong>
+                        </div>
+                        <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0f3460; border-radius: 5px;">
+                            <span style="color: #aaa;">Minimum WD (net):</span>
+                            <strong style="color: #fff;">2,500</strong>
+                        </div>
+                        <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0f3460; border-radius: 5px;">
+                            <span style="color: #aaa;">Yang harus dikirim (gross):</span>
+                            <strong id="grossAmount" style="color: #ffd700;">2,941</strong>
+                        </div>
+                        <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0f3460; border-radius: 5px;">
+                            <span style="color: #aaa;">Nilai Rupiah (net):</span>
+                            <strong style="color: #28a745;">Rp 500,000</strong>
+                        </div>
+                    </div>
+                    <button class="btn-futuristic btn-large" onclick="requestWithdraw()" style="padding: 15px 30px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; white-space: nowrap;">💸 Request Withdraw</button>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- [BERSAMBUNG KE PART 2 - SCRIPT] -->
+    <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
+        <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
+    </div>
+
+    <!-- [BERSAMBUNG KE PART 2] -->
+
     <script>
-    // 1. Init Supabase (Aman dari duplikasi)
-    if (!window.supabaseClient) {
-        window.supabaseClient = window.supabase.createClient(
-            'https://xvnmpbmyxphrddjjldbt.supabase.co',
-            'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
-        );
-    }
-    var supabase = window.supabaseClient;
-
-    // 2. Variabel Global
-    var currentUserId = null;
-    var currentTeamId = null;
-
-    // 3. Fungsi Logout & Tab
-    function handleLogout() {
-        supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
-    }
-
-    function switchMarketTab(tabName, btnElement) {
-        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        const target = document.getElementById('tab-' + tabName);
-        if (target) target.style.display = 'block';
-        if (btnElement) btnElement.classList.add('active');
-        
-        // Refresh data saat ganti tab
-        if (tabName === 'beli') loadMarketPlayers();
-        if (tabName === 'jual') loadMyPlayers();
-        if (tabName === 'riwayat') loadTransactionHistory();
-    }
-
-    // 4. Hitung Pajak Market 2%
-    function hitungPajakMarket(harga) {
-        var pajak = Math.floor(harga * 0.02);
-        var bersih = harga - pajak;
-        return { pajak: pajak, bersih: bersih };
-    }
-
-    // 5. Load Pemain di Pasar (Untuk Dibeli)
-    async function loadMarketPlayers() {
-        try {
-            // Ambil pemain yang sedang dijual (is_on_market = true)
-            const { data: players, error } = await supabase
-                .from('players')
-                .select('*, teams(team_name)')
-                .eq('is_on_market', true)
-                .order('market_price', { ascending: true });
-
-            const grid = document.getElementById('marketPlayersGrid');
-            if (error) throw error;
-
-            if (!players || players.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;">Belum ada pemain yang dijual di pasar.</p>';
-                return;
-            }
-
-            grid.innerHTML = players.map(p => {
-                var sellerTeam = p.teams ? p.teams.team_name : 'Unknown Club';
-                var isOwnPlayer = p.team_id === currentTeamId; // Cek kalau player mau beli pemain sendiri (seharusnya tidak muncul di market, tapi jaga-jaga)
-                
-                return `
-                <div style="background:#16213e;padding:15px;border-radius:8px;border:1px solid #333;color:white;">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width:50px;height:50px;border-radius:50%;">
-                    <h4 style="margin:10px 0 5px;color:#00d4ff;">${p.name}</h4>
-                    <p style="font-size:12px;color:#aaa;margin:2px 0;">${p.position} • Rating: <strong style="color:#ffd700;">${p.overall_rating}</strong></p>
-                    <p style="font-size:12px;color:#aaa;margin:2px 0;">Penjual: ${sellerTeam}</p>
-                    <p style="font-size:16px;font-weight:bold;color:#28a745;margin:10px 0;">Harga: ${p.market_price.toLocaleString('id-ID')} Currency</p>
-                    <button onclick="beliPemain('${p.id}', '${p.name}', ${p.market_price}, '${p.team_id}')" 
-                        ${isOwnPlayer ? 'disabled style="background:#555;cursor:not-allowed;"' : 'style="width:100%;padding:8px;background:#00d4ff;color:#1a1a2e;border:none;border-radius:5px;cursor:pointer;font-weight:bold;"'}>
-                        ${isOwnPlayer ? 'Pemain Anda' : '🛒 BELI SEKARANG'}
-                    </button>
-                </div>`;
-            }).join('');
-
-        } catch (err) {
-            console.error('Error loading market:', err);
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
         }
-    }
+        var supabase = window.supabaseClient;
+        let currentUserId = null;
+        let userBalances = { diamond: 0, gold: 0, currency: 0 };
 
-    // 6. Load Pemain Saya (Untuk Dijual)
-    async function loadMyPlayers() {
-        try {
-            const { data: players } = await supabase
-                .from('players')
-                .select('*')
-                .eq('team_id', currentTeamId)
-                .eq('is_on_market', false)
-                .order('overall_rating', { ascending: false });
+        const rates = {
+            'diamond-gold': { from: 'Diamond', to: 'Gold', rate: 20, fee: 0.05 },
+            'gold-diamond': { from: 'Gold', to: 'Diamond', rate: 1/20, fee: 0.05 },
+            'gold-currency': { from: 'Gold', to: 'Currency', rate: 10, fee: 0.05 },
+            'currency-gold': { from: 'Currency', to: 'Gold', rate: 1/10, fee: 0.05 },
+            'diamond-currency': { from: 'Diamond', to: 'Currency', rate: 200, fee: 0.05 },
+            'currency-diamond': { from: 'Currency', to: 'Diamond', rate: 1/200, fee: 0.05 }
+        };
+        let currentExchange = 'diamond-gold';
 
-            const grid = document.getElementById('myPlayersGrid');
-            if (!players || players.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#999;">Anda tidak memiliki pemain untuk dijual.</p>';
-                return;
-            }
-
-            grid.innerHTML = players.map(p => `
-                <div style="background:#16213e;padding:15px;border-radius:8px;border:1px solid #333;color:white;">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width:50px;height:50px;border-radius:50%;">
-                    <h4 style="margin:10px 0 5px;color:#00d4ff;">${p.name}</h4>
-                    <p style="font-size:12px;color:#aaa;margin:2px 0;">${p.position} • Rating: <strong style="color:#ffd700;">${p.overall_rating}</strong></p>
-                    <button onclick="jualPemain('${p.id}', '${p.name}')" style="width:100%;padding:8px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:10px;">
-                        💸 JUAL KE PASAR
-                    </button>
-                </div>
-            `).join('');
-
-        } catch (err) {
-            console.error('Error loading my players:', err);
-        }
-    }
-
-    // 7. Fungsi Jual Pemain (Listing)
-    async function jualPemain(playerId, playerName) {
-        var harga = prompt(`Tentukan harga jual untuk ${playerName} (Currency):`, "10000");
-        
-        if (harga === null) return; // Dibatalkan
-        harga = parseInt(harga);
-
-        if (isNaN(harga) || harga <= 0) {
-            alert('Harga tidak valid!');
-            return;
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
         }
 
-        if (!confirm(`Yakin ingin menjual ${playerName} seharga ${harga.toLocaleString('id-ID')} Currency?\n\nCatatan: Pajak platform 2% (${hitungPajakMarket(harga).pajak}) akan dipotong saat pemain terbeli.\nAnda akan menerima bersih: ${hitungPajakMarket(harga).bersih.toLocaleString('id-ID')} Currency.`)) {
-            return;
-        }
-
-        try {
-            // Update status pemain jadi di pasar
-            const { error } = await supabase
-                .from('players')
-                .update({ 
-                    is_on_market: true, 
-                    market_price: harga 
-                })
-                .eq('id', playerId);
-
-            if (error) throw error;
-
-            alert(`✅ ${playerName} berhasil dipajang di pasar!\nMenunggu pembeli...`);
-            loadMyPlayers(); // Refresh grid
-
-        } catch (err) {
-            console.error('Error listing player:', err);
-            alert('Gagal memajang pemain.');
-        }
-    }
-
-    // 8. Fungsi Beli Pemain (Dengan Pajak 2%)
-    async function beliPemain(playerId, playerName, harga, sellerTeamId) {
-        if (!confirm(`Yakin ingin membeli ${playerName} seharga ${harga.toLocaleString('id-ID')} Currency?`)) {
-            return;
-        }
-
-        try {
-            // 1. Cek saldo pembeli
-            const { data: buyerProfile } = await supabase
-                .from('profiles')
-                .select('currency')
-                .eq('id', currentUserId)
-                .single();
-
-            if ((buyerProfile.currency || 0) < harga) {
-                alert('❌ Saldo Currency Anda tidak cukup!');
-                return;
-            }
-
-            // 2. Cari profil penjual (dari team_id pemain)
-            const { data: sellerTeam } = await supabase
-                .from('teams')
-                .select('user_id')
-                .eq('id', sellerTeamId)
-                .single();
-            
-            var sellerUserId = sellerTeam ? sellerTeam.user_id : null;
-
-            // 3. Hitung Pajak 2%
-            var taxInfo = hitungPajakMarket(harga);
-
-            // 4. Kurangi saldo PEMBELI (Harga Penuh)
-            await supabase
-                .from('profiles')
-                .update({ currency: buyerProfile.currency - harga })
-                .eq('id', currentUserId);
-
-            // 5. Tambah saldo PENJUAL (Harga Bersih setelah pajak)
-            if (sellerUserId && sellerUserId !== currentUserId) {
-                const { data: sellerProfile } = await supabase
-                    .from('profiles')
-                    .select('currency')
-                    .eq('id', sellerUserId)
-                    .single();
-                
-                if (sellerProfile) {
-                    await supabase
-                        .from('profiles')
-                        .update({ currency: (sellerProfile.currency || 0) + taxInfo.bersih })
-                        .eq('id', sellerUserId);
-                }
-            }
-
-            // 6. Pindahkan kepemilikan pemain ke pembeli
-            await supabase
-                .from('players')
-                .update({ 
-                    team_id: currentTeamId, 
-                    is_on_market: false, 
-                    market_price: 0 
-                })
-                .eq('id', playerId);
-
-            // 7. Simpan Riwayat Transaksi (Opsional, bisa dibuat tabel terpisah nanti)
-            // await supabase.from('transactions').insert({ ... });
-
-            alert(`🎉 Pembelian Berhasil!\n\nAnda membeli ${playerName} seharga ${harga.toLocaleString('id-ID')} Currency.\n(Pajak platform 2% sebesar ${taxInfo.pajak} Currency telah dipotong dari penjual).`);
-            
-            loadMarketPlayers(); // Refresh grid
-            // Update saldo di sidebar
-            document.getElementById('currencyBalance').textContent = (buyerProfile.currency - harga).toLocaleString('id-ID');
-
-        } catch (err) {
-            console.error('Error buying player:', err);
-            alert('Gagal memproses pembelian. Pastikan kolom database sudah benar.');
-        }
-    }
-
-    // 9. Load Riwayat (Placeholder)
-    async function loadTransactionHistory() {
-        const list = document.getElementById('transactionHistoryList');
-        list.innerHTML = '<p style="text-align:center;color:#999;">Fitur riwayat transaksi detail akan segera hadir. Cek notifikasi untuk log transaksi Anda.</p>';
-    }
-
-    // 10. Main Logic Saat Halaman Load
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
+        document.addEventListener('DOMContentLoaded', async function() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             currentUserId = session.user.id;
 
-            // Load Data Tim
-            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
-            if (team) {
-                currentTeamId = team.id;
-                document.getElementById('clubName').textContent = team.team_name || 'My Club';
-                document.getElementById('clubRank').textContent = (team.wins || 0) + 'W-' + (team.draws || 0) + 'D-' + (team.losses || 0) + 'L';
-                document.getElementById('popularityText').textContent = 'Popularitas Klub: ' + (team.popularity || 0) + '%';
-                document.getElementById('popularityBar').style.width = (team.popularity || 0) + '%';
-                document.getElementById('moralText').textContent = 'Moral Tim: ' + (team.moral || 0) + '%';
-                document.getElementById('moralBar').style.width = (team.moral || 0) + '%';
-            }
-
-            // Load Saldo User
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
+
             if (profile) {
-                var username = profile.username || session.user.email.split('@')[0];
+                const username = profile.username || session.user.email.split('@')[0];
                 document.getElementById('userName').textContent = username;
-                document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
-                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
-                document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
-                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                
+                userBalances = {
+                    diamond: profile.diamonds || 0,
+                    gold: profile.gold || 0,
+                    currency: profile.currency || 0
+                };
+                
+                document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userBalances.gold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = userBalances.currency.toLocaleString('id-ID');
+                document.getElementById('withdrawBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
             }
 
-            // Load Data Awal
-            loadMarketPlayers();
+            if (team) {
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
 
-        } catch (error) {
-            console.error('Market error:', error);
+            setExchangeDirection('diamond-gold', document.querySelector('.direction-tab'));
+            loadTransactions();
+            drawMockChart();
+        });
+
+        function setExchangeDirection(direction, btn) {
+            currentExchange = direction;
+            const config = rates[direction];
+            
+            document.getElementById('fromLabel').textContent = `Dari (${config.from})`;
+            document.getElementById('toLabel').textContent = `Ke (${config.to})`;
+            document.getElementById('rateInfo').textContent = `Kurs: 1 ${config.from} = ${(config.rate).toLocaleString('id-ID')} ${config.to}`;
+            document.getElementById('feeInfo').textContent = `Biaya: ${(config.fee * 100)}%`;
+            
+            document.querySelectorAll('.direction-tab').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = '#333';
+                b.style.color = 'white';
+            });
+            if (btn) {
+                btn.classList.add('active');
+                btn.style.background = '#00d4ff';
+                btn.style.color = '#000';
+            }
+            
+            document.getElementById('exchangeAmount').value = '';
+            document.getElementById('exchangeResult').value = '';
+            
+            const balanceKey = config.from.toLowerCase() === 'diamond' ? 'diamond' : config.from.toLowerCase();
+            document.getElementById('fromBalance').textContent = `Saldo: ${userBalances[balanceKey].toLocaleString('id-ID')} ${config.from}`;
         }
-    });
+
+        function calculateExchange() {
+            const amount = parseFloat(document.getElementById('exchangeAmount').value) || 0;
+            const config = rates[currentExchange];
+            const feeAmount = amount * config.fee;
+            const netAmount = amount - feeAmount;
+            const result = netAmount * config.rate;
+            
+            document.getElementById('exchangeResult').value = result.toFixed(config.to === 'Diamond' ? 2 : 0);
+        }
+
+        async function executeExchange() {
+            const amount = parseFloat(document.getElementById('exchangeAmount').value);
+            if (!amount || amount <= 0) return alert('❌ Masukkan jumlah yang valid!');
+            
+            const config = rates[currentExchange];
+            const feeAmount = amount * config.fee;
+            const netAmount = amount - feeAmount;
+            const result = netAmount * config.rate;
+            
+            const fromKey = config.from.toLowerCase() === 'diamond' ? 'diamond' : config.from.toLowerCase();
+            if (userBalances[fromKey] < amount) {
+                return alert(`❌ Saldo ${config.from} tidak cukup!`);
+            }
+            
+            const updates = {};
+            updates[config.from.toLowerCase() === 'diamond' ? 'diamonds' : config.from.toLowerCase()] = userBalances[fromKey] - amount;
+            
+            const toKey = config.to.toLowerCase() === 'diamond' ? 'diamonds' : config.to.toLowerCase();
+            updates[toKey] = userBalances[config.to.toLowerCase() === 'diamond' ? 'diamond' : config.to.toLowerCase()] + result;
+            
+            const { error } = await supabase.from('profiles').update(updates).eq('id', currentUserId);
+            if (error) return alert('❌ Gagal melakukan exchange: ' + error.message);
+            
+            await supabase.from('transactions').insert({
+                user_id: currentUserId,
+                type: 'exchange',
+                from_currency: config.from,
+                to_currency: config.to,
+                amount_from: amount,
+                amount_to: result,
+                fee: feeAmount,
+                status: 'completed'
+            });
+            
+            alert(`✅ Berhasil menukar ${amount} ${config.from} menjadi ${result.toFixed(2)} ${config.to}!`);
+            document.getElementById('exchangeAmount').value = '';
+            document.getElementById('exchangeResult').value = '';
+            
+            // Refresh balances
+            const { data: profile } = await supabase.from('profiles').select('diamonds, gold, currency').eq('id', currentUserId).single();
+            if (profile) {
+                userBalances = { diamond: profile.diamonds || 0, gold: profile.gold || 0, currency: profile.currency || 0 };
+                document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = userBalances.gold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = userBalances.currency.toLocaleString('id-ID');
+                document.getElementById('withdrawBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+                setExchangeDirection(currentExchange, document.querySelector('.direction-tab.active'));
+            }
+            loadTransactions();
+        }
+
+        async function requestWithdraw() {
+            const netRequired = 2500;
+            const grossRequired = Math.ceil(netRequired / 0.85); // 2941
+            
+            if (userBalances.diamond < grossRequired) {
+                return alert(`❌ Saldo Diamond tidak cukup!\n\nMinimum withdraw (net): ${netRequired.toLocaleString('id-ID')} Diamond\nAnda perlu mengirim (gross): ${grossRequired.toLocaleString('id-ID')} Diamond\n\nSaldo Anda saat ini: ${userBalances.diamond.toLocaleString('id-ID')} Diamond`);
+            }
+            
+            if (!confirm(`Yakin ingin request withdraw ${grossRequired.toLocaleString('id-ID')} Diamond?\n\n(Net yang diterima: ${netRequired.toLocaleString('id-ID')} Diamond ≈ Rp 500.000)`)) return;
+            
+            const newBalance = userBalances.diamond - grossRequired;
+            await supabase.from('profiles').update({ diamonds: newBalance }).eq('id', currentUserId);
+            userBalances.diamond = newBalance;
+            
+            await supabase.from('transactions').insert({
+                user_id: currentUserId,
+                type: 'withdraw',
+                from_currency: 'Diamond',
+                amount_from: grossRequired,
+                amount_to: netRequired,
+                fee: grossRequired - netRequired,
+                status: 'pending'
+            });
+            
+            alert('✅ Permintaan Withdraw berhasil diajukan! Admin akan memproses dalam 1x24 jam.');
+            document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+            document.getElementById('withdrawBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+            loadTransactions();
+        }
+
+        async function loadTransactions() {
+            const { data, error } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .order('created_at', { ascending: false })
+                .limit(10);
+                
+            const list = document.getElementById('transactionList');
+            if (!data || data.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">Belum ada transaksi.</p>';
+                return;
+            }
+            
+            list.innerHTML = data.map(t => {
+                const date = new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                let desc = '';
+                if (t.type === 'exchange') {
+                    desc = `Exchange: ${t.amount_from} ${t.from_currency} → ${parseFloat(t.amount_to).toFixed(2)} ${t.to_currency}`;
+                } else if (t.type === 'withdraw') {
+                    desc = `Withdraw: ${t.amount_from} ${t.from_currency} (Net: ${t.amount_to})`;
+                } else {
+                    desc = `${t.type}: ${t.amount_to} ${t.to_currency || ''}`;
+                }
+                
+                const statusColor = t.status === 'completed' ? '#28a745' : (t.status === 'pending' ? '#ffc107' : '#ff6b6b');
+                
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid #333; color:white;">
+                        <div>
+                            <div style="font-weight:bold; color:#00d4ff;">${desc}</div>
+                            <div style="font-size:12px; color:#aaa;">${date}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="background:${statusColor}; color:#000; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${t.status.toUpperCase()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function drawMockChart() {
+            const canvas = document.getElementById('marketChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Grid
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < width; i += 50) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke(); }
+            for (let i = 0; i < height; i += 50) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke(); }
+            
+            // Diamond/Gold line
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            for (let i = 0; i < width; i += 20) {
+                ctx.lineTo(i, (height / 2) + Math.sin(i * 0.05) * 50 + Math.random() * 20);
+            }
+            ctx.stroke();
+            
+            // Gold/Currency line
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 1.5);
+            for (let i = 0; i < width; i += 20) {
+                ctx.lineTo(i, (height / 1.5) + Math.cos(i * 0.05) * 40 + Math.random() * 20);
+            }
+            ctx.stroke();
+        }
     </script>
 </body>
 </html>
