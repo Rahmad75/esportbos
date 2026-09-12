@@ -8,69 +8,36 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
-
-    <!-- NAVBAR -->
     <nav class="top-navbar">
         <div class="navbar-left">
-            <img src="logo-esportbos-banner.jpeg" alt="EsportBos" class="top-logo">
-            <div class="search-box">
-                <input type="text" placeholder="🔍 Cari Pemain/Manager/Tim...">
-            </div>
+            <img src="logo-esportbos-banner(2).jpeg" alt="EsportBos" class="top-logo">
+            <div class="search-box"><input type="text" placeholder="🔍 Cari Pemain/Manager/Tim..."></div>
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif active">Lobby</a>
-            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
+            <a href="dana-klub.html" class="stat-badge notif"> Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
             <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
                 <span id="userName">Loading...</span>
-                <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
+                <button onclick="handleLogout()" style="margin-left:10px;padding:5px 10px;background:#ff6b6b;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="dashboard-wrapper">
-        <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="jam-sidebar-box">
-                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
-            </div>
-            <script>
-                let offset = 0;
-                function tampilJam() {
-                    const waktu = new Date(Date.now() + offset);
-                    const j = String(waktu.getHours()).padStart(2,'0');
-                    const m = String(waktu.getMinutes()).padStart(2,'0');
-                    const d = String(waktu.getSeconds()).padStart(2,'0');
-                    const el = document.getElementById('jamServerFinal');
-                    if(el) el.innerText = j+":"+m+":"+d+" WIB";
-                }
-                setInterval(tampilJam, 1000);
-                async function sync() {
-                    try {
-                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
-                        const data = await r.json();
-                        const server = new Date(data.dateTime).getTime();
-                        offset = server - Date.now();
-                    } catch(e) { console.log("Gagal sync server"); }
-                }
-                sync();
-            </script>
-
+            <div class="jam-sidebar-box"><div id="jamServerFinal" style="font-family:monospace;font-size:22px;color:#00d9ff;font-weight:bold;">--:--:--</div></div>
+            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
+            
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
                 <h3 class="team-name" id="clubName">My Club</h3>
                 <div class="team-rank" id="clubRank">-</div>
-                <div class="team-popularity">
-                    <span id="popularityText">Popularitas Klub: 0%</span>
-                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
-                </div>
-                <div class="team-moral">
-                    <span id="moralText">Moral Tim: 0%</span>
-                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
-                </div>
+                <div class="team-popularity"><span id="popularityText">Popularitas Klub: 0%</span><div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width:0%;"></div></div></div>
+                <div class="team-moral"><span id="moralText">Moral Tim: 0%</span><div class="moral-bar"><div class="moral-fill" id="moralBar" style="width:0%;"></div></div></div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
                     <div class="stat-row">🟡 Gold: <strong id="goldBalance">0</strong></div>
@@ -84,298 +51,55 @@
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
-                <a href="transfer.html" class="menu-item"> Transfer</a>
+                <a href="transfer.html" class="menu-item">💰 Transfer</a>
                 <a href="akademi.html" class="menu-item">🎓 Akademi Muda</a>
-                <a href="kantor.html" class="menu-item"> Kantor</a>
-                <a href="tim-teknis.html" class="menu-item">‍💻 Tim Teknis</a>
+                <a href="kantor.html" class="menu-item">🏢 Kantor</a>
+                <a href="tim-teknis.html" class="menu-item">👨‍💻 Tim Teknis</a>
                 <a href="stadion.html" class="menu-item">🏟️ Stadion</a>
                 <a href="prediksi.html" class="menu-item">🎯 Liga Prediksi</a>
-                <a href="akun.html" class="menu-item"> Akun Saya</a>
+                <a href="akun.html" class="menu-item">👤 Akun Saya</a>
             </nav>
-
-            <div class="social-icons">
-                <a href="#">📘</a>
-                <a href="#">💬</a>
-                <a href="#">📷</a>
-            </div>
+            <div class="social-icons"><a href="#">📘</a><a href="#">💬</a><a href="#">📷</a></div>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <div class="info-bar">
-                <span>Musim 28 / Hari 3</span>
-                <span>⚽ Pertandingan selanjutnya: <strong id="infoNextMatch">-</strong></span>
-            </div>
-
-            <!-- Top Panels -->
+            <div class="info-bar"><span>Musim 28 / Hari 3</span><span> Pertandingan selanjutnya: <strong id="infoNextMatch">-</strong></span></div>
+            
             <div class="top-panels">
-                <div class="panel raised">
-                    <h4>⏮ Pertandingan Terakhir</h4>
-                    <div class="match-result">
-                        <span class="team" id="lastMatchHome">-</span>
-                        <span class="score"><span id="lastMatchHomeScore">-</span> - <span id="lastMatchAwayScore">-</span></span>
-                        <span class="team" id="lastMatchAway">-</span>
-                    </div>
-                    <div class="match-info" id="lastMatchInfo">-</div>
-                </div>
-
-                <div class="panel raised">
-                    <h4>⏭ Pertandingan Selanjutnya</h4>
-                    <div class="match-result">
-                        <span class="team" id="nextMatchHome">-</span>
-                        <span class="score">VS</span>
-                        <span class="team" id="nextMatchAway">-</span>
-                    </div>
-                    <div class="match-info" id="nextMatchInfo">-</div>
-                </div>
-
-                <div class="panel raised">
-                    <h4>🏆 Kompetisi</h4>
-                    <div class="competition-info">
-                        <div>C.4 <span class="badge" id="clubRankBadge">New</span> (0 pts)</div>
-                        <div class="progress">1/642</div>
-                    </div>
-                </div>
+                <div class="panel raised"><h4> Pertandingan Terakhir</h4><div class="match-result"><span class="team" id="lastMatchHome">-</span><span class="score"><span id="lastMatchHomeScore">-</span> - <span id="lastMatchAwayScore">-</span></span><span class="team" id="lastMatchAway">-</span></div><div class="match-info" id="lastMatchInfo">-</div></div>
+                <div class="panel raised"><h4> Pertandingan Selanjutnya</h4><div class="match-result"><span class="team" id="nextMatchHome">-</span><span class="score">VS</span><span class="team" id="nextMatchAway">-</span></div><div class="match-info" id="nextMatchInfo">-</div></div>
+                <div class="panel raised"><h4>🏆 Kompetisi</h4><div class="competition-info"><div>C.4 <span class="badge" id="clubRankBadge">New</span> (0 pts)</div><div class="progress">1/642</div></div></div>
             </div>
 
-            <!-- Tabs -->
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchDashboardTab('terbaru', this)">Terbaru</button>
-                <button class="tab-btn" onclick="switchDashboardTab('kalender', this)">Kalender</button>
+                <button class="tab-btn active" onclick="switchDashboardTab('terbaru',this)">Terbaru</button>
+                <button class="tab-btn" onclick="switchDashboardTab('kalender',this)">Kalender</button>
             </div>
 
-            <!-- TAB: TERBARU -->
-            <div id="tab-terbaru" class="tab-content" style="display: block;">
+            <div id="tab-terbaru" class="tab-content" style="display:block;">
                 <div class="content-grid">
-                    <div class="panel raised">
-                        <h3>📅 Pertandingan Terbesar yang Akan Datang</h3>
-                        <div class="match-table" id="upcomingMatchesTable">
-                            <div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div>
-                            <div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Memuat jadwal...</div>
-                        </div>
-                    </div>
-
-                    <div class="panel raised">
-                        <h3>💬 Postingan Forum Terbaru</h3>
-                        <div class="forum-list" id="forumList"></div>
-                    </div>
+                    <div class="panel raised"><h3>📅 Pertandingan Terbesar yang Akan Datang</h3><div class="match-table" id="upcomingMatchesTable"><div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div><div class="table-row" style="justify-content:center;color:#999;padding:20px;">Memuat jadwal...</div></div></div>
+                    <div class="panel raised"><h3>💬 Postingan Forum Terbaru</h3><div class="forum-list" id="forumList"></div></div>
                 </div>
             </div>
 
-            <!-- TAB: KALENDER -->
-            <div id="tab-kalender" class="tab-content" style="display: none;">
-                <div class="panel raised">
-                    <h3>📅 Kalender Pertandingan</h3>
-                    <div class="match-table" id="calendarMatchesTable">
-                        <div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span><span>Status</span></div>
-                        <div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Memuat jadwal...</div>
-                    </div>
-                </div>
+            <div id="tab-kalender" class="tab-content" style="display:none;">
+                <div class="panel raised"><h3>📅 Kalender Pertandingan</h3><div class="match-table" id="calendarMatchesTable"><div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span><span>Status</span></div><div class="table-row" style="justify-content:center;color:#999;padding:20px;">Memuat jadwal...</div></div></div>
             </div>
 
-            <!-- ADSTERRA BANNER -->
-            <div class="ad-native-container" style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+            <div class="ad-native-container" style="margin:20px 0;padding:15px;background:#f8f9fa;border-radius:8px;text-align:center;">
                 <script async="async" data-cfasync="false" src="https://pl31224048.profitableratecpmnetwork.com/87d310fb3aa345fe84ac3bc8f95173a7/invoke.js"></script>
                 <div id="container-87d310fb3aa345fe84ac3bc8f95173a7"></div>
             </div>
 
-            <!-- Transfer Tables -->
             <div class="transfer-grid">
-                <div class="panel raised">
-                    <h3>💸 Transfer Pemain Terbaru</h3>
-                    <div class="transfer-table" id="latestTransfersTable">
-                        <div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>
-                        <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Memuat data...</div>
-                    </div>
-                </div>
-                <div class="panel raised">
-                    <h3>🔨 Bid Transfer Terbaru</h3>
-                    <div class="transfer-table" id="latestBidsTable">
-                        <div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>
-                        <div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Memuat data...</div>
-                    </div>
-                </div>
+                <div class="panel raised"><h3>💸 Transfer Pemain Terbaru</h3><div class="transfer-table" id="latestTransfersTable"><div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div><div class="table-row" style="justify-content:center;color:#999;padding:15px;">Memuat data...</div></div></div>
+                <div class="panel raised"><h3>🔨 Bid Transfer Terbaru</h3><div class="transfer-table" id="latestBidsTable"><div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div><div class="table-row" style="justify-content:center;color:#999;padding:15px;">Memuat data...</div></div></div>
             </div>
-            <!-- MATCHMAKING SECTION -->
-<div class="panel raised" style="margin-top: 20px;">
-    <h3>🔍 Cari Pertandingan</h3>
-    <p style="color: #aaa; margin-bottom: 20px;">Temukan lawan dan mainkan match ranked!</p>
-    
-    <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 300px;">
-            <div style="background: #16213e; padding: 20px; border-radius: 10px; color: white;">
-                <div style="font-size: 14px; color: #aaa; margin-bottom: 10px;">Status Queue:</div>
-                <div id="matchmakingStatus" style="font-size: 24px; font-weight: bold; color: #00d4ff;">Tidak dalam queue</div>
-                <div id="matchmakingInfo" style="font-size: 12px; color: #999; margin-top: 5px;">Klik tombol di bawah untuk mencari lawan</div>
-            </div>
-        </div>
-        <button onclick="toggleMatchmaking()" id="matchmakingBtn" class="btn-futuristic" style="padding: 15px 30px; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
-            🔍 Cari Lawan
-        </button>
-    </div>
-</div>
-
-<!-- DIVISION STANDING -->
-<div class="panel raised" style="margin-top: 20px;">
-    <h3>🏆 Klasemen Divisi</h3>
-    <div id="divisionStanding" style="margin-top: 15px;">
-        <p style="text-align: center; color: #999;">Memuat klasemen...</p>
-    </div>
-</div>
         </main>
     </div>
 
-    <!-- [BERSAMBUNG KE PART 2 - SCRIPT] -->
-
-    <!-- SCRIPT UTAMA DASHBOARD -->
-    <script>
-    // 1. Init Supabase (Aman dari bentrok)
-    if (!window.supabaseClient) {
-        window.supabaseClient = window.supabase.createClient(
-            'https://xvnmpbmyxphrddjjldbt.supabase.co',
-            'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
-        );
-    }
-    var supabase = window.supabaseClient;
-
-    // 2. Fungsi Logout
-    function handleLogout() {
-        supabase.auth.signOut().then(() => { window.location.href = 'index.html'; });
-    }
-
-    // 3. Fungsi Ganti Tab
-    function switchDashboardTab(tabName, btnElement) {
-        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        const target = document.getElementById('tab-' + tabName);
-        if (target) target.style.display = 'block';
-        if (btnElement) btnElement.classList.add('active');
-    }
-
-    // 4. Fungsi Load Transfer Data
-    async function loadTransferData() {
-        try {
-            const { data: transfers } = await supabase.from('transfers').select('*').eq('status', 'completed').eq('transfer_type', 'transfer').order('created_at', { ascending: false }).limit(5);
-            const tTable = document.getElementById('latestTransfersTable');
-            if (!transfers || transfers.length === 0) {
-                tTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div><div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada transfer</div>';
-            } else {
-                tTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Dari</span><span>Ke</span><span>Nilai Bid</span></div>' + transfers.map(t => {
-                    const posCode = t.player_position?.substring(0, 2).toUpperCase() || 'P';
-                    return '<div class="table-row"><span class="pos" style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">' + posCode + '</span><span>' + (t.player_name || '-') + '</span><span>' + (t.to_team_name || '-') + '</span><span class="bid" style="color:#28a745;">💰 ' + parseFloat(t.bid_amount || 0).toFixed(2) + '</span></div>';
-                }).join('');
-            }
-
-            const { data: bids } = await supabase.from('transfers').select('*').eq('status', 'pending').eq('transfer_type', 'bid').order('created_at', { ascending: false }).limit(5);
-            const bTable = document.getElementById('latestBidsTable');
-            if (!bids || bids.length === 0) {
-                bTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div><div class="table-row" style="justify-content:center; color:#999; padding: 15px;">Belum ada bid</div>';
-            } else {
-                bTable.innerHTML = '<div class="table-header"><span>Pos</span><span>Oleh Tim</span><span>Nilai Bid</span><span>Waktu Lalu</span></div>' + bids.map(b => {
-                    const mins = Math.floor((new Date() - new Date(b.created_at)) / (1000 * 60));
-                    const timeText = mins < 60 ? mins + ' Menit' : Math.floor(mins / 60) + ' Jam';
-                    const posCode = b.player_position?.substring(0, 2).toUpperCase() || 'P';
-                    return '<div class="table-row"><span class="pos" style="background:#3498db; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">' + posCode + '</span><span>' + (b.to_team_name || '-') + '</span><span class="bid" style="color:#28a745;">💰 ' + parseFloat(b.bid_amount || 0).toFixed(2) + '</span><span style="color:#999; font-size:12px;">' + timeText + '</span></div>';
-                }).join('');
-            }
-        } catch (err) { console.error('Error loading transfers:', err); }
-    }
-
-    // 5. Main Logic Saat Halaman Load
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
-            const user = session.user;
-
-            // Load Profile
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (profile) {
-                const username = profile.username || user.email.split('@')[0];
-                document.getElementById('userName').textContent = username;
-                document.getElementById('navAvatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
-                document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
-                document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
-                document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
-            }
-
-            // Load Team & Matches
-            const { data: team } = await supabase.from('teams').select('*').eq('user_id', user.id).single();
-            if (team) {
-                document.getElementById('clubName').textContent = team.team_name || 'My Club';
-                document.getElementById('clubRank').textContent = (team.wins || 0) + 'W-' + (team.draws || 0) + 'D-' + (team.losses || 0) + 'L';
-                document.getElementById('popularityText').textContent = 'Popularitas Klub: ' + (team.popularity || 0) + '%';
-                document.getElementById('popularityBar').style.width = (team.popularity || 0) + '%';
-                document.getElementById('moralText').textContent = 'Moral Tim: ' + (team.moral || 0) + '%';
-                document.getElementById('moralBar').style.width = (team.moral || 0) + '%';
-
-                const { data: allMatches } = await supabase.from('matches').select('*, home_team:home_team_id(team_name), away_team:away_team_id(team_name)').or('home_team_id.eq.' + team.id + ',away_team_id.eq.' + team.id).order('match_date', { ascending: false });
-
-                if (allMatches) {
-                    const finishedMatches = allMatches.filter(m => m.status === 'finished');
-                    const scheduledMatches = allMatches.filter(m => m.status === 'scheduled').reverse();
-
-                    // Last Match
-                    if (finishedMatches.length > 0) {
-                        const last = finishedMatches[0];
-                        document.getElementById('lastMatchHome').textContent = last.home_team?.team_name || '-';
-                        document.getElementById('lastMatchHomeScore').textContent = last.home_score ?? '-';
-                        document.getElementById('lastMatchAwayScore').textContent = last.away_score ?? '-';
-                        document.getElementById('lastMatchAway').textContent = last.away_team?.team_name || '-';
-                        document.getElementById('lastMatchInfo').textContent = (last.competition || 'Friendly') + ' - ' + new Date(last.match_date).toLocaleDateString('id-ID');
-                    }
-
-                    // Next Match
-                    if (scheduledMatches.length > 0) {
-                        const next = scheduledMatches[0];
-                        const isHome = next.home_team_id === team.id;
-                        document.getElementById('nextMatchHome').textContent = next.home_team?.team_name || '-';
-                        document.getElementById('nextMatchAway').textContent = next.away_team?.team_name || '-';
-                        document.getElementById('nextMatchInfo').textContent = (next.competition || 'Friendly') + ' - ' + new Date(next.match_date).toLocaleDateString('id-ID');
-                        document.getElementById('infoNextMatch').textContent = (isHome ? next.away_team?.team_name : next.home_team?.team_name) + ' (' + (isHome ? 'K' : 'T') + ')';
-                    }
-
-                    // Upcoming Matches (Tab Terbaru)
-                    const upcomingTable = document.getElementById('upcomingMatchesTable');
-                    const topUpcoming = scheduledMatches.slice(0, 4);
-                    const upcomingHtml = topUpcoming.map(m => {
-                        const date = new Date(m.match_date);
-                        const diffHours = Math.ceil((date - new Date()) / (1000 * 60 * 60));
-                        const timeText = diffHours > 0 ? 'dalam ' + diffHours + ' Jam' : date.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-                        return '<div class="table-row"><span>🏠 ' + (m.home_team?.team_name || 'TBD') + '</span><span>✈️ ' + (m.away_team?.team_name || 'TBD') + '</span><span style="color: #00d4ff;">' + timeText + '</span></div>';
-                    }).join('');
-                    upcomingTable.innerHTML = '<div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span></div>' + (upcomingHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada pertandingan yang dijadwalkan.</div>');
-
-                    // Calendar Matches (Tab Kalender)
-                    const calendarTable = document.getElementById('calendarMatchesTable');
-                    const calendarMatches = [...allMatches].sort((a,b) => new Date(a.match_date) - new Date(b.match_date));
-                    const calendarHtml = calendarMatches.map(m => {
-                        const timeText = new Date(m.match_date).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' });
-                        const badge = m.status === 'finished' ? '<span style="background:#28a745; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">Selesai</span>' : '<span style="background:#ffc107; color:black; padding:2px 8px; border-radius:4px; font-size:12px;">Akan Datang</span>';
-                        return '<div class="table-row"><span>🏠 ' + (m.home_team?.team_name || 'TBD') + '</span><span>✈️ ' + (m.away_team?.team_name || 'TBD') + '</span><span>' + timeText + '</span><span>' + badge + '</span></div>';
-                    }).join('');
-                    calendarTable.innerHTML = '<div class="table-header"><span>Kandang</span><span>Tandang</span><span>Waktu</span><span>Status</span></div>' + (calendarHtml || '<div class="table-row" style="justify-content:center; color:#999; padding: 20px;">Belum ada jadwal pertandingan.</div>');
-                }
-            }
-
-            // Forum Posts
-            const forumList = document.getElementById('forumList');
-            forumList.innerHTML = [
-                { topic: "🔥 Selamat datang di EsportBos Manager!", time: "Baru saja" },
-                { topic: "Tips mendapatkan Currency dengan cepat", time: "1 Jam lalu" },
-                { topic: "Strategi taktik 4-3-3 untuk pemula", time: "3 Jam lalu" }
-            ].map(post => '<div class="forum-item"><span class="forum-topic">' + post.topic + '</span><span class="forum-time">' + post.time + '</span></div>').join('');
-
-            // Load Transfers
-            loadTransferData();
-
-        } catch (error) {
-            console.error('Dashboard error:', error);
-        }
-    });
-    </script>
-
-    <!-- ADSTERRA SOCIAL BAR -->
+    <script src="js/dashboard.js"></script>
     <script src="https://pl31224049.profitableratecpmnetwork.com/e4/13/8f/e4138fe2b379adb70789402622bf9a37.js"></script>
 </body>
 </html>
