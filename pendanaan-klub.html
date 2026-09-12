@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=1200">
     <title>EsportBos - Pendanaan Klub</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="dashboard-body">
 
@@ -18,12 +20,12 @@
         </div>
         <div class="navbar-right">
             <a href="dashboard.html" class="stat-badge notif">Lobby</a>
-            <a href="dana-klub.html" class="stat-badge notif">💰 Dana Klub</a>
+            <a href="dana-klub.html" class="stat-badge notif active">💰 Dana Klub</a>
             <div class="stat-badge notif">🔔 Pembaruan (0)</div>
             <a href="financial-market.html" class="stat-badge market-badge">📈 Market</a>
             <div class="stat-badge message">✉️ Pesan (0)</div>
             <div class="user-profile">
-                <img src="" alt="User" id="navAvatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="User" id="navAvatar">
                 <span id="userName">Loading...</span>
                 <button onclick="handleLogout()" style="margin-left: 10px; padding: 5px 10px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer;">Logout</button>
             </div>
@@ -31,20 +33,19 @@
     </nav>
 
     <div class="dashboard-wrapper">
-
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>
-                <h3 class="team-name" id="clubName">My Club</h3>
+                <h3 class="team-name" id="clubName">Loading...</h3>
                 <div class="team-rank" id="clubRank">-</div>
                 <div class="team-popularity">
-                    <span id="popularityText">Popularitas Klub: -</span>
-                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 50%;"></div></div>
+                    <span id="popularityText">Popularitas Klub: 0%</span>
+                    <div class="pop-bar"><div class="pop-fill" id="popularityBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-moral">
-                    <span id="moralText">Moral Tim: -</span>
-                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 70%;"></div></div>
+                    <span id="moralText">Moral Tim: 0%</span>
+                    <div class="moral-bar"><div class="moral-fill" id="moralBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="team-stats">
                     <div class="stat-row">💎 Diamond: <strong id="diamondBalance">0</strong></div>
@@ -55,8 +56,7 @@
             </div>
 
             <nav class="sidebar-menu">
-                <a href="dashboard.html" class="menu-item">🏠 Dashboard</a>
-                <a href="pemain.html" class="menu-item"> Pemain</a>
+                <a href="pemain.html" class="menu-item">👥 Pemain</a>
                 <a href="taktik.html" class="menu-item">🧠 Taktik</a>
                 <a href="pertandingan.html" class="menu-item">⚔️ Pertandingan</a>
                 <a href="latihan.html" class="menu-item">💪 Latihan</a>
@@ -78,7 +78,6 @@
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-
             <div class="info-bar">
                 <span>💼 Pendanaan Klub</span>
                 <span>Top-up Dana untuk Klub Anda</span>
@@ -109,16 +108,15 @@
             <!-- Paket Top-Up -->
             <div class="panel raised">
                 <h3>📦 Paket Pendanaan</h3>
-                <p style="color: #666; margin-bottom: 20px;">Pilih paket yang sesuai dengan kebutuhan klub Anda</p>
+                <p style="color: #aaa; margin-bottom: 20px;">Pilih paket yang sesuai dengan kebutuhan klub Anda</p>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                    
                     <!-- Paket Starter -->
-                    <div style="border: 2px solid #ddd; border-radius: 12px; padding: 25px; text-align: center; transition: all 0.3s;">
+                    <div style="border: 2px solid #333; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white; transition: all 0.3s;">
                         <h4 style="color: #667eea;">🥉 Starter</h4>
                         <div style="font-size: 48px; margin: 15px 0;">💎 100</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 50.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 50.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
                             <li>✅ 100 Diamond</li>
                             <li>✅ Bonus 50 Gold</li>
                             <li>✅ Instant Delivery</li>
@@ -127,12 +125,12 @@
                     </div>
 
                     <!-- Paket Pro -->
-                    <div style="border: 3px solid #ff9800; border-radius: 12px; padding: 25px; text-align: center; position: relative;">
+                    <div style="border: 3px solid #ff9800; border-radius: 12px; padding: 25px; text-align: center; position: relative; background: #16213e; color: white;">
                         <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ff9800; color: white; padding: 4px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">POPULER</div>
                         <h4 style="color: #ff9800;">🥈 Pro</h4>
                         <div style="font-size: 48px; margin: 15px 0;">💎 500</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 200.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 200.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
                             <li>✅ 500 Diamond</li>
                             <li>✅ Bonus 300 Gold</li>
                             <li>✅ Instant Delivery</li>
@@ -141,11 +139,11 @@
                     </div>
 
                     <!-- Paket Elite -->
-                    <div style="border: 2px solid #ddd; border-radius: 12px; padding: 25px; text-align: center;">
+                    <div style="border: 2px solid #333; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white;">
                         <h4 style="color: #f5576c;">🥇 Elite</h4>
                         <div style="font-size: 48px; margin: 15px 0;">💎 1500</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #333;">Rp 500.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #666;">
+                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 500.000</div>
+                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
                             <li>✅ 1500 Diamond</li>
                             <li>✅ Bonus 1000 Gold</li>
                             <li>✅ Instant Delivery</li>
@@ -153,7 +151,6 @@
                         </ul>
                         <button onclick="topUp('elite', 500000, 1500, 1000)" class="btn-topup" style="width: 100%; padding: 12px; background: #f5576c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
                     </div>
-
                 </div>
             </div>
 
@@ -161,13 +158,13 @@
             <div class="panel raised">
                 <h3>💳 Metode Pembayaran</h3>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; padding: 20px;">
-                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">🏦 Transfer Bank</div>
-                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">📱 E-Wallet (OVO, DANA, GoPay)</div>
-                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">🏪 Minimarket (Alfamart, Indomaret)</div>
-                    <div style="padding: 15px 30px; background: #f8f9fa; border-radius: 8px; border: 2px solid #ddd;">💳 Kartu Kredit/Debit</div>
+                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">🏦 Transfer Bank</div>
+                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">📱 E-Wallet (OVO, DANA, GoPay)</div>
+                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">🏪 Minimarket (Alfamart, Indomaret)</div>
+                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">💳 Kartu Kredit/Debit</div>
                 </div>
                 <p style="text-align: center; color: #999; margin-top: 15px;">
-                     Pembayaran diproses melalui <strong>Duitku Payment Gateway</strong> (Akan segera hadir)
+                    Pembayaran diproses melalui <strong>Duitku Payment Gateway</strong>
                 </p>
             </div>
 
@@ -175,146 +172,177 @@
             <div class="panel raised">
                 <h3>📜 Riwayat Pendanaan</h3>
                 <div id="riwayatPendanaan" style="padding: 20px; text-align: center; color: #999;">
-                    Belum ada riwayat pendanaan. Mulai top-up pertama Anda!
+                    Memuat riwayat...
                 </div>
             </div>
-
         </main>
     </div>
 
+    <!-- ===== SCRIPT UTAMA - SUPABASE VERSION ===== -->
     <script>
-// Fungsi untuk create payment request ke Duitku
-async function topUp(paket, harga, diamond, gold) {
-    const user = window.currentUser;
-    if (!user) {
-        alert('❌ Silakan login terlebih dahulu!');
-        window.location.href = 'index.html';
-        return;
-    }
+        // 1. Init Supabase
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(
+                'https://xvnmpbmyxphrddjjldbt.supabase.co',
+                'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+            );
+        }
+        const supabase = window.supabaseClient;
+        let currentUserId = null;
 
-    try {
-        const { data: { session } } = await window.supabaseClient.auth.getSession();
-        
-        const response = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-                packageType: paket,
-                amount: harga,
-                diamond: diamond,
-                gold: gold
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            alert('✅ Transaksi dibuat! Mengalihkan ke halaman pembayaran...');
-            window.location.href = data.paymentUrl;
-        } else {
-            alert(' Gagal: ' + data.error);
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
         }
 
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('❌ Terjadi kesalahan sistem.');
-    }
-}
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 2. Cek Auth
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { 
+                window.location.href = 'index.html'; 
+                return; 
+            }
+            currentUserId = session.user.id;
 
-// Fungsi generate signature untuk Duitku
-function generateSignature(orderId, amount) {
-    // Signature = MD5(MerchantCode + Amount + MerchantOrderId + SecretKey)
-    // Ganti 'YOUR_SECRET_KEY' dengan secret key dari Duitku
-    const merchantCode = 'YOUR_MERCHANT_CODE';
-    const secretKey = '5e9a78b75a211329a8e9d6353bce19a3';
-    const stringToHash = merchantCode + amount + orderId + secretKey;
-    
-    // Simple MD5 hash (gunakan library MD5 atau crypto)
-    return simpleMD5(stringToHash);
-}
+            // 3. Load Profile & Team
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+            const { data: team } = await supabase.from('teams').select('*').eq('user_id', currentUserId).single();
 
-// Simple MD5 function (gunakan library crypto-js untuk production)
-function simpleMD5(str) {
-    // Ini cuma placeholder - gunakan library MD5 yang proper
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
-}
+            if (profile) {
+                const username = profile.username || session.user.email.split('@')[0];
+                document.getElementById('userName').textContent = username;
+                document.getElementById('navAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                
+                const diamonds = profile.diamonds || 0;
+                const gold = profile.gold || 0;
+                const currency = profile.currency || 0;
 
-// Load riwayat transaksi user
-async function loadRiwayatPendanaan() {
-    const user = window.currentUser;
-    if (!user) return;
-    
-    const { data, error } = await window.supabaseClient
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('type', 'topup')
-        .order('created_at', { ascending: false })
-        .limit(10);
-    
-    const container = document.getElementById('riwayatPendanaan');
-    
-    if (error || !data || data.length === 0) {
-        container.innerHTML = 'Belum ada riwayat pendanaan. Mulai top-up pertama Anda!';
-        return;
-    }
-    
-    const statusColors = {
-        'pending': '#ffc107',
-        'success': '#28a745',
-        'failed': '#dc3545'
-    };
-    
-    const statusLabels = {
-        'pending': '⏳ Pending',
-        'success': '✅ Berhasil',
-        'failed': '❌ Gagal'
-    };
-    
-    container.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">
-                    <th style="padding: 12px; text-align: left;">Tanggal</th>
-                    <th style="padding: 12px; text-align: left;">Paket</th>
-                    <th style="padding: 12px; text-align: left;">Jumlah</th>
-                    <th style="padding: 12px; text-align: left;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${data.map(tx => `
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 12px;">${new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
-                        <td style="padding: 12px; font-weight: bold;">${tx.package.toUpperCase()}</td>
-                        <td style="padding: 12px;">Rp ${tx.amount.toLocaleString('id-ID')}</td>
-                        <td style="padding: 12px;">
-                            <span style="padding: 5px 12px; background: ${statusColors[tx.status]}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
-                                ${statusLabels[tx.status]}
-                            </span>
-                        </td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-}
+                // Update Sidebar
+                document.getElementById('diamondBalance').textContent = diamonds.toLocaleString('id-ID');
+                document.getElementById('goldBalance').textContent = gold.toLocaleString('id-ID');
+                document.getElementById('currencyBalance').textContent = currency.toLocaleString('id-ID');
+                
+                // Update Main Content
+                document.getElementById('saldoDiamond').textContent = diamonds.toLocaleString('id-ID');
+                document.getElementById('saldoGold').textContent = gold.toLocaleString('id-ID');
+                document.getElementById('saldoCurrency').textContent = currency.toLocaleString('id-ID');
+            }
 
-// Jalankan saat halaman load
-document.addEventListener('DOMContentLoaded', async function() {
-    await waitForCurrentUser();
-    if (window.currentUser) {
-        loadRiwayatPendanaan();
-    }
-});
-</script>
+            if (team) {
+                document.getElementById('clubName').textContent = team.team_name;
+                document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+                document.getElementById('popularityText').textContent = `Popularitas Klub: ${team.popularity}%`;
+                document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+                document.getElementById('moralText').textContent = `Moral Tim: ${team.moral}%`;
+                document.getElementById('moralBar').style.width = `${team.moral}%`;
+            }
+
+            // Load riwayat
+            loadRiwayatPendanaan();
+        });
+
+        // Fungsi untuk create payment request ke Duitku
+        async function topUp(paket, harga, diamond, gold) {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    alert('❌ Silakan login terlebih dahulu!');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const response = await fetch('https://xvnmpbmyxphrddjjldbt.supabase.co/functions/v1/create-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        packageType: paket,
+                        amount: harga,
+                        diamond: diamond,
+                        gold: gold
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Transaksi dibuat! Mengalihkan ke halaman pembayaran...');
+                    window.location.href = data.paymentUrl;
+                } else {
+                    alert('❌ Gagal: ' + (data.error || 'Terjadi kesalahan'));
+                }
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('❌ Terjadi kesalahan sistem.');
+            }
+        }
+
+        // Load riwayat transaksi user
+        async function loadRiwayatPendanaan() {
+            try {
+                const { data, error } = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .eq('user_id', currentUserId)
+                    .eq('type', 'topup')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                const container = document.getElementById('riwayatPendanaan');
+                
+                if (error || !data || data.length === 0) {
+                    container.innerHTML = '<p style="color: #999;">Belum ada riwayat pendanaan. Mulai top-up pertama Anda!</p>';
+                    return;
+                }
+                
+                const statusColors = {
+                    'pending': '#ffc107',
+                    'success': '#28a745',
+                    'completed': '#28a745',
+                    'failed': '#dc3545'
+                };
+                
+                const statusLabels = {
+                    'pending': '⏳ Pending',
+                    'success': '✅ Berhasil',
+                    'completed': '✅ Berhasil',
+                    'failed': '❌ Gagal'
+                };
+                
+                container.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse; color: white;">
+                        <thead>
+                            <tr style="background: #16213e; border-bottom: 2px solid #333;">
+                                <th style="padding: 12px; text-align: left;">Tanggal</th>
+                                <th style="padding: 12px; text-align: left;">Paket</th>
+                                <th style="padding: 12px; text-align: left;">Jumlah</th>
+                                <th style="padding: 12px; text-align: left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(tx => `
+                                <tr style="border-bottom: 1px solid #333;">
+                                    <td style="padding: 12px;">${new Date(tx.created_at).toLocaleDateString('id-ID')}</td>
+                                    <td style="padding: 12px; font-weight: bold;">${tx.package ? tx.package.toUpperCase() : 'TOPUP'}</td>
+                                    <td style="padding: 12px;">Rp ${(tx.amount || 0).toLocaleString('id-ID')}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="padding: 5px 12px; background: ${statusColors[tx.status] || '#999'}; color: white; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                                            ${statusLabels[tx.status] || tx.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (err) {
+                console.error('Error loading riwayat:', err);
+                document.getElementById('riwayatPendanaan').innerHTML = '<p style="color: #999;">Gagal memuat riwayat.</p>';
+            }
+        }
+    </script>
 </body>
 </html>
