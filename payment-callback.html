@@ -23,87 +23,98 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Init Supabase (cek dulu biar gak duplikat)
+if (!window.supabaseClient) {
+    window.supabaseClient = window.supabase.createClient(
+        'https://xvnmpbmyxphrddjjldbt.supabase.co',
+        'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
+    );
+}
+const supabase = window.supabaseClient;
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const merchantOrderId = urlParams.get('merchantOrderId');
-            const resultCode = urlParams.get('resultCode');
-            const amount = urlParams.get('amount');
+// Check URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const mockSuccess = urlParams.get('mock');
+const orderId = urlParams.get('orderId');
+
+async function processPayment() {
+    try {
+        if (mockSuccess === 'success') {
+            // MODE TESTING - Langsung sukses
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            if (!merchantOrderId) {
-                document.getElementById('status').className = 'status failed';
-                document.getElementById('status').textContent = '❌ Callback Tidak Valid';
-                document.getElementById('message').textContent = 'Parameter transaksi tidak ditemukan.';
-                setTimeout(() => window.location.href = 'dashboard.html', 3000);
+            // Get user
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '/index.html';
                 return;
             }
 
-            try {
-                // Ambil data transaksi
-                const { data: transaction, error: fetchError } = await supabase
+            // Find transaction
+            const { data: transaction } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('order_id', orderId)
+                .single();
+
+            if (transaction) {
+                // Update status
+                await supabase
                     .from('transactions')
-                    .select('*')
-                    .eq('transaction_id', merchantOrderId)
+                    .update({ status: 'completed', completed_at: new Date().toISOString() })
+                    .eq('order_id', orderId);
+
+                // Add diamonds & gold
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('diamonds, gold')
+                    .eq('id', session.user.id)
                     .single();
 
-                if (fetchError || !transaction) {
-                    throw new Error('Transaksi tidak ditemukan');
-                }
-
-                // Cek status dari Duitku (0 = success)
-                const isSuccess = resultCode === '0';
-                const newStatus = isSuccess ? 'success' : 'failed';
-
-                // Update status transaksi
-                const { error: updateError } = await supabase
-                    .from('transactions')
+                await supabase
+                    .from('profiles')
                     .update({
-                        status: newStatus,
-                        updated_at: new Date().toISOString()
+                        diamonds: (profile.diamonds || 0) + (transaction.diamonds || 0),
+                        gold: (profile.gold || 0) + (transaction.gold || 0)
                     })
-                    .eq('transaction_id', merchantOrderId);
+                    .eq('id', session.user.id);
 
-                if (updateError) throw updateError;
+                document.getElementById('status').innerHTML = `
+                    <div class="success">
+                        ✅ Pembayaran Berhasil!<br><br>
+                        💎 +${transaction.diamonds} Diamond<br>
+                        🟡 +${transaction.gold} Gold<br><br>
+                        <small>Redirecting...</small>
+                    </div>
+                `;
 
-                // Jika sukses, update saldo user
-                if (isSuccess && transaction.status !== 'success') {
-                    const { error: balanceError } = await supabase
-                        .from('profiles')
-                        .update({
-                            diamonds: (transaction.diamond || 0),
-                            gold: (transaction.gold || 0)
-                        })
-                        .eq('id', transaction.user_id);
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 3000);
 
-                    if (balanceError) throw balanceError;
-                }
-
-                // Tampilkan hasil
-                const statusEl = document.getElementById('status');
-                const messageEl = document.getElementById('message');
-
-                if (isSuccess) {
-                    statusEl.className = 'status success';
-                    statusEl.textContent = '✅ Pembayaran Berhasil!';
-                    messageEl.textContent = `${transaction.diamond} Diamond dan ${transaction.gold} Gold telah ditambahkan ke akun Anda.`;
-                } else {
-                    statusEl.className = 'status failed';
-                    statusEl.textContent = '❌ Pembayaran Gagal';
-                    messageEl.textContent = 'Transaksi dibatalkan atau gagal. Silakan coba lagi.';
-                }
-
-                setTimeout(() => window.location.href = 'dashboard.html', 5000);
-
-            } catch (err) {
-                console.error('Callback error:', err);
-                document.getElementById('status').className = 'status failed';
-                document.getElementById('status').textContent = '❌ Error';
-                document.getElementById('message').textContent = err.message;
+            } else {
+                document.getElementById('status').innerHTML = '<div class="failed">❌ Transaksi tidak ditemukan</div>';
             }
-        });
-    </script>
+
+        } else {
+            // MODE PRODUCTION - Handle Duitku callback
+            document.getElementById('status').innerHTML = '<div class="loading">Verifikasi pembayaran...</div>';
+            
+            // Di sini nanti logic verify callback dari Duitku
+            // Untuk sekarang, redirect aja
+            setTimeout(() => {
+                window.location.href = '/dashboard.html';
+            }, 2000);
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('status').innerHTML = '<div class="failed"> Error: ' + error.message + '</div>';
+    }
+}
+
+// Run on load
+document.addEventListener('DOMContentLoaded', processPayment);
+</script>
 </body>
 </html>
