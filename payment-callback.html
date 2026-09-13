@@ -4,117 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsportBos - Payment Callback</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #1a1a2e; color: white; }
-        .container { max-width: 600px; margin: 0 auto; background: #16213e; padding: 40px; border-radius: 15px; }
-        h1 { color: #00d4ff; }
-        .status { font-size: 24px; margin: 20px 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(22, 33, 62, 0.9);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            color: #00d4ff;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        .status {
+            font-size: 24px;
+            margin: 20px 0;
+            min-height: 60px;
+        }
+        .loading { color: #ffc107; }
         .success { color: #28a745; }
         .failed { color: #dc3545; }
-        .loading { color: #ffc107; }
+        .message {
+            color: #aaa;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎮 EsportBos Payment</h1>
-        <div id="status" class="status loading">⏳ Memproses pembayaran...</div>
-        <p id="message">Mohon tunggu sebentar</p>
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            Memproses pembayaran...
+        </div>
+        <div class="message">Mohon tunggu sebentar</div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-// Init Supabase (cek dulu biar gak duplikat)
-if (!window.supabaseClient) {
-    window.supabaseClient = window.supabase.createClient(
+    // Init Supabase
+    const supabase = window.supabase.createClient(
         'https://xvnmpbmyxphrddjjldbt.supabase.co',
         'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
     );
-}
-const supabase = window.supabaseClient;
 
-// Check URL parameters
-const urlParams = new URLSearchParams(window.location.search);
-const mockSuccess = urlParams.get('mock');
-const orderId = urlParams.get('orderId');
+    async function processPayment() {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mockSuccess = urlParams.get('mock');
+            const orderId = urlParams.get('orderId');
 
-async function processPayment() {
-    try {
-        if (mockSuccess === 'success') {
-            // MODE TESTING - Langsung sukses
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Get user
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = '/index.html';
-                return;
-            }
+            if (mockSuccess === 'success') {
+                // MODE TESTING
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    document.getElementById('status').innerHTML = '<div class="failed">❌ Silakan login dulu</div>';
+                    setTimeout(() => { window.location.href = '/index.html'; }, 3000);
+                    return;
+                }
 
-            // Find transaction
-            const { data: transaction } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('order_id', orderId)
-                .single();
+                // Cari transaction
+                let transaction = null;
+                if (orderId) {
+                    const { data } = await supabase
+                        .from('transactions')
+                        .select('*')
+                        .eq('order_id', orderId)
+                        .single();
+                    transaction = data;
+                }
 
-            if (transaction) {
-                // Update status
-                await supabase
-                    .from('transactions')
-                    .update({ status: 'completed', completed_at: new Date().toISOString() })
-                    .eq('order_id', orderId);
+                // Kalau tidak ada orderId, ambil transaction terbaru yang pending
+                if (!transaction) {
+                    const { data } = await supabase
+                        .from('transactions')
+                        .select('*')
+                        .eq('user_id', session.user.id)
+                        .eq('status', 'pending')
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .single();
+                    transaction = data;
+                }
 
-                // Add diamonds & gold
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('diamonds, gold')
-                    .eq('id', session.user.id)
-                    .single();
+                if (transaction) {
+                    // Update status transaction
+                    await supabase
+                        .from('transactions')
+                        .update({ 
+                            status: 'completed', 
+                            completed_at: new Date().toISOString() 
+                        })
+                        .eq('id', transaction.id);
 
-                await supabase
-                    .from('profiles')
-                    .update({
-                        diamonds: (profile.diamonds || 0) + (transaction.diamonds || 0),
-                        gold: (profile.gold || 0) + (transaction.gold || 0)
-                    })
-                    .eq('id', session.user.id);
+                    // Tambah diamond & gold ke profile
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('diamonds, gold')
+                        .eq('id', session.user.id)
+                        .single();
 
-                document.getElementById('status').innerHTML = `
-                    <div class="success">
-                        ✅ Pembayaran Berhasil!<br><br>
-                        💎 +${transaction.diamonds} Diamond<br>
-                        🟡 +${transaction.gold} Gold<br><br>
-                        <small>Redirecting...</small>
-                    </div>
-                `;
+                    const newDiamonds = (profile.diamonds || 0) + (transaction.diamonds || 0);
+                    const newGold = (profile.gold || 0) + (transaction.gold || 0);
 
-                setTimeout(() => {
-                    window.location.href = '/dashboard.html';
-                }, 3000);
+                    await supabase
+                        .from('profiles')
+                        .update({
+                            diamonds: newDiamonds,
+                            gold: newGold
+                        })
+                        .eq('id', session.user.id);
+
+                    document.getElementById('status').innerHTML = `
+                        <div class="success">
+                            ✅ Pembayaran Berhasil!<br><br>
+                            💎 +${transaction.diamonds} Diamond<br>
+                            🟡 +${transaction.gold} Gold<br><br>
+                            <small>Redirecting ke dashboard...</small>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        window.location.href = '/pendanaan-klub.html';
+                    }, 3000);
+
+                } else {
+                    document.getElementById('status').innerHTML = '<div class="failed">❌ Transaksi tidak ditemukan</div>';
+                }
 
             } else {
-                document.getElementById('status').innerHTML = '<div class="failed">❌ Transaksi tidak ditemukan</div>';
+                // MODE PRODUCTION - Handle Duitku callback
+                document.getElementById('status').innerHTML = '<div class="loading">Verifikasi pembayaran...</div>';
+                
+                setTimeout(() => {
+                    window.location.href = '/pendanaan-klub.html';
+                }, 2000);
             }
 
-        } else {
-            // MODE PRODUCTION - Handle Duitku callback
-            document.getElementById('status').innerHTML = '<div class="loading">Verifikasi pembayaran...</div>';
-            
-            // Di sini nanti logic verify callback dari Duitku
-            // Untuk sekarang, redirect aja
-            setTimeout(() => {
-                window.location.href = '/dashboard.html';
-            }, 2000);
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('status').innerHTML = '<div class="failed">❌ Error: ' + error.message + '</div>';
         }
-
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('status').innerHTML = '<div class="failed"> Error: ' + error.message + '</div>';
     }
-}
 
-// Run on load
-document.addEventListener('DOMContentLoaded', processPayment);
-</script>
+    // Jalankan saat halaman load
+    processPayment();
+    </script>
 </body>
 </html>
