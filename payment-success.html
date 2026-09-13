@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Success - EsportBos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="background:#1a1a2e;color:white;font-family:Arial;text-align:center;padding:50px;">
+    <h1>✅ Pembayaran Berhasil!</h1>
+    <p>Diamond dan Gold sedang ditambahkan...</p>
+    
+    <script>
+    const supabaseUrl = 'https://xvnmpbmyxphrddjjldbt.supabase.co';
+    const supabaseKey = 'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv';
+    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    async function finalizePayment() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+        
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            alert('Silakan login');
+            window.location.href = '/index.html';
+            return;
+        }
+        
+        // Update transaction
+        const { data: tx } = await supabaseClient
+            .from('transactions')
+            .select('*')
+            .eq('order_id', orderId || window.location.search)
+            .single();
+        
+        if (tx && tx.status === 'pending') {
+            await supabaseClient
+                .from('transactions')
+                .update({ status: 'completed', completed_at: new Date().toISOString() })
+                .eq('id', tx.id);
+            
+            // Add to profile
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('diamonds, gold')
+                .eq('id', session.user.id)
+                .single();
+            
+            await supabaseClient
+                .from('profiles')
+                .update({
+                    diamonds: (profile.diamonds || 0) + (tx.diamonds || 0),
+                    gold: (profile.gold || 0) + (tx.gold || 0)
+                })
+                .eq('id', session.user.id);
+            
+            alert(`Berhasil! +${tx.diamonds} Diamond, +${tx.gold} Gold`);
+            window.location.href = '/pendanaan-klub.html';
+        }
+    }
+    
+    finalizePayment();
+    </script>
+</body>
+</html>
