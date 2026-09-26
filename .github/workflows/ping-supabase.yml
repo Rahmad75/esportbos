@@ -1,0 +1,16 @@
+name: Ping Supabase Biar Gak Pause Bray
+on:
+  schedule:
+    - cron: '0 */12 * * *' # jalan tiap 12 jam, biar aman
+  workflow_dispatch: # bisa klik manual
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase esportbos
+        run: |
+          curl -X GET "https://xvnmpbmyxphrddjjldbt.supabase.co/rest/v1/profiles?select=count" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          echo "Udah gue ping bray! Jam London: $(date)"
