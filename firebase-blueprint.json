@@ -7,7 +7,6 @@
       "properties": {
         "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "username": { "type": "string", "minLength": 1, "maxLength": 64 },
-        "email": { "type": "string", "format": "email", "maxLength": 254 },
         "club_name": { "type": "string", "maxLength": 80 },
         "referral_code": { "type": "string", "maxLength": 32 },
         "referred_by": { "type": "string", "maxLength": 128 },
@@ -21,9 +20,10 @@
         "prediction_score": { "type": "number" },
         "prediction_total": { "type": "number" },
         "prediction_correct": { "type": "number" },
-        "created_at": { "type": "string", "maxLength": 64 }
+        "created_at": { "type": "string", "maxLength": 64 },
+        "updated_at": { "type": "string", "maxLength": 64 }
       },
-      "required": ["id", "username", "email", "diamonds", "gold", "currency"]
+      "required": ["id", "username", "diamonds", "gold", "currency"]
     },
     "Team": {
       "title": "Team",
@@ -49,7 +49,8 @@
         "last_match_at": { "type": "string", "maxLength": 64 },
         "matches_played_today": { "type": "number" },
         "last_daily_reset": { "type": "string", "maxLength": 32 },
-        "created_at": { "type": "string", "maxLength": 64 }
+        "created_at": { "type": "string", "maxLength": 64 },
+        "updated_at": { "type": "string", "maxLength": 64 }
       },
       "required": ["user_id", "team_name"]
     },
@@ -157,9 +158,23 @@
         "completed_at": { "type": "string", "maxLength": 64 }
       },
       "required": ["user_id", "type", "status", "created_at"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator role marker document keyed by Firebase Auth UID",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "maxLength": 32 },
+        "created_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["role"]
     }
   },
   "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin role allowlist keyed by Firebase Auth UID"
+    },
     "/profiles/{userId}": {
       "schema": { "$ref": "#/entities/Profile" },
       "description": "User profiles keyed by Firebase Auth UID"
