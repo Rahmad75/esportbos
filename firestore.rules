@@ -14,6 +14,16 @@ service cloud.firestore {
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
     function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email_verified == true && request.auth.token.email in [
+          'muhammadgazali75@gmail.com',
+          'angriyani1977@gmail.com',
+          'm.gazali1975@gmail.com'
+        ])
+      );
+    }
 
     // === VALIDATION BLUEPRINTS ===
     function isValidProfile(data) {
@@ -181,9 +191,14 @@ service cloud.firestore {
     }
 
     // === COLLECTION RULES ===
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isOwner(adminId);
+      allow write: if false;
+    }
+
     match /profiles/{userId} {
-      allow get: if isValidId(userId) && isOwner(userId);
-      allow list: if isSignedIn() && resource.data.prediction_score >= 0;
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.prediction_score >= 0 || isAdmin());
       allow create: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming());
       allow update: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming())
         && incoming().id == existing().id
@@ -195,8 +210,8 @@ service cloud.firestore {
     }
 
     match /teams/{teamId} {
-      allow get: if isValidId(teamId) && isSignedIn() && existing().user_id == request.auth.uid;
-      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow get: if isValidId(teamId) && isSignedIn() && (existing().user_id == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.user_id == request.auth.uid || isAdmin());
       allow create: if isValidId(teamId) && isSignedIn() && isValidTeam(incoming());
       allow update: if isValidId(teamId) && isSignedIn() && existing().user_id == request.auth.uid
         && isValidTeam(incoming())
@@ -213,9 +228,9 @@ service cloud.firestore {
 
     match /players/{playerId} {
       allow get: if isValidId(playerId) && isSignedIn()
-        && (existing().team_id == null || existing().owner_id == request.auth.uid);
+        && (existing().team_id == null || existing().owner_id == request.auth.uid || isAdmin());
       allow list: if isSignedIn()
-        && (resource.data.team_id == null || resource.data.owner_id == request.auth.uid);
+        && (resource.data.team_id == null || resource.data.owner_id == request.auth.uid || isAdmin());
       allow create: if isValidId(playerId) && isSignedIn() && isValidPlayer(incoming())
         && incoming().owner_id == request.auth.uid;
       allow update: if isValidId(playerId) && isSignedIn() && isValidPlayer(incoming())
@@ -227,13 +242,14 @@ service cloud.firestore {
             'team_id', 'owner_id'
           ]))
         );
+      allow delete: if isValidId(playerId) && isSignedIn() && (existing().owner_id == request.auth.uid || isAdmin());
     }
 
     match /matches/{matchId} {
       allow get: if isValidId(matchId) && isSignedIn()
-        && (existing().user_id == request.auth.uid || existing().status in ['scheduled', 'finished']);
+        && (existing().user_id == request.auth.uid || existing().status in ['scheduled', 'finished'] || isAdmin());
       allow list: if isSignedIn()
-        && (resource.data.user_id == request.auth.uid || resource.data.status in ['scheduled', 'finished']);
+        && (resource.data.user_id == request.auth.uid || resource.data.status in ['scheduled', 'finished'] || isAdmin());
       allow create: if isValidId(matchId) && isSignedIn() && isValidMatch(incoming());
       allow update: if isValidId(matchId) && isSignedIn()
         && existing().user_id == request.auth.uid
@@ -243,10 +259,11 @@ service cloud.firestore {
         && incoming().diff(existing()).affectedKeys().hasOnly([
           'home_score', 'away_score', 'status', 'result', 'match_date', 'duration_minutes'
         ]);
+      allow delete: if isValidId(matchId) && isSignedIn() && (existing().user_id == request.auth.uid || isAdmin());
     }
 
     match /transfers/{transferId} {
-      allow get: if isValidId(transferId) && isSignedIn() && resource.data.status in ['pending', 'completed'];
+      allow get: if isValidId(transferId) && isSignedIn() && existing().status in ['pending', 'completed'];
       allow list: if isSignedIn() && resource.data.status in ['pending', 'completed'];
       allow create: if isValidId(transferId) && isSignedIn() && isValidTransfer(incoming());
     }

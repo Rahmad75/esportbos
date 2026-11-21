@@ -38,42 +38,46 @@ async function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  const user = await getCurrentUserOnce();
-  if (!user) { window.location.href = 'index.html'; return; }
-  currentUserId = user.uid;
+  try {
+    const user = await getCurrentUserOnce();
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUserId = user.uid;
 
-  const profile = await getOrCreateProfile(user);
-  const team = await getOrCreateTeam(user, profile?.club_name);
+    const profile = await getOrCreateProfile(user);
+    const team = await getOrCreateTeam(user, profile?.club_name);
 
-  if (profile) {
-    const username = profile.username || user.email.split('@')[0];
-    document.getElementById('userName').textContent = username;
-    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    if (profile) {
+      const username = profile.username || user.email.split('@')[0];
+      document.getElementById('userName').textContent = username;
+      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
 
-    userBalances = {
-      diamond: profile.diamonds || 0,
-      gold: profile.gold || 0,
-      currency: profile.currency || 0
-    };
+      userBalances = {
+        diamond: profile.diamonds || 0,
+        gold: profile.gold || 0,
+        currency: profile.currency || 0
+      };
 
-    document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
-    document.getElementById('goldBalance').textContent = userBalances.gold.toLocaleString('id-ID');
-    document.getElementById('currencyBalance').textContent = userBalances.currency.toLocaleString('id-ID');
-    document.getElementById('withdrawBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+      document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+      document.getElementById('goldBalance').textContent = userBalances.gold.toLocaleString('id-ID');
+      document.getElementById('currencyBalance').textContent = userBalances.currency.toLocaleString('id-ID');
+      document.getElementById('withdrawBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
+    }
+
+    if (team) {
+      document.getElementById('clubName').textContent = team.team_name;
+      document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+      document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+      document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+      document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+      document.getElementById('moralBar').style.width = `${team.moral}%`;
+    }
+
+    setExchangeDirection('diamond-gold', document.querySelector('.direction-tab'));
+    await loadTransactions();
+    drawMockChart();
+  } catch (err) {
+    console.error('Financial market error:', err);
   }
-
-  if (team) {
-    document.getElementById('clubName').textContent = team.team_name;
-    document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
-    document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
-    document.getElementById('popularityBar').style.width = `${team.popularity}%`;
-    document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
-    document.getElementById('moralBar').style.width = `${team.moral}%`;
-  }
-
-  setExchangeDirection('diamond-gold', document.querySelector('.direction-tab'));
-  await loadTransactions();
-  drawMockChart();
 });
 
 function setExchangeDirection(direction, btn) {
@@ -179,22 +183,27 @@ async function requestWithdraw() {
   if (!confirm(`Yakin ingin request withdraw ${grossRequired.toLocaleString('id-ID')} Diamond?\n\n(Net yang diterima: ${netRequired.toLocaleString('id-ID')} Diamond ≈ Rp 500.000)`)) return;
 
   const newBalance = userBalances.diamond - grossRequired;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    diamonds: newBalance,
-    updated_at: new Date().toISOString()
-  });
-  userBalances.diamond = newBalance;
+  try {
+    await updateDoc(doc(db, 'profiles', currentUserId), {
+      diamonds: newBalance,
+      updated_at: new Date().toISOString()
+    });
+    userBalances.diamond = newBalance;
 
-  await addDoc(collection(db, 'transactions'), {
-    user_id: currentUserId,
-    type: 'withdraw',
-    from_currency: 'Diamond',
-    amount_from: grossRequired,
-    amount_to: netRequired,
-    fee: grossRequired - netRequired,
-    status: 'pending',
-    created_at: new Date().toISOString()
-  });
+    await addDoc(collection(db, 'transactions'), {
+      user_id: currentUserId,
+      type: 'withdraw',
+      from_currency: 'Diamond',
+      amount_from: grossRequired,
+      amount_to: netRequired,
+      fee: grossRequired - netRequired,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'profiles/transactions');
+    return;
+  }
 
   alert('✅ Permintaan Withdraw berhasil diajukan! Admin akan memproses dalam 1x24 jam.');
   document.getElementById('diamondBalance').textContent = userBalances.diamond.toLocaleString('id-ID');
@@ -203,12 +212,18 @@ async function requestWithdraw() {
 }
 
 async function loadTransactions() {
-  const q = query(collection(db, 'transactions'), where('user_id', '==', currentUserId));
-  const snap = await getDocs(q);
-  const data = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 10);
+  let data = [];
+  try {
+    const q = query(collection(db, 'transactions'), where('user_id', '==', currentUserId));
+    const snap = await getDocs(q);
+    data = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, 'transactions');
+    return;
+  }
 
   const list = document.getElementById('transactionList');
   if (!data || data.length === 0) {

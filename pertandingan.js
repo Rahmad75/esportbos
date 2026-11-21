@@ -14,7 +14,9 @@ import {
   db,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  handleFirestoreError,
+  OperationType
 } from './firebase-config.js';
 
 let currentUserId = null;
@@ -34,21 +36,37 @@ function switchMatchTab(tabName, btnElement) {
 }
 
 async function simulateMatch() {
+  if (!currentUserId || !currentTeamId) {
+    alert('Data tim belum dimuat. Silakan refresh halaman.');
+    return;
+  }
+
   const btn = document.getElementById('simulateButton');
 
-  const teamSnap = await getDoc(doc(db, 'teams', currentTeamId));
-  const team = teamSnap.exists() ? teamSnap.data() : null;
+  let team = null;
+  try {
+    const teamSnap = await getDoc(doc(db, 'teams', currentTeamId));
+    team = teamSnap.exists() ? teamSnap.data() : null;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.GET, `teams/${currentTeamId}`);
+    return;
+  }
 
   const today = new Date().toISOString().split('T')[0];
 
   let matchesToday = 0;
   if (team && team.last_daily_reset !== today) {
     matchesToday = 0;
-    await updateDoc(doc(db, 'teams', currentTeamId), {
-      matches_played_today: 0,
-      last_daily_reset: today,
-      updated_at: new Date().toISOString()
-    });
+    try {
+      await updateDoc(doc(db, 'teams', currentTeamId), {
+        matches_played_today: 0,
+        last_daily_reset: today,
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `teams/${currentTeamId}`);
+      return;
+    }
   } else if (team) {
     matchesToday = team.matches_played_today || 0;
   }
@@ -148,12 +166,12 @@ async function simulateMatch() {
     alert(`✅ Pertandingan Selesai!\n\nReward: ${result === 'win' ? '10,000' : result === 'draw' ? '2,000' : '500'} Currency\nMatch ke-${newMatchCount}/3 hari ini\nSisa match: ${3 - newMatchCount}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
   } catch (err) {
     console.error('Error saving match:', err);
-    alert('Match selesai tapi gagal simpan data. Reward tetap diberikan!');
+    handleFirestoreError(err, OperationType.WRITE, `teams/${currentTeamId}/matches`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = ' MAIN LAGI!';
+    btn.style.background = '#28a745';
   }
-
-  btn.disabled = false;
-  btn.textContent = ' MAIN LAGI!';
-  btn.style.background = '#28a745';
 
   await loadMatchHistory();
 }
@@ -180,7 +198,7 @@ async function giveMatchReward(result) {
 
       alert('💰 Reward Pertandingan!\nAnda mendapatkan ' + reward.toLocaleString('id-ID') + ' Currency.');
     } catch (err) {
-      console.error('Gagal memberi reward:', err);
+      handleFirestoreError(err, OperationType.UPDATE, `profiles/${currentUserId}`);
     }
   }
 }
@@ -223,7 +241,7 @@ async function loadMatchHistory() {
         </div>`;
     }).join('');
   } catch (err) {
-    console.error('Error load history:', err);
+    handleFirestoreError(err, OperationType.LIST, 'matches');
   }
 }
 

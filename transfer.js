@@ -13,10 +13,13 @@ import {
   db,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  handleFirestoreError,
+  OperationType
 } from './firebase-config.js';
 
 let currentTeamId = null;
+let currentTeamName = 'My Club';
 let currentUserId = null;
 let userGold = 0;
 
@@ -26,36 +29,41 @@ async function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  const user = await getCurrentUserOnce();
-  if (!user) { window.location.href = 'index.html'; return; }
-  currentUserId = user.uid;
+  try {
+    const user = await getCurrentUserOnce();
+    if (!user) { window.location.href = 'index.html'; return; }
+    currentUserId = user.uid;
 
-  const profile = await getOrCreateProfile(user);
-  const team = await getOrCreateTeam(user, profile?.club_name);
+    const profile = await getOrCreateProfile(user);
+    const team = await getOrCreateTeam(user, profile?.club_name);
 
-  if (profile) {
-    userGold = profile.gold || 0;
-    const username = profile.username || user.email.split('@')[0];
-    document.getElementById('userName').textContent = username;
-    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
-    document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
-    document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+    if (profile) {
+      userGold = profile.gold || 0;
+      const username = profile.username || user.email.split('@')[0];
+      document.getElementById('userName').textContent = username;
+      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+      document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+      document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+    }
+
+    if (team) {
+      currentTeamId = team.id;
+      currentTeamName = team.team_name || 'My Club';
+      document.getElementById('clubName').textContent = currentTeamName;
+      document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+      document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+      document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+      document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+      document.getElementById('moralBar').style.width = `${team.moral}%`;
+    }
+
+    await renderMarket();
+    await renderMyTeam();
+    await renderHistory();
+  } catch (err) {
+    console.error('Transfer page error:', err);
   }
-
-  if (team) {
-    currentTeamId = team.id;
-    document.getElementById('clubName').textContent = team.team_name;
-    document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
-    document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
-    document.getElementById('popularityBar').style.width = `${team.popularity}%`;
-    document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
-    document.getElementById('moralBar').style.width = `${team.moral}%`;
-  }
-
-  await renderMarket();
-  await renderMyTeam();
-  renderHistory();
 });
 
 function switchTransferTab(tab) {
@@ -66,15 +74,21 @@ function switchTransferTab(tab) {
 }
 
 async function renderMarket() {
+  let marketPlayers = [];
   const posFilter = document.getElementById('filterPosition').value;
   const budgetFilter = document.getElementById('filterBudget').value;
 
-  const q = query(collection(db, 'players'), where('team_id', '==', null));
-  const snap = await getDocs(q);
-  let marketPlayers = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => posFilter === 'all' || p.position === posFilter)
-    .sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+  try {
+    const q = query(collection(db, 'players'), where('team_id', '==', null));
+    const snap = await getDocs(q);
+    marketPlayers = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => posFilter === 'all' || p.position === posFilter)
+      .sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, 'players');
+    return;
+  }
 
   if (marketPlayers.length === 0) {
     marketPlayers = [
@@ -109,12 +123,18 @@ async function renderMarket() {
 
 async function renderMyTeam() {
   if (!currentTeamId) return;
-  const q = query(collection(db, 'players'), where('owner_id', '==', currentUserId));
-  const snap = await getDocs(q);
-  const players = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.team_id === currentTeamId)
-    .sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+  let players = [];
+  try {
+    const q = query(collection(db, 'players'), where('owner_id', '==', currentUserId));
+    const snap = await getDocs(q);
+    players = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => p.team_id === currentTeamId)
+      .sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, 'players');
+    return;
+  }
 
   const grid = document.getElementById('myTeamGrid');
   if (!players || players.length === 0) {
@@ -128,12 +148,13 @@ async function renderMyTeam() {
       <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
       <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
       <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">Nilai Jual: 💰 ${Math.floor((p.market_value || 0) * 0.8).toLocaleString('id-ID')} Gold</p>
-      <button onclick="sellPlayer('${p.id}', '${p.name}', ${p.market_value || 0})" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
+      <button onclick="sellPlayer('${p.id}', '${p.name}', ${p.market_value || 0}, '${p.position}')" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
     </div>
   `).join('');
 }
 
 async function buyPlayer(playerId, playerName, price, position = 'Mid', rating = 80) {
+  if (!currentUserId || !currentTeamId) return alert('Data tim belum siap.');
   if (userGold < price) {
     alert('❌ Gold tidak cukup untuk membeli pemain ini!');
     return;
@@ -141,65 +162,129 @@ async function buyPlayer(playerId, playerName, price, position = 'Mid', rating =
 
   if (!confirm(`Yakin ingin membeli ${playerName} seharga ${price.toLocaleString('id-ID')} Gold?`)) return;
 
-  const newGold = userGold - price;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+  try {
+    const newGold = userGold - price;
+    await updateDoc(doc(db, 'profiles', currentUserId), {
+      gold: newGold,
+      updated_at: new Date().toISOString()
+    });
+    userGold = newGold;
+    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
 
-  if (playerId.startsWith('m')) {
-    await addDoc(collection(db, 'players'), {
-      name: playerName,
-      position: position,
-      overall_rating: rating,
-      market_value: price,
-      team_id: currentTeamId,
-      owner_id: currentUserId
+    if (playerId.startsWith('m')) {
+      await addDoc(collection(db, 'players'), {
+        name: String(playerName).slice(0, 80),
+        position: position,
+        overall_rating: rating,
+        market_value: price,
+        team_id: currentTeamId,
+        owner_id: currentUserId
+      });
+    } else {
+      await updateDoc(doc(db, 'players', playerId), {
+        team_id: currentTeamId,
+        owner_id: currentUserId
+      });
+    }
+
+    await addDoc(collection(db, 'transfers'), {
+      user_id: currentUserId,
+      status: 'completed',
+      transfer_type: 'transfer',
+      player_position: String(position).slice(0, 32),
+      player_name: String(playerName).slice(0, 80),
+      to_team_name: String(currentTeamName).slice(0, 80),
+      bid_amount: price,
+      created_at: new Date().toISOString()
     });
-  } else {
-    await updateDoc(doc(db, 'players', playerId), {
-      team_id: currentTeamId,
-      owner_id: currentUserId
-    });
+
+    alert(`✅ Berhasil membeli ${playerName}!`);
+    await renderMarket();
+    await renderMyTeam();
+    await renderHistory();
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'players/transfers');
   }
-
-  alert(`✅ Berhasil membeli ${playerName}!`);
-  await renderMarket();
-  await renderMyTeam();
 }
 
-async function sellPlayer(playerId, playerName, price) {
+async function sellPlayer(playerId, playerName, price, position = 'Mid') {
+  if (!currentUserId || !currentTeamId) return alert('Data tim belum siap.');
   const sellPrice = Math.floor(price * 0.8);
 
   if (!confirm(`Yakin ingin menjual ${playerName}? Anda akan mendapat ${sellPrice.toLocaleString('id-ID')} Gold.`)) return;
 
-  const newGold = userGold + sellPrice;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+  try {
+    const newGold = userGold + sellPrice;
+    await updateDoc(doc(db, 'profiles', currentUserId), {
+      gold: newGold,
+      updated_at: new Date().toISOString()
+    });
+    userGold = newGold;
+    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
 
-  await updateDoc(doc(db, 'players', playerId), {
-    team_id: null,
-    owner_id: null
-  });
+    await updateDoc(doc(db, 'players', playerId), {
+      team_id: null,
+      owner_id: null
+    });
 
-  alert(`✅ Berhasil menjual ${playerName}!`);
-  await renderMarket();
-  await renderMyTeam();
+    await addDoc(collection(db, 'transfers'), {
+      user_id: currentUserId,
+      status: 'completed',
+      transfer_type: 'transfer',
+      player_position: String(position).slice(0, 32),
+      player_name: String(playerName).slice(0, 80),
+      to_team_name: 'Free Agent',
+      bid_amount: sellPrice,
+      created_at: new Date().toISOString()
+    });
+
+    alert(`✅ Berhasil menjual ${playerName}!`);
+    await renderMarket();
+    await renderMyTeam();
+    await renderHistory();
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'players/transfers');
+  }
 }
 
-function renderHistory() {
-  document.getElementById('transferHistoryList').innerHTML = `
-    <div style="padding: 15px; background: #16213e; border-radius: 8px; color: white; text-align: center;">
-      <p style="color: #aaa;">📜 Belum ada riwayat transfer resmi di musim ini.</p>
-      <p style="font-size: 12px; color: #666;">Riwayat akan muncul otomatis setelah Anda membeli atau menjual pemain.</p>
-    </div>
-  `;
+async function renderHistory() {
+  const container = document.getElementById('transferHistoryList');
+  if (!container) return;
+
+  try {
+    const q = query(collection(db, 'transfers'), where('status', '==', 'completed'));
+    const snap = await getDocs(q);
+    const items = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(t => t.user_id === currentUserId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 15);
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 15px; background: #16213e; border-radius: 8px; color: white; text-align: center;">
+          <p style="color: #aaa;">📜 Belum ada riwayat transfer resmi di musim ini.</p>
+          <p style="font-size: 12px; color: #666;">Riwayat akan muncul otomatis setelah Anda membeli atau menjual pemain.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = items.map(t => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 15px;background:#16213e;border-radius:8px;margin-bottom:8px;color:white;border-left:4px solid #00d4ff;">
+        <div>
+          <strong style="color:#00d4ff;">${t.player_name}</strong> <span style="color:#aaa;font-size:12px;">(${t.player_position || 'P'})</span>
+          <div style="font-size:12px;color:#aaa;">Ke: ${t.to_team_name}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#28a745;font-weight:bold;">💰 ${(t.bid_amount || 0).toLocaleString('id-ID')} Gold</div>
+          <div style="font-size:11px;color:#888;">${new Date(t.created_at).toLocaleDateString('id-ID')}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, 'transfers');
+  }
 }
 
 function closeTransferModal() {
