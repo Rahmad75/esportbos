@@ -1,282 +1,226 @@
-// ===== ESPORTBOS - STADION =====
+import { signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {
+  doc,
+  updateDoc
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  auth,
+  db,
+  getCurrentUserOnce,
+  getOrCreateProfile,
+  getOrCreateTeam
+} from './firebase-config.js';
 
-// Database Level Stadion
-const stadionLevels = {
-    1: { name: "Gaming House", capacity: 100, ticketPrice: 50, income: 5000, upgradeCost: 15000 },
-    2: { name: "Arena Esport", capacity: 500, ticketPrice: 100, income: 25000, upgradeCost: 50000 },
-    3: { name: "Stadion Nasional", capacity: 2000, ticketPrice: 200, income: 100000, upgradeCost: 200000 },
-    4: { name: "Super Arena", capacity: 10000, ticketPrice: 500, income: 500000, upgradeCost: null }
+let currentUserId = null;
+let currentTeamId = null;
+let userGold = 0;
+let stadiumData = {};
+
+const stadiumLevels = {
+  1: { name: 'Gaming House Sederhana', capacity: 100, ticketPrice: 50, income: 5000, upgradeCost: 15000, icon: '🏠' },
+  2: { name: 'Arena Esport', capacity: 500, ticketPrice: 50, income: 25000, upgradeCost: 50000, icon: '🏟️' },
+  3: { name: 'Stadion Nasional', capacity: 2000, ticketPrice: 50, income: 100000, upgradeCost: 200000, icon: '🏛️' },
+  4: { name: 'Super Arena', capacity: 10000, ticketPrice: 100, income: 500000, upgradeCost: null, icon: '🌌' }
 };
 
-// Load Data
-function loadStadionData() {
-    const saved = localStorage.getItem('esportbos_stadion');
-    if (saved) return JSON.parse(saved);
-    return {
-        level: 1,
-        pendingIncome: 0,
-        totalHomeMatches: 0,
-        totalIncome: 0
+async function handleLogout() {
+  await signOut(auth);
+  window.location.href = 'index.html';
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  const user = await getCurrentUserOnce();
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUserId = user.uid;
+
+  const profile = await getOrCreateProfile(user);
+  const team = await getOrCreateTeam(user, profile?.club_name);
+
+  if (profile) {
+    userGold = profile.gold || 0;
+    const username = profile.username || user.email.split('@')[0];
+    document.getElementById('userName').textContent = username;
+    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+    document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
+  }
+
+  if (team) {
+    currentTeamId = team.id;
+    stadiumData = {
+      level: team.stadium_level || 1,
+      pendingIncome: team.pending_stadium_income || 0,
+      totalHomeMatches: team.total_home_matches || 0,
+      totalIncome: team.total_stadium_income || 0
     };
+
+    document.getElementById('clubName').textContent = team.team_name;
+    document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
+    document.getElementById('popularityText').textContent = `Popularitas: ${team.popularity}%`;
+    document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+    document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
+    document.getElementById('moralBar').style.width = `${team.moral}%`;
+  }
+
+  renderStadionOverview();
+  renderUpgradeStages();
+  renderIncomeTab();
+});
+
+function switchStadionTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).style.display = 'block';
+  if (window.event && window.event.target) window.event.target.classList.add('active');
 }
 
-function saveStadionData(data) {
-    localStorage.setItem('esportbos_stadion', JSON.stringify(data));
+function renderStadionOverview() {
+  const current = stadiumLevels[stadiumData.level];
+  document.getElementById('stadionArt').textContent = current.icon;
+  document.getElementById('stadionName').textContent = current.name;
+  document.getElementById('stadionLevel').textContent = stadiumData.level;
+  document.getElementById('capacity').textContent = current.capacity.toLocaleString('id-ID');
+  document.getElementById('ticketPrice').textContent = current.ticketPrice.toLocaleString('id-ID');
+  document.getElementById('matchIncome').textContent = current.income.toLocaleString('id-ID');
 }
 
-function getTeamFunds() {
-    return parseInt(localStorage.getItem('esportbos_team_funds') || '10000');
-}
-
-function updateFundsDisplay() {
-    const funds = getTeamFunds();
-    const display = document.getElementById('teamFundsDisplay');
-    if (display) display.textContent = funds.toLocaleString();
-}
-
-// Render Overview
-function renderOverview() {
-    const stadionData = loadStadionData();
-    const level = stadionLevels[stadionData.level];
-    
-    document.getElementById('stadionName').textContent = level.name;
-    document.getElementById('stadionLevel').textContent = stadionData.level;
-    document.getElementById('capacity').textContent = level.capacity.toLocaleString();
-    document.getElementById('ticketPrice').textContent = level.ticketPrice.toLocaleString();
-    document.getElementById('matchIncome').textContent = level.income.toLocaleString();
-    
-    // Render visual stadion
-    renderStadionArt(stadionData.level);
-}
-
-// Render Stadion Art (Simple ASCII-like visual)
-function renderStadionArt(level) {
-    const container = document.getElementById('stadionArt');
-    if (!container) return;
-    
-    const visuals = {
-        1: `
-            <div class="art-building small">
-                <div class="art-roof">🏠</div>
-                <div class="art-body"></div>
-            </div>
-        `,
-        2: `
-            <div class="art-building medium">
-                <div class="art-roof">🏟️</div>
-                <div class="art-body">⚡</div>
-                <div class="art-crowd">👥👥👥</div>
-            </div>
-        `,
-        3: `
-            <div class="art-building large">
-                <div class="art-roof">🏛️</div>
-                <div class="art-body">🎯</div>
-                <div class="art-crowd">👥👥👥</div>
-                <div class="art-lights">💡💡💡</div>
-            </div>
-        `,
-        4: `
-            <div class="art-building xlarge">
-                <div class="art-roof">🌟</div>
-                <div class="art-body">🏆</div>
-                <div class="art-crowd">👥👥👥👥👥👥👥</div>
-                <div class="art-lights">💡💡💡💡💡</div>
-                <div class="art-flag">🚩🚩</div>
-            </div>
-        `
-    };
-    
-    container.innerHTML = visuals[level] || visuals[1];
-}
-
-// Render Upgrade Stages
 function renderUpgradeStages() {
-    const stadionData = loadStadionData();
-    const currentLevel = stadionData.level;
-    
-    for (let i = 1; i <= 4; i++) {
-        const stage = document.getElementById(`stage${i}`);
-        if (!stage) continue;
-        
-        stage.className = 'stage-card';
-        
-        if (i < currentLevel) {
-            stage.classList.add('completed');
-            stage.querySelector('.stage-status').textContent = '✅ Selesai';
-            const btn = stage.querySelector('button');
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = '✅ Selesai';
-            }
-        } else if (i === currentLevel) {
-            stage.classList.add('current');
-            stage.querySelector('.stage-status').textContent = '📍 Saat Ini';
-            const btn = stage.querySelector('button');
-            if (btn && i < 4) {
-                const cost = stadionLevels[i].upgradeCost;
-                btn.disabled = false;
-                btn.textContent = `⬆️ Upgrade (${cost.toLocaleString()} G)`;
-                btn.onclick = () => upgradeStadion(i);
-            } else if (btn && i === 4) {
-                btn.disabled = true;
-                btn.textContent = ' Level MAX';
-            }
-        } else {
-            stage.classList.add('locked');
-            stage.querySelector('.stage-status').textContent = '🔒 Terkunci';
-            const btn = stage.querySelector('button');
-            if (btn) {
-                btn.disabled = true;
-                const cost = stadionLevels[i].upgradeCost;
-                btn.textContent = ` Upgrade (${cost.toLocaleString()} G)`;
-            }
-        }
+  const container = document.getElementById('upgradeStages');
+  let html = '';
+
+  for (let i = 1; i <= 4; i++) {
+    const levelData = stadiumLevels[i];
+    let statusClass = '';
+    let statusText = '';
+    let btnDisabled = '';
+    let btnText = '';
+
+    if (i < stadiumData.level) {
+      statusClass = 'completed';
+      statusText = '✅ Selesai';
+      btnText = 'Sudah Dimiliki';
+      btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+    } else if (i === stadiumData.level) {
+      statusClass = 'current';
+      statusText = '📍 Saat Ini';
+      if (levelData.upgradeCost === null) {
+        btnText = 'Level Maksimum';
+        btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
+      } else {
+        btnText = `Upgrade (${levelData.upgradeCost.toLocaleString('id-ID')} G)`;
+      }
+    } else {
+      statusClass = 'locked';
+      statusText = '🔒 Terkunci';
+      btnText = levelData.upgradeCost ? `Upgrade (${levelData.upgradeCost.toLocaleString('id-ID')} G)` : 'Maksimum';
+      btnDisabled = 'disabled style="opacity: 0.5; cursor: not-allowed;"';
     }
+
+    html += `
+      <div class="stage-card ${statusClass}" style="background: #16213e; padding: 20px; border-radius: 10px; text-align: center; color: white; border: 1px solid ${i === stadiumData.level ? '#00d4ff' : '#333'};">
+        <div class="stage-number" style="font-size: 24px; font-weight: bold; color: #ffd700; margin-bottom: 10px;">${i}</div>
+        <h4 style="margin: 5px 0; color: #00d4ff;">${levelData.name}</h4>
+        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Kapasitas: ${levelData.capacity.toLocaleString('id-ID')}</p>
+        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Income: ${levelData.income.toLocaleString('id-ID')}/match</p>
+        <div class="stage-status" style="margin: 10px 0; font-weight: bold; color: ${i < stadiumData.level ? '#28a745' : (i === stadiumData.level ? '#00d4ff' : '#ff6b6b')}">${statusText}</div>
+        <button class="btn-upgrade" onclick="upgradeStadion(${i + 1})" ${btnDisabled} style="width: 100%; padding: 10px; background: ${i === stadiumData.level && levelData.upgradeCost ? '#28a745' : '#666'}; color: white; border: none; border-radius: 5px; cursor: ${i === stadiumData.level && levelData.upgradeCost ? 'pointer' : 'not-allowed'}; font-weight: bold; margin-top: 10px;">
+          ${btnText}
+        </button>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
 }
 
-// Upgrade Stadion
-function upgradeStadion(targetLevel) {
-    const stadionData = loadStadionData();
-    const currentLevel = stadionData.level;
-    
-    if (targetLevel !== currentLevel + 1) {
-        alert('❌ Kamu harus upgrade secara berurutan!');
-        return;
-    }
-    
-    const cost = stadionLevels[currentLevel].upgradeCost;
-    const funds = getTeamFunds();
-    
-    if (funds < cost) {
-        alert(`❌ Dana tidak cukup! Kamu butuh ${cost.toLocaleString()} Gold.`);
-        return;
-    }
-    
-    if (!confirm(`Upgrade stadion ke Level ${targetLevel} seharga ${cost.toLocaleString()} Gold?`)) {
-        return;
-    }
-    
-    // Kurangi dana
-    localStorage.setItem('esportbos_team_funds', (funds - cost).toString());
-    
-    // Upgrade level
-    stadionData.level = targetLevel;
-    saveStadionData(stadionData);
-    
-    updateFundsDisplay();
-    renderOverview();
-    renderUpgradeStages();
-    renderIncome();
-    
-    alert(`🏟️ Stadion berhasil di-upgrade ke ${stadionLevels[targetLevel].name}!`);
+function renderIncomeTab() {
+  document.getElementById('pendingIncome').textContent = stadiumData.pendingIncome.toLocaleString('id-ID');
+  document.getElementById('totalHomeMatches').textContent = stadiumData.totalHomeMatches.toLocaleString('id-ID');
+  document.getElementById('totalIncome').textContent = stadiumData.totalIncome.toLocaleString('id-ID');
 }
 
-// Render Income
-function renderIncome() {
-    const stadionData = loadStadionData();
-    
-    document.getElementById('pendingIncome').textContent = stadionData.pendingIncome.toLocaleString() + ' Gold';
-    document.getElementById('totalHomeMatches').textContent = stadionData.totalHomeMatches;
-    document.getElementById('totalIncome').textContent = stadionData.totalIncome.toLocaleString() + ' Gold';
+async function upgradeStadion(targetLevel) {
+  const currentLevel = stadiumData.level;
+  if (targetLevel !== currentLevel + 1) return;
+
+  const currentLevelData = stadiumLevels[currentLevel];
+  const nextLevelData = stadiumLevels[targetLevel];
+  if (!nextLevelData || !currentLevelData?.upgradeCost) return;
+
+  const cost = currentLevelData.upgradeCost;
+  if (userGold < cost) {
+    alert(`❌ Gold tidak cukup! Dibutuhkan ${cost.toLocaleString('id-ID')} Gold.`);
+    return;
+  }
+
+  if (!confirm(`Yakin ingin upgrade ke ${nextLevelData.name} seharga ${cost.toLocaleString('id-ID')} Gold?`)) return;
+
+  const newGold = userGold - cost;
+  await updateDoc(doc(db, 'profiles', currentUserId), {
+    gold: newGold,
+    updated_at: new Date().toISOString()
+  });
+  userGold = newGold;
+  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+  stadiumData.level = targetLevel;
+  await updateDoc(doc(db, 'teams', currentTeamId), {
+    stadium_level: targetLevel,
+    updated_at: new Date().toISOString()
+  });
+
+  alert(`✅ Stadion berhasil di-upgrade ke ${nextLevelData.name}!`);
+  renderStadionOverview();
+  renderUpgradeStages();
 }
 
-// Claim Ticket Income
-function claimTicketIncome() {
-    const stadionData = loadStadionData();
-    
-    if (stadionData.pendingIncome === 0) {
-        alert('⚠️ Tidak ada pendapatan yang bisa diklaim!');
-        return;
-    }
-    
-    let funds = getTeamFunds();
-    funds += stadionData.pendingIncome;
-    localStorage.setItem('esportbos_team_funds', funds.toString());
-    
-    const claimed = stadionData.pendingIncome;
-    stadionData.pendingIncome = 0;
-    saveStadionData(stadionData);
-    
-    updateFundsDisplay();
-    renderIncome();
-    
-    showStadionModal('💰 Pendapatan Diklaim!', `
-        <div style="text-align:center; padding: 20px;">
-            <h2 style="color: #28a745;">BERHASIL!</h2>
-            <div style="font-size: 48px; font-weight: 900; color: #28a745; margin: 20px 0;">
-                +${claimed.toLocaleString()} Gold
-            </div>
-            <p>Pendapatan tiket berhasil diklaim!</p>
-            <p style="margin-top: 20px; font-weight: bold;">Saldo Baru: ${funds.toLocaleString()} Gold</p>
-        </div>
-    `);
+async function claimTicketIncome() {
+  if (stadiumData.pendingIncome <= 0) {
+    alert('Tidak ada pendapatan tiket yang tertunda untuk diklaim.');
+    return;
+  }
+
+  const incomeToClaim = stadiumData.pendingIncome;
+
+  const newGold = userGold + incomeToClaim;
+  await updateDoc(doc(db, 'profiles', currentUserId), {
+    gold: newGold,
+    updated_at: new Date().toISOString()
+  });
+  userGold = newGold;
+  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+
+  stadiumData.pendingIncome = 0;
+  stadiumData.totalIncome += incomeToClaim;
+
+  await updateDoc(doc(db, 'teams', currentTeamId), {
+    pending_stadium_income: 0,
+    total_stadium_income: stadiumData.totalIncome,
+    updated_at: new Date().toISOString()
+  });
+
+  showStadionModal('💵 Klaim Berhasil!', `Anda berhasil mengklaim <strong style="color: #28a745;">${incomeToClaim.toLocaleString('id-ID')} Gold</strong> dari penjualan tiket.`);
+  renderIncomeTab();
 }
 
-// Simulasi pendapatan dari match (dipanggil dari pertandingan.js)
-function addMatchIncome() {
-    const stadionData = loadStadionData();
-    const level = stadionLevels[stadionData.level];
-    
-    // Simulasi okupansi 70-100%
-    const occupancy = 0.7 + Math.random() * 0.3;
-    const income = Math.round(level.income * occupancy);
-    
-    stadionData.pendingIncome += income;
-    stadionData.totalHomeMatches++;
-    stadionData.totalIncome += income;
-    saveStadionData(stadionData);
-    
-    return income;
-}
-
-// Modal Helpers
-function showStadionModal(title, content) {
-    document.getElementById('stadionModalBody').innerHTML = `<h3>${title}</h3>${content}`;
-    document.getElementById('stadionModal').style.display = 'block';
+function showStadionModal(title, message) {
+  const modal = document.getElementById('stadionModal');
+  const body = document.getElementById('stadionModalBody');
+  body.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+    <h3 style="color: #00d4ff; margin-bottom: 10px;">${title}</h3>
+    <p style="color: #aaa; margin-bottom: 20px;">${message}</p>
+    <button onclick="closeStadionModal()" style="padding: 10px 30px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Tutup</button>
+  `;
+  modal.style.display = 'flex';
 }
 
 function closeStadionModal() {
-    document.getElementById('stadionModal').style.display = 'none';
+  document.getElementById('stadionModal').style.display = 'none';
 }
 
-function switchStadionTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    document.getElementById(`tab-${tabName}`).style.display = 'block';
-    event.target.classList.add('active');
-    
-    if (tabName === 'overview') renderOverview();
-    if (tabName === 'upgrade') renderUpgradeStages();
-    if (tabName === 'income') renderIncome();
-}
-
-// Init
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof EsportBosAuth !== 'undefined') {
-        EsportBosAuth.requireAuth();
-        const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
-        if (user) {
-            const userNameSpan = document.getElementById('userName');
-            if (userNameSpan) userNameSpan.textContent = user.username;
-        }
-    }
-    
-    updateFundsDisplay();
-    renderOverview();
-    renderUpgradeStages();
-    renderIncome();
-    
-    window.onclick = function(event) {
-        const modal = document.getElementById('stadionModal');
-        if (event.target === modal) {
-            closeStadionModal();
-        }
-    };
-});
-
-// Export function untuk dipanggil dari pertandingan.js
-window.EsportBosStadion = {
-    addMatchIncome
-};
+window.handleLogout = handleLogout;
+window.switchStadionTab = switchStadionTab;
+window.upgradeStadion = upgradeStadion;
+window.claimTicketIncome = claimTicketIncome;
+window.closeStadionModal = closeStadionModal;

@@ -1,0 +1,196 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "User profile, economy balances, and prediction stats",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "username": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "club_name": { "type": "string", "maxLength": 80 },
+        "referral_code": { "type": "string", "maxLength": 32 },
+        "referred_by": { "type": "string", "maxLength": 128 },
+        "avatar_url": { "type": "string", "maxLength": 1000 },
+        "bio": { "type": "string", "maxLength": 500 },
+        "country": { "type": "string", "maxLength": 16 },
+        "city": { "type": "string", "maxLength": 80 },
+        "diamonds": { "type": "number" },
+        "gold": { "type": "number" },
+        "currency": { "type": "number" },
+        "prediction_score": { "type": "number" },
+        "prediction_total": { "type": "number" },
+        "prediction_correct": { "type": "number" },
+        "created_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "username", "email", "diamonds", "gold", "currency"]
+    },
+    "Team": {
+      "title": "Team",
+      "description": "Esports club owned by a user",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "team_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "wins": { "type": "number" },
+        "draws": { "type": "number" },
+        "losses": { "type": "number" },
+        "popularity": { "type": "number" },
+        "moral": { "type": "number" },
+        "academy_level": { "type": "number" },
+        "stadium_level": { "type": "number" },
+        "facility_level": { "type": "number" },
+        "active_sponsors": { "type": "array" },
+        "hired_staff": { "type": "array" },
+        "pending_stadium_income": { "type": "number" },
+        "total_home_matches": { "type": "number" },
+        "total_stadium_income": { "type": "number" },
+        "last_claim_at": { "type": "string", "maxLength": 64 },
+        "last_match_at": { "type": "string", "maxLength": 64 },
+        "matches_played_today": { "type": "number" },
+        "last_daily_reset": { "type": "string", "maxLength": 32 },
+        "created_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["user_id", "team_name"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "Esports player belonging to a team or free-agent transfer market",
+      "type": "object",
+      "properties": {
+        "team_id": { "type": "string", "maxLength": 128 },
+        "owner_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "position": { "type": "string", "enum": ["Top", "Jungle", "Mid", "ADC", "Support"] },
+        "overall_rating": { "type": "number" },
+        "potential": { "type": "number" },
+        "age": { "type": "number" },
+        "nationality": { "type": "string", "maxLength": 16 },
+        "market_value": { "type": "number" },
+        "is_academy": { "type": "boolean" },
+        "recruited_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["name", "position", "overall_rating"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Scheduled or finished esports match",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "home_team_id": { "type": "string", "maxLength": 128 },
+        "away_team_id": { "type": "string", "maxLength": 128 },
+        "home_team_name": { "type": "string", "maxLength": 80 },
+        "away_team_name": { "type": "string", "maxLength": 80 },
+        "home_score": { "type": "number" },
+        "away_score": { "type": "number" },
+        "status": { "type": "string", "enum": ["scheduled", "finished"] },
+        "competition": { "type": "string", "maxLength": 80 },
+        "match_date": { "type": "string", "maxLength": 64 },
+        "result": { "type": "string", "enum": ["win", "draw", "lose"] },
+        "duration_minutes": { "type": "number" }
+      },
+      "required": ["user_id", "home_team_id", "status", "match_date"]
+    },
+    "Transfer": {
+      "title": "Transfer",
+      "description": "Transfer and bid history item",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "transfer_type": { "type": "string", "enum": ["transfer", "bid"] },
+        "player_position": { "type": "string", "maxLength": 32 },
+        "player_name": { "type": "string", "maxLength": 80 },
+        "to_team_name": { "type": "string", "maxLength": 80 },
+        "bid_amount": { "type": "number" },
+        "created_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["user_id", "status", "transfer_type", "player_name", "to_team_name", "bid_amount", "created_at"]
+    },
+    "TeamTactic": {
+      "title": "TeamTactic",
+      "description": "Formation and tactical slider configuration for a team",
+      "type": "object",
+      "properties": {
+        "team_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "formation": { "type": "object" },
+        "tempo": { "type": "number" },
+        "aggression": { "type": "number" },
+        "updated_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["team_id", "user_id", "formation", "tempo", "aggression"]
+    },
+    "Prediction": {
+      "title": "Prediction",
+      "description": "User score prediction for a match",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "match_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "home_score": { "type": "number" },
+        "away_score": { "type": "number" },
+        "updated_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["user_id", "match_id", "home_score", "away_score"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial exchange, withdraw, and top-up transaction records",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "order_id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["exchange", "withdraw", "topup"] },
+        "from_currency": { "type": "string", "maxLength": 32 },
+        "to_currency": { "type": "string", "maxLength": 32 },
+        "amount_from": { "type": "number" },
+        "amount_to": { "type": "number" },
+        "amount": { "type": "number" },
+        "fee": { "type": "number" },
+        "diamonds": { "type": "number" },
+        "gold": { "type": "number" },
+        "package": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["pending", "completed", "success", "failed"] },
+        "created_at": { "type": "string", "maxLength": 64 },
+        "completed_at": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["user_id", "type", "status", "created_at"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": { "$ref": "#/entities/Profile" },
+      "description": "User profiles keyed by Firebase Auth UID"
+    },
+    "/teams/{teamId}": {
+      "schema": { "$ref": "#/entities/Team" },
+      "description": "Esports clubs owned by users"
+    },
+    "/players/{playerId}": {
+      "schema": { "$ref": "#/entities/Player" },
+      "description": "Roster and transfer market players"
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Match records and scheduled games"
+    },
+    "/transfers/{transferId}": {
+      "schema": { "$ref": "#/entities/Transfer" },
+      "description": "Transfer and bid log entries"
+    },
+    "/team_tactics/{teamId}": {
+      "schema": { "$ref": "#/entities/TeamTactic" },
+      "description": "Tactical settings keyed by team ID"
+    },
+    "/predictions/{predictionId}": {
+      "schema": { "$ref": "#/entities/Prediction" },
+      "description": "Match predictions keyed by userId_matchId"
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "User financial transactions"
+    }
+  }
+}

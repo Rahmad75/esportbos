@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsportBos - Payment Callback</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -68,117 +67,6 @@
         <div class="message">Mohon tunggu sebentar</div>
     </div>
 
-    <script>
-    // Init Supabase
-    const supabase = window.supabase.createClient(
-        'https://xvnmpbmyxphrddjjldbt.supabase.co',
-        'sb_publishable_qB9jHOOjiiJDrEQR5XndKA_ji_w-jsv'
-    );
-
-    async function processPayment() {
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mockSuccess = urlParams.get('mock');
-            const orderId = urlParams.get('orderId');
-
-            if (mockSuccess === 'success') {
-                // MODE TESTING
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                const { data: { session } } = await supabase.auth.getSession();
-                
-                if (!session) {
-                    document.getElementById('status').innerHTML = '<div class="failed">❌ Silakan login dulu</div>';
-                    setTimeout(() => { window.location.href = '/index.html'; }, 3000);
-                    return;
-                }
-
-                // Cari transaction
-                let transaction = null;
-                if (orderId) {
-                    const { data } = await supabase
-                        .from('transactions')
-                        .select('*')
-                        .eq('order_id', orderId)
-                        .single();
-                    transaction = data;
-                }
-
-                // Kalau tidak ada orderId, ambil transaction terbaru yang pending
-                if (!transaction) {
-                    const { data } = await supabase
-                        .from('transactions')
-                        .select('*')
-                        .eq('user_id', session.user.id)
-                        .eq('status', 'pending')
-                        .order('created_at', { ascending: false })
-                        .limit(1)
-                        .single();
-                    transaction = data;
-                }
-
-                if (transaction) {
-                    // Update status transaction
-                    await supabase
-                        .from('transactions')
-                        .update({ 
-                            status: 'completed', 
-                            completed_at: new Date().toISOString() 
-                        })
-                        .eq('id', transaction.id);
-
-                    // Tambah diamond & gold ke profile
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('diamonds, gold')
-                        .eq('id', session.user.id)
-                        .single();
-
-                    const newDiamonds = (profile.diamonds || 0) + (transaction.diamonds || 0);
-                    const newGold = (profile.gold || 0) + (transaction.gold || 0);
-
-                    await supabase
-                        .from('profiles')
-                        .update({
-                            diamonds: newDiamonds,
-                            gold: newGold
-                        })
-                        .eq('id', session.user.id);
-
-                    document.getElementById('status').innerHTML = `
-                        <div class="success">
-                            ✅ Pembayaran Berhasil!<br><br>
-                            💎 +${transaction.diamonds} Diamond<br>
-                            🟡 +${transaction.gold} Gold<br><br>
-                            <small>Redirecting ke dashboard...</small>
-                        </div>
-                    `;
-
-                    setTimeout(() => {
-                        window.location.href = '/pendanaan-klub.html';
-                    }, 3000);
-
-                } else {
-                    document.getElementById('status').innerHTML = '<div class="failed">❌ Transaksi tidak ditemukan</div>';
-                }
-
-            } else {
-                // MODE PRODUCTION - Handle Duitku callback
-                document.getElementById('status').innerHTML = '<div class="loading">Verifikasi pembayaran...</div>';
-                
-                setTimeout(() => {
-                    window.location.href = '/pendanaan-klub.html';
-                }, 2000);
-            }
-
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('status').innerHTML = '<div class="failed">❌ Error: ' + error.message + '</div>';
-        }
-    }
-
-    // Jalankan saat halaman load
-    processPayment();
-    </script>
+    <script type="module" src="payment-callback.js"></script>
 </body>
 </html>

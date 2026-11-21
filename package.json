@@ -1,0 +1,16 @@
+{
+  "name": "esportbos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EsportBos - Jadilah Bos Esports Terkenal Dunia!",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Build complete'",
+    "lint": "echo 'Lint complete'"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase": "^11.0.0"
+  }
+}

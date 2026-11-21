@@ -308,7 +308,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     loadFinancialData();
-    
-    // Auto-refresh every 30 seconds
-    setInterval(loadFinancialData, 30000);
 });

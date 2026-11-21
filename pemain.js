@@ -1,317 +1,142 @@
-// ===== ESPORTBOS - HALAMAN PEMAIN =====
+import { signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {
+  collection,
+  getDocs,
+  query,
+  where
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {
+  auth,
+  db,
+  getCurrentUserOnce,
+  getOrCreateProfile,
+  getOrCreateTeam
+} from './firebase-config.js';
 
-// Data default pemain (dummy)
-const defaultPlayers = [
-    {
-        id: 1,
-        nama: "Faker Jr.",
-        posisi: "Mid Laner",
-        role: "Carry",
-        umur: 21,
-        negara: "🇰🇷 Korea",
-        kontrak: "2027",
-        gaji: 15000,
-        stats: { mechanics: 92, gameSense: 88, teamwork: 85, stamina: 95 },
-        avatar: "FakerJr",
-        avatarIndex: 12  // Tambahin ini
-    },
-    {
-        id: 2,
-        nama: "JungleKing",
-        posisi: "Jungler",
-        role: "Support",
-        umur: 23,
-        negara: "🇮🇩 Indonesia",
-        kontrak: "2026",
-        gaji: 12000,
-        stats: { mechanics: 85, gameSense: 90, teamwork: 88, stamina: 92 },
-        avatar: "JungleKing",
-        avatarIndex: 34  // Tambahin ini
-    },
-    {
-        id: 3,
-        nama: "TopLaner99",
-        posisi: "Top Laner",
-        role: "Tank",
-        umur: 24,
-        negara: "🇷 Brazil",
-        kontrak: "2026",
-        gaji: 11000,
-        stats: { mechanics: 82, gameSense: 80, teamwork: 90, stamina: 88 },
-        avatar: "TopLaner99",
-        avatarIndex: 67  // Tambahin ini
-    },
-    {
-        id: 4,
-        nama: "ADCarry",
-        posisi: "AD Carry",
-        role: "Carry",
-        umur: 20,
-        negara: "🇨🇳 China",
-        kontrak: "2028",
-        gaji: 18000,
-        stats: { mechanics: 95, gameSense: 82, teamwork: 78, stamina: 90 },
-        avatar: "ADCarry",
-        avatarIndex: 45  // Tambahin ini
-    },
-    {
-        id: 5,
-        nama: "SupportPro",
-        posisi: "Support",
-        role: "Support",
-        umur: 25,
-        negara: "🇪🇺 Europe",
-        kontrak: "2025",
-        gaji: 9000,
-        stats: { mechanics: 78, gameSense: 92, teamwork: 95, stamina: 85 },
-        avatar: "SupportPro",
-        avatarIndex: 89  // Tambahin ini
+async function handleLogout() {
+  await signOut(auth);
+  window.location.href = 'index.html';
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const user = await getCurrentUserOnce();
+    if (!user) {
+      window.location.href = 'index.html';
+      return;
     }
-];
-// Load pemain dari localStorage atau pakai default
-function loadPlayers() {
-    const saved = localStorage.getItem('esportbos_players');
-    if (saved) {
-        return JSON.parse(saved);
+
+    const profile = await getOrCreateProfile(user);
+    const team = await getOrCreateTeam(user, profile?.club_name);
+
+    if (profile) {
+      const username = profile.username || user.email.split('@')[0];
+      document.getElementById('userName').textContent = username;
+      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
+      document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
+      document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
     }
-    // Simpan default ke localStorage
-    localStorage.setItem('esportbos_players', JSON.stringify(defaultPlayers));
-    return defaultPlayers;
-}
 
-// Save pemain ke localStorage
-function savePlayers(players) {
-    localStorage.setItem('esportbos_players', JSON.stringify(players));
-}
+    if (team) {
+      document.getElementById('clubName').textContent = team.team_name;
+      document.getElementById('infoTeamName').textContent = team.team_name;
+      document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
 
-function getAvatarUrl(seed) {
-    try {
-        // Generate angka dari nama pemain
-        let hash = 0;
-        for (let i = 0; i < seed.length; i++) {
-            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-            hash = hash & hash; // Convert to 32-bit integer
-        }
-        
-        // Pastikan angka positif dan antara 0-99
-        const photoNum = Math.abs(hash) % 100;
-        
-        return `https://randomuser.me/api/portraits/men/${photoNum}.jpg`;
-    } catch (error) {
-        // Fallback ke initials kalau error
-        return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=00d4ff`;
+      document.getElementById('popularityText').textContent = `Popularitas Klub: ${team.popularity}%`;
+      document.getElementById('popularityBar').style.width = `${team.popularity}%`;
+
+      document.getElementById('moralText').textContent = `Moral Tim: ${team.moral}%`;
+      document.getElementById('moralBar').style.width = `${team.moral}%`;
     }
-}
 
-// Render roster
-function renderRoster() {
-    const players = loadPlayers();
-    const grid = document.getElementById('rosterGrid');
-    
-    if (!grid) return;
-    
-    grid.innerHTML = '';
-    
-    players.forEach(player => {
-        const avgStats = Math.round(
-            (player.stats.mechanics + player.stats.gameSense + player.stats.teamwork + player.stats.stamina) / 4
-        );
-        
-        const card = document.createElement('div');
-        card.className = 'player-card';
-        card.innerHTML = `
-            <div class="player-avatar-wrapper">
-                <img src="${getAvatarUrl(player.avatar)}" alt="${player.nama}" class="player-avatar">
-                <div class="player-role-badge ${player.role.toLowerCase()}">${player.role}</div>
-            </div>
-            <div class="player-info">
-                <h3 class="player-name">${player.nama}</h3>
-                <div class="player-position">${player.posisi}</div>
-                <div class="player-meta">
-                    <span>${player.umur} thn</span>
-                    <span>${player.negara}</span>
-                </div>
-                <div class="player-stats-mini">
-                    <div class="stat-mini">
-                        <span class="stat-label">MEC</span>
-                        <div class="stat-bar"><div class="stat-fill" style="width: ${player.stats.mechanics}%"></div></div>
-                        <span class="stat-value">${player.stats.mechanics}</span>
-                    </div>
-                    <div class="stat-mini">
-                        <span class="stat-label">GS</span>
-                        <div class="stat-bar"><div class="stat-fill" style="width: ${player.stats.gameSense}%"></div></div>
-                        <span class="stat-value">${player.stats.gameSense}</span>
-                    </div>
-                    <div class="stat-mini">
-                        <span class="stat-label">TW</span>
-                        <div class="stat-bar"><div class="stat-fill" style="width: ${player.stats.teamwork}%"></div></div>
-                        <span class="stat-value">${player.stats.teamwork}</span>
-                    </div>
-                </div>
-                <div class="player-footer">
-                    <span class="player-rating">⭐ ${avgStats}</span>
-                    <button class="btn-detail" onclick="showPlayerDetail(${player.id})">Detail</button>
-                </div>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-    
-    document.getElementById('totalPlayers').textContent = players.length;
-}
+    const teamId = team ? team.id : null;
+    let players = [];
+    if (teamId) {
+      const q = query(collection(db, 'players'), where('owner_id', '==', user.uid));
+      const snap = await getDocs(q);
+      players = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(p => p.team_id === teamId)
+        .sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+    }
 
-// Tampilkan detail pemain di modal
-function showPlayerDetail(id) {
-    const players = loadPlayers();
-    const player = players.find(p => p.id === id);
-    if (!player) return;
-    
-    const modal = document.getElementById('playerModal');
-    const modalBody = document.getElementById('modalBody');
-    
-    modalBody.innerHTML = `
-        <div class="player-detail">
-            <div class="player-detail-header">
-                <img src="${getAvatarUrl(player.avatar)}" alt="${player.nama}" class="player-avatar-large">
-                <div>
-                    <h2>${player.nama}</h2>
-                    <p class="player-position-large">${player.posisi} • ${player.role}</p>
-                    <p>${player.umur} tahun • ${player.negara}</p>
-                </div>
-            </div>
-            
-            <div class="player-stats-detail">
-                <h3>📊 Statistik Pemain</h3>
-                <div class="stat-detail-row">
-                    <span>Mechanics</span>
-                    <div class="stat-bar-large"><div class="stat-fill" style="width: ${player.stats.mechanics}%"></div></div>
-                    <span>${player.stats.mechanics}/100</span>
-                </div>
-                <div class="stat-detail-row">
-                    <span>Game Sense</span>
-                    <div class="stat-bar-large"><div class="stat-fill" style="width: ${player.stats.gameSense}%"></div></div>
-                    <span>${player.stats.gameSense}/100</span>
-                </div>
-                <div class="stat-detail-row">
-                    <span>Teamwork</span>
-                    <div class="stat-bar-large"><div class="stat-fill" style="width: ${player.stats.teamwork}%"></div></div>
-                    <span>${player.stats.teamwork}/100</span>
-                </div>
-                <div class="stat-detail-row">
-                    <span>Stamina</span>
-                    <div class="stat-bar-large"><div class="stat-fill" style="width: ${player.stats.stamina}%"></div></div>
-                    <span>${player.stats.stamina}/100</span>
-                </div>
-            </div>
-            
-            <div class="player-contract-info">
-                <h3> Informasi Kontrak</h3>
-                <div class="contract-grid">
-                    <div class="contract-item">
-                        <span class="contract-label">Berakhir</span>
-                        <span class="contract-value">${player.kontrak}</span>
-                    </div>
-                    <div class="contract-item">
-                        <span class="contract-label">Gaji/Bulan</span>
-                        <span class="contract-value">💰 ${player.gaji.toLocaleString()}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="player-actions">
-                <button class="btn-futuristic btn-small" onclick="latihPemain(${player.id})">🏋️ Latih</button>
-                <button class="btn-futuristic btn-small btn-secondary" onclick="jualPemain(${player.id})">💰 Jual</button>
-                <button class="btn-futuristic btn-small btn-secondary" onclick="perpanjangKontrak(${player.id})">📝 Perpanjang</button>
-            </div>
+    const rosterGrid = document.getElementById('rosterGrid');
+    const totalPlayersEl = document.getElementById('totalPlayers');
+
+    if (players && players.length > 0) {
+      totalPlayersEl.textContent = players.length;
+      rosterGrid.innerHTML = players.map(player => `
+        <div class="player-card" onclick="showPlayerDetail('${player.id}', '${player.name}', '${player.position}', ${player.overall_rating}, ${player.market_value || 0})" style="cursor: pointer; background: #1a1a2e; border-radius: 10px; padding: 15px; color: white; text-align: center; border: 1px solid #333; transition: transform 0.2s;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span style="background: #00d4ff; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${player.position}</span>
+            <span style="background: #ffd700; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px;">${player.overall_rating}</span>
+          </div>
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}" alt="${player.name}" style="width: 80px; height: 80px; border-radius: 50%; background: #333; margin-bottom: 10px;">
+          <h4 style="margin: 5px 0; color: #fff;">${player.name}</h4>
+          <p style="font-size: 12px; color: #aaa; margin: 0;">${player.nationality || 'ID'} • ${player.age || 18} Thn</p>
+          <div style="margin-top: 10px; color: #28a745; font-weight: bold;">
+            💰 ${(player.market_value || 0).toLocaleString('id-ID')}
+          </div>
         </div>
-    `;
-    
-    modal.style.display = 'block';
+      `).join('');
+    } else {
+      totalPlayersEl.textContent = '0';
+      rosterGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; background: #16213e; border-radius: 10px; border: 1px dashed #00d4ff;">
+          <div style="font-size: 64px; margin-bottom: 15px;">👥</div>
+          <h3 style="color: #fff; margin-bottom: 10px;">Belum Ada Pemain</h3>
+          <p style="color: #aaa; margin-bottom: 20px;">Tim Anda masih kosong. Segera rekrut pemain di menu Transfer!</p>
+          <button class="btn-futuristic" onclick="window.location.href='transfer.html'" style="padding: 10px 20px; background: #00d4ff; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Rekrut Pemain</button>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Error loading pemain:', error);
+    alert('Gagal memuat data. Silakan refresh halaman.');
+  }
+});
+
+function showPlayerDetail(id, name, position, rating, value) {
+  const modal = document.getElementById('playerModal');
+  const body = document.getElementById('modalBody');
+
+  body.innerHTML = `
+    <div style="text-align: center; padding: 20px;">
+      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${name}" style="width: 120px; height: 120px; border-radius: 50%; background: #333; margin-bottom: 15px;">
+      <h2 style="color: #00d4ff; margin: 0;">${name}</h2>
+      <p style="color: #aaa; margin-top: 5px;">${position} • Rating: <strong style="color: #ffd700;">${rating}</strong></p>
+      <hr style="border-color: #333; margin: 20px 0;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+        <div style="background: #1a1a2e; padding: 10px; border-radius: 8px;">
+          <div style="font-size: 12px; color: #aaa;">Nilai Pasar</div>
+          <div style="font-size: 18px; color: #28a745; font-weight: bold;">💰 ${value.toLocaleString('id-ID')}</div>
+        </div>
+        <div style="background: #1a1a2e; padding: 10px; border-radius: 8px;">
+          <div style="font-size: 12px; color: #aaa;">Status</div>
+          <div style="font-size: 18px; color: #fff; font-weight: bold;">Aktif</div>
+        </div>
+      </div>
+      <button onclick="closeModal()" style="margin-top: 20px; padding: 10px 30px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Tutup</button>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.background = 'rgba(0,0,0,0.8)';
+  modal.style.zIndex = '9999';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
 }
 
 function closeModal() {
-    document.getElementById('playerModal').style.display = 'none';
+  document.getElementById('playerModal').style.display = 'none';
 }
 
-function latihPemain(id) {
-    const players = loadPlayers();
-    const player = players.find(p => p.id === id);
-    if (!player) return;
-    
-    // Random increase stats
-    player.stats.mechanics = Math.min(100, player.stats.mechanics + Math.floor(Math.random() * 3));
-    player.stats.gameSense = Math.min(100, player.stats.gameSense + Math.floor(Math.random() * 3));
-    
-    savePlayers(players);
-    renderRoster();
-    closeModal();
-    alert(`✅ ${player.nama} berhasil dilatih! Stats meningkat.`);
-}
-
-function jualPemain(id) {
-    if (!confirm('Yakin mau jual pemain ini?')) return;
-    
-    let players = loadPlayers();
-    const player = players.find(p => p.id === id);
-    if (!player) return;
-    
-    players = players.filter(p => p.id !== id);
-    savePlayers(players);
-    renderRoster();
-    closeModal();
-    alert(`💰 ${player.nama} berhasil dijual!`);
-}
-
-function perpanjangKontrak(id) {
-    const players = loadPlayers();
-    const player = players.find(p => p.id === id);
-    if (!player) return;
-    
-    player.kontrak = String(parseInt(player.kontrak) + 2);
-    savePlayers(players);
-    renderRoster();
-    closeModal();
-    alert(`📝 Kontrak ${player.nama} diperpanjang sampai ${player.kontrak}!`);
-}
-
-function tambahPemain() {
-    alert('🔜 Fitur rekrut pemain akan segera hadir! Nanti bisa scout & bidding di Transfer Market.');
-}
-
-function simulasiLatihan() {
-    const players = loadPlayers();
-    players.forEach(p => {
-        p.stats.stamina = Math.min(100, p.stats.stamina + Math.floor(Math.random() * 5));
-    });
-    savePlayers(players);
-    renderRoster();
-    alert('🏋️ Tim berhasil dilatih! Stamina semua pemain meningkat.');
-}
-
-function pilihKapten() {
-    alert('⭐ Fitur pilih kapten akan segera hadir!');
-}
-
-// Init
-document.addEventListener('DOMContentLoaded', function() {
-    // Cek auth
-    if (typeof EsportBosAuth !== 'undefined') {
-        EsportBosAuth.requireAuth();
-        
-        const user = JSON.parse(localStorage.getItem('esportbos_current_user'));
-        if (user) {
-            const userNameSpan = document.getElementById('userName');
-            if (userNameSpan) userNameSpan.textContent = user.username;
-        }
-    }
-    
-    renderRoster();
-    
-    // Close modal kalau klik di luar
-    window.onclick = function(event) {
-        const modal = document.getElementById('playerModal');
-        if (event.target === modal) {
-            closeModal();
-        }
-    };
-});
+window.handleLogout = handleLogout;
+window.showPlayerDetail = showPlayerDetail;
+window.closeModal = closeModal;

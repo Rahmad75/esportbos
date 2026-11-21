@@ -1,0 +1,298 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // === GLOBAL PRIMITIVES ===
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+    // === VALIDATION BLUEPRINTS ===
+    function isValidProfile(data) {
+      return data.keys().hasAll(['id', 'username', 'diamonds', 'gold', 'currency'])
+        && data.keys().hasOnly([
+          'id', 'username', 'club_name', 'referral_code', 'referred_by',
+          'avatar_url', 'bio', 'country', 'city',
+          'diamonds', 'gold', 'currency',
+          'prediction_score', 'prediction_total', 'prediction_correct',
+          'created_at', 'updated_at'
+        ])
+        && data.id is string && data.id == request.auth.uid
+        && data.username is string && data.username.size() >= 1 && data.username.size() <= 64
+        && data.diamonds is number && data.diamonds >= 0
+        && data.gold is number && data.gold >= 0
+        && data.currency is number && data.currency >= 0
+        && (!('club_name' in data) || (data.club_name is string && data.club_name.size() <= 80))
+        && (!('referral_code' in data) || (data.referral_code is string && data.referral_code.size() <= 32))
+        && (!('referred_by' in data) || data.referred_by == null || (data.referred_by is string && data.referred_by.size() <= 128))
+        && (!('avatar_url' in data) || data.avatar_url == null || (data.avatar_url is string && data.avatar_url.size() <= 1000))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('country' in data) || (data.country is string && data.country.size() <= 16))
+        && (!('city' in data) || (data.city is string && data.city.size() <= 80))
+        && (!('prediction_score' in data) || (data.prediction_score is number && data.prediction_score >= 0))
+        && (!('prediction_total' in data) || (data.prediction_total is number && data.prediction_total >= 0))
+        && (!('prediction_correct' in data) || (data.prediction_correct is number && data.prediction_correct >= 0))
+        && (!('created_at' in data) || (data.created_at is string && data.created_at.size() <= 64))
+        && (!('updated_at' in data) || (data.updated_at is string && data.updated_at.size() <= 64));
+    }
+
+    function isValidTeam(data) {
+      return data.keys().hasAll(['user_id', 'team_name'])
+        && data.keys().hasOnly([
+          'user_id', 'team_name', 'wins', 'draws', 'losses',
+          'popularity', 'moral', 'academy_level', 'stadium_level', 'facility_level',
+          'active_sponsors', 'hired_staff',
+          'pending_stadium_income', 'total_home_matches', 'total_stadium_income',
+          'last_claim_at', 'last_match_at', 'matches_played_today', 'last_daily_reset',
+          'created_at', 'updated_at'
+        ])
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.team_name is string && data.team_name.size() >= 1 && data.team_name.size() <= 80
+        && (!('wins' in data) || (data.wins is number && data.wins >= 0))
+        && (!('draws' in data) || (data.draws is number && data.draws >= 0))
+        && (!('losses' in data) || (data.losses is number && data.losses >= 0))
+        && (!('popularity' in data) || (data.popularity is number && data.popularity >= 0 && data.popularity <= 100))
+        && (!('moral' in data) || (data.moral is number && data.moral >= 0 && data.moral <= 100))
+        && (!('academy_level' in data) || (data.academy_level is number && data.academy_level >= 1 && data.academy_level <= 10))
+        && (!('stadium_level' in data) || (data.stadium_level is number && data.stadium_level >= 1 && data.stadium_level <= 10))
+        && (!('facility_level' in data) || (data.facility_level is number && data.facility_level >= 1 && data.facility_level <= 10))
+        && (!('active_sponsors' in data) || (data.active_sponsors is list && data.active_sponsors.size() <= 20))
+        && (!('hired_staff' in data) || (data.hired_staff is list && data.hired_staff.size() <= 20))
+        && (!('pending_stadium_income' in data) || (data.pending_stadium_income is number && data.pending_stadium_income >= 0))
+        && (!('total_home_matches' in data) || (data.total_home_matches is number && data.total_home_matches >= 0))
+        && (!('total_stadium_income' in data) || (data.total_stadium_income is number && data.total_stadium_income >= 0))
+        && (!('matches_played_today' in data) || (data.matches_played_today is number && data.matches_played_today >= 0))
+        && (!('last_claim_at' in data) || data.last_claim_at == null || (data.last_claim_at is string && data.last_claim_at.size() <= 64))
+        && (!('last_match_at' in data) || data.last_match_at == null || (data.last_match_at is string && data.last_match_at.size() <= 64))
+        && (!('last_daily_reset' in data) || data.last_daily_reset == null || (data.last_daily_reset is string && data.last_daily_reset.size() <= 32))
+        && (!('created_at' in data) || (data.created_at is string && data.created_at.size() <= 64))
+        && (!('updated_at' in data) || (data.updated_at is string && data.updated_at.size() <= 64));
+    }
+
+    function isValidPlayer(data) {
+      return data.keys().hasAll(['name', 'position', 'overall_rating'])
+        && data.keys().hasOnly([
+          'team_id', 'owner_id', 'name', 'position', 'overall_rating',
+          'potential', 'age', 'nationality', 'market_value',
+          'is_academy', 'recruited_at'
+        ])
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.position is string && data.position in ['Top', 'Jungle', 'Mid', 'ADC', 'Support']
+        && data.overall_rating is number && data.overall_rating >= 1 && data.overall_rating <= 99
+        && (!('team_id' in data) || data.team_id == null || (data.team_id is string && data.team_id.size() <= 128))
+        && (!('owner_id' in data) || data.owner_id == null || (data.owner_id is string && data.owner_id.size() <= 128))
+        && (!('potential' in data) || (data.potential is number && data.potential >= 1 && data.potential <= 99))
+        && (!('age' in data) || (data.age is number && data.age >= 15 && data.age <= 50))
+        && (!('nationality' in data) || (data.nationality is string && data.nationality.size() <= 16))
+        && (!('market_value' in data) || (data.market_value is number && data.market_value >= 0))
+        && (!('is_academy' in data) || data.is_academy is bool)
+        && (!('recruited_at' in data) || (data.recruited_at is string && data.recruited_at.size() <= 64));
+    }
+
+    function isValidMatch(data) {
+      return data.keys().hasAll(['user_id', 'home_team_id', 'status', 'match_date'])
+        && data.keys().hasOnly([
+          'user_id', 'home_team_id', 'away_team_id',
+          'home_team_name', 'away_team_name',
+          'home_score', 'away_score', 'status', 'competition',
+          'match_date', 'result', 'duration_minutes'
+        ])
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.home_team_id is string && data.home_team_id.size() <= 128
+        && data.status is string && data.status in ['scheduled', 'finished']
+        && data.match_date is string && data.match_date.size() <= 64
+        && (!('away_team_id' in data) || data.away_team_id == null || (data.away_team_id is string && data.away_team_id.size() <= 128))
+        && (!('home_team_name' in data) || (data.home_team_name is string && data.home_team_name.size() <= 80))
+        && (!('away_team_name' in data) || (data.away_team_name is string && data.away_team_name.size() <= 80))
+        && (!('home_score' in data) || (data.home_score is number && data.home_score >= 0))
+        && (!('away_score' in data) || (data.away_score is number && data.away_score >= 0))
+        && (!('competition' in data) || (data.competition is string && data.competition.size() <= 80))
+        && (!('result' in data) || (data.result is string && data.result in ['win', 'draw', 'lose']))
+        && (!('duration_minutes' in data) || (data.duration_minutes is number && data.duration_minutes >= 0));
+    }
+
+    function isValidTransfer(data) {
+      return data.keys().hasAll(['user_id', 'status', 'transfer_type', 'player_name', 'to_team_name', 'bid_amount', 'created_at'])
+        && data.keys().hasOnly([
+          'user_id', 'status', 'transfer_type', 'player_position',
+          'player_name', 'to_team_name', 'bid_amount', 'created_at'
+        ])
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.status is string && data.status in ['pending', 'completed']
+        && data.transfer_type is string && data.transfer_type in ['transfer', 'bid']
+        && data.player_name is string && data.player_name.size() <= 80
+        && data.to_team_name is string && data.to_team_name.size() <= 80
+        && data.bid_amount is number && data.bid_amount >= 0
+        && data.created_at is string && data.created_at.size() <= 64
+        && (!('player_position' in data) || (data.player_position is string && data.player_position.size() <= 32));
+    }
+
+    function isValidTeamTactic(data) {
+      return data.keys().hasAll(['team_id', 'user_id', 'formation', 'tempo', 'aggression'])
+        && data.keys().hasOnly(['team_id', 'user_id', 'formation', 'tempo', 'aggression', 'updated_at'])
+        && data.team_id is string && data.team_id.size() <= 128
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.formation is map
+        && data.tempo is number && data.tempo >= 0 && data.tempo <= 100
+        && data.aggression is number && data.aggression >= 0 && data.aggression <= 100
+        && (!('updated_at' in data) || (data.updated_at is string && data.updated_at.size() <= 64));
+    }
+
+    function isValidPrediction(data) {
+      return data.keys().hasAll(['user_id', 'match_id', 'home_score', 'away_score'])
+        && data.keys().hasOnly(['user_id', 'match_id', 'home_score', 'away_score', 'updated_at'])
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.match_id is string && data.match_id.size() <= 128
+        && data.home_score is number && data.home_score >= 0
+        && data.away_score is number && data.away_score >= 0
+        && (!('updated_at' in data) || (data.updated_at is string && data.updated_at.size() <= 64));
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['user_id', 'type', 'status', 'created_at'])
+        && data.keys().hasOnly([
+          'user_id', 'order_id', 'type', 'from_currency', 'to_currency',
+          'amount_from', 'amount_to', 'amount', 'fee', 'diamonds', 'gold',
+          'package', 'status', 'created_at', 'completed_at'
+        ])
+        && data.user_id is string && data.user_id == request.auth.uid
+        && data.type is string && data.type in ['exchange', 'withdraw', 'topup']
+        && data.status is string && data.status in ['pending', 'completed', 'success', 'failed']
+        && data.created_at is string && data.created_at.size() <= 64
+        && (!('order_id' in data) || (data.order_id is string && data.order_id.size() <= 128))
+        && (!('from_currency' in data) || (data.from_currency is string && data.from_currency.size() <= 32))
+        && (!('to_currency' in data) || (data.to_currency is string && data.to_currency.size() <= 32))
+        && (!('amount_from' in data) || (data.amount_from is number && data.amount_from >= 0))
+        && (!('amount_to' in data) || (data.amount_to is number && data.amount_to >= 0))
+        && (!('amount' in data) || (data.amount is number && data.amount >= 0))
+        && (!('fee' in data) || (data.fee is number && data.fee >= 0))
+        && (!('diamonds' in data) || (data.diamonds is number && data.diamonds >= 0))
+        && (!('gold' in data) || (data.gold is number && data.gold >= 0))
+        && (!('package' in data) || (data.package is string && data.package.size() <= 64))
+        && (!('completed_at' in data) || (data.completed_at is string && data.completed_at.size() <= 64));
+    }
+
+    // === COLLECTION RULES ===
+    match /profiles/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if isSignedIn() && resource.data.prediction_score >= 0;
+      allow create: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming());
+      allow update: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming())
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'username', 'club_name', 'avatar_url', 'bio', 'country', 'city',
+          'diamonds', 'gold', 'currency',
+          'prediction_score', 'prediction_total', 'prediction_correct', 'updated_at'
+        ]);
+    }
+
+    match /teams/{teamId} {
+      allow get: if isValidId(teamId) && isSignedIn() && existing().user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isValidId(teamId) && isSignedIn() && isValidTeam(incoming());
+      allow update: if isValidId(teamId) && isSignedIn() && existing().user_id == request.auth.uid
+        && isValidTeam(incoming())
+        && incoming().user_id == existing().user_id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'team_name', 'wins', 'draws', 'losses', 'popularity', 'moral',
+          'academy_level', 'stadium_level', 'facility_level',
+          'active_sponsors', 'hired_staff',
+          'pending_stadium_income', 'total_home_matches', 'total_stadium_income',
+          'last_claim_at', 'last_match_at', 'matches_played_today', 'last_daily_reset',
+          'updated_at'
+        ]);
+    }
+
+    match /players/{playerId} {
+      allow get: if isValidId(playerId) && isSignedIn()
+        && (existing().team_id == null || existing().owner_id == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.team_id == null || resource.data.owner_id == request.auth.uid);
+      allow create: if isValidId(playerId) && isSignedIn() && isValidPlayer(incoming())
+        && incoming().owner_id == request.auth.uid;
+      allow update: if isValidId(playerId) && isSignedIn() && isValidPlayer(incoming())
+        && (
+          (existing().owner_id == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly([
+            'team_id', 'owner_id', 'overall_rating', 'market_value'
+          ])) ||
+          (existing().team_id == null && incoming().owner_id == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly([
+            'team_id', 'owner_id'
+          ]))
+        );
+    }
+
+    match /matches/{matchId} {
+      allow get: if isValidId(matchId) && isSignedIn()
+        && (existing().user_id == request.auth.uid || existing().status in ['scheduled', 'finished']);
+      allow list: if isSignedIn()
+        && (resource.data.user_id == request.auth.uid || resource.data.status in ['scheduled', 'finished']);
+      allow create: if isValidId(matchId) && isSignedIn() && isValidMatch(incoming());
+      allow update: if isValidId(matchId) && isSignedIn()
+        && existing().user_id == request.auth.uid
+        && existing().status != 'finished'
+        && isValidMatch(incoming())
+        && incoming().user_id == existing().user_id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'home_score', 'away_score', 'status', 'result', 'match_date', 'duration_minutes'
+        ]);
+    }
+
+    match /transfers/{transferId} {
+      allow get: if isValidId(transferId) && isSignedIn() && resource.data.status in ['pending', 'completed'];
+      allow list: if isSignedIn() && resource.data.status in ['pending', 'completed'];
+      allow create: if isValidId(transferId) && isSignedIn() && isValidTransfer(incoming());
+    }
+
+    match /team_tactics/{teamId} {
+      allow get: if isValidId(teamId) && isSignedIn()
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.user_id == request.auth.uid;
+      allow create: if isValidId(teamId) && isSignedIn()
+        && isValidTeamTactic(incoming())
+        && incoming().team_id == teamId
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.user_id == request.auth.uid;
+      allow update: if isValidId(teamId) && isSignedIn()
+        && existing().user_id == request.auth.uid
+        && isValidTeamTactic(incoming())
+        && incoming().team_id == existing().team_id
+        && incoming().user_id == existing().user_id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'formation', 'tempo', 'aggression', 'updated_at'
+        ]);
+    }
+
+    match /predictions/{predictionId} {
+      allow get: if isValidId(predictionId) && isSignedIn() && existing().user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isValidId(predictionId) && isSignedIn() && isValidPrediction(incoming());
+      allow update: if isValidId(predictionId) && isSignedIn()
+        && existing().user_id == request.auth.uid
+        && isValidPrediction(incoming())
+        && incoming().user_id == existing().user_id
+        && incoming().match_id == existing().match_id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'home_score', 'away_score', 'updated_at'
+        ]);
+    }
+
+    match /transactions/{transactionId} {
+      allow get: if isValidId(transactionId) && isSignedIn() && existing().user_id == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isValidId(transactionId) && isSignedIn() && isValidTransaction(incoming());
+      allow update: if isValidId(transactionId) && isSignedIn()
+        && existing().user_id == request.auth.uid
+        && existing().status == 'pending'
+        && isValidTransaction(incoming())
+        && incoming().user_id == existing().user_id
+        && incoming().type == existing().type
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'completed_at']);
+    }
+  }
+}
