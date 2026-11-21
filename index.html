@@ -74,9 +74,9 @@
                 <small style="color:#999; font-size:12px;">💡 Jika dapat link referral, kode otomatis terisi</small>
             </div>
             <!-- Cloudflare Turnstile -->
-<div style="margin: 20px 0; display: flex; justify-content: center;">
-    <div class="cf-turnstile" data-sitekey="0x4AAAAAAEsqpET_2vCL9a-h"></div>
-</div>
+            <div style="margin: 20px 0; display: flex; justify-content: center;">
+                <div id="turnstileContainer" data-sitekey="0x4AAAAAAEsqpET_2vCL9a-h"></div>
+            </div>
             <button type="submit" class="btn-futuristic btn-register">Buat Akun</button>
             <div class="login-link">
                 Sudah punya akun? <a href="#" onclick="showLogin()">Login di sini</a>
@@ -156,6 +156,5 @@
     <!-- Scripts - URUTAN INI WAJIB -->
 <script type="module" src="auth.js"></script>
 <script src="script.js"></script>
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 </html>

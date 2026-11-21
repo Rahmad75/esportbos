@@ -10,12 +10,66 @@ import {
   getOrCreateTeam
 } from './firebase-config.js';
 
+const TURNSTILE_ALLOWED_HOSTS = new Set(['esportbos.com', 'www.esportbos.com']);
+let turnstileScriptPromise = null;
+let turnstileWidgetId = null;
+
+function isTurnstileEnabledHost() {
+  return TURNSTILE_ALLOWED_HOSTS.has(window.location.hostname.toLowerCase());
+}
+
+function loadTurnstileScript() {
+  if (window.turnstile) return Promise.resolve(window.turnstile);
+  if (turnstileScriptPromise) return turnstileScriptPromise;
+
+  turnstileScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(window.turnstile);
+    script.onerror = () => reject(new Error('Gagal memuat widget Turnstile'));
+    document.head.appendChild(script);
+  });
+
+  return turnstileScriptPromise;
+}
+
+async function initTurnstileWidget() {
+  const container = document.getElementById('turnstileContainer');
+  if (!container) return;
+
+  if (!isTurnstileEnabledHost()) {
+    container.textContent = '🔒 Verifikasi Turnstile aktif otomatis di esportbos.com';
+    container.style.cssText = 'font-size:12px;color:#999;padding:8px 12px;border:1px solid #333;border-radius:6px;background:rgba(255,255,255,0.03);';
+    return;
+  }
+
+  try {
+    const turnstile = await loadTurnstileScript();
+    if (!turnstile) return;
+
+    if (turnstileWidgetId !== null) {
+      turnstile.reset(turnstileWidgetId);
+      return;
+    }
+
+    const sitekey = container.dataset.sitekey || '0x4AAAAAAEsqpET_2vCL9a-h';
+    turnstileWidgetId = turnstile.render(container, {
+      sitekey,
+      'error-callback': () => true
+    });
+  } catch (err) {
+    console.warn('Turnstile widget unavailable:', err.message);
+  }
+}
+
 function showRegister() {
   const loginEl = document.getElementById('login');
   const regEl = document.getElementById('register');
   if (loginEl) loginEl.style.display = 'none';
   if (regEl) regEl.style.display = 'block';
-  if (window.turnstile) window.turnstile.reset();
+  initTurnstileWidget();
 }
 
 function showLogin() {
@@ -65,19 +119,28 @@ async function handleRegister() {
     const urlParams = new URLSearchParams(window.location.search);
     const isTestMode = urlParams.get('test') === 'true';
 
-    if (!isTestMode) {
-      const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
-      if (turnstileResponse && turnstileResponse.value) {
-        const captchaResponse = await fetch('/api/verify-captcha', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: turnstileResponse.value })
-        });
-        const captchaData = await captchaResponse.json();
-        if (!captchaData.success) {
-          alert('❌ Verifikasi captcha gagal. Coba lagi.');
-          return;
+    if (!isTestMode && isTurnstileEnabledHost()) {
+      const token = (window.turnstile && turnstileWidgetId !== null)
+        ? window.turnstile.getResponse(turnstileWidgetId)
+        : (document.querySelector('[name="cf-turnstile-response"]')?.value || '');
+
+      if (!token) {
+        alert('❌ Silakan selesaikan verifikasi captcha terlebih dahulu.');
+        return;
+      }
+
+      const captchaResponse = await fetch('/api/verify-captcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const captchaData = await captchaResponse.json();
+      if (!captchaResponse.ok || !captchaData.success) {
+        alert('❌ Verifikasi captcha gagal. Coba lagi.');
+        if (window.turnstile && turnstileWidgetId !== null) {
+          window.turnstile.reset(turnstileWidgetId);
         }
+        return;
       }
     }
 

@@ -15,17 +15,23 @@ app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/fireb
 app.post('/api/verify-captcha', async (req, res) => {
   try {
     const { token } = req.body || {};
-    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (typeof token !== 'string' || !token.trim() || token.length > 4096) {
+      return res.status(400).json({ success: false, error: 'Invalid captcha token' });
+    }
 
+    const secret = process.env.TURNSTILE_SECRET_KEY;
     if (!secret) {
-      return res.json({ success: Boolean(token), mode: 'client-token-check' });
+      return res.json({ success: true, mode: 'client-token-check' });
     }
 
     const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret, response: token || '' })
+      body: new URLSearchParams({ secret, response: token.trim() })
     });
+    if (!verifyRes.ok) {
+      return res.status(502).json({ success: false, error: 'Captcha service unavailable' });
+    }
     const result = await verifyRes.json();
     return res.json({ success: Boolean(result.success) });
   } catch (err) {
