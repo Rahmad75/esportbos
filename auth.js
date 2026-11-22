@@ -6,8 +6,11 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
   auth,
+  ensureFirestoreReady,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  isFirestoreOfflineError,
+  withFirestoreRetry
 } from './firebase-config.js';
 
 const TURNSTILE_ALLOWED_HOSTS = new Set(['esportbos.com', 'www.esportbos.com']);
@@ -82,19 +85,37 @@ function showLogin() {
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
+  const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+  const originalText = submitBtn ? submitBtn.textContent : 'Login';
 
   if (!email || !password) {
     alert('❌ Email dan password wajib diisi!');
     return;
   }
 
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Menghubungkan...';
+  }
+
   try {
     const credential = await signInWithEmailAndPassword(auth, email, password);
-    await getOrCreateProfile(credential.user);
-    await getOrCreateTeam(credential.user);
+    await credential.user.getIdToken();
+    await ensureFirestoreReady(3, 1000);
+    await withFirestoreRetry(() => getOrCreateProfile(credential.user), 3, 1000);
+    await withFirestoreRetry(() => getOrCreateTeam(credential.user), 3, 1000);
     window.location.href = 'dashboard.html';
   } catch (err) {
-    alert('❌ Login gagal: ' + (err.message || err.code));
+    if (isFirestoreOfflineError(err)) {
+      alert('❌ Gagal terhubung ke server, cek koneksi / buka di tab baru');
+    } else {
+      alert('❌ Login gagal: ' + (err.message || err.code));
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
   }
 }
 
@@ -104,6 +125,8 @@ async function handleRegister() {
   const password = document.getElementById('registerPassword').value;
   const clubName = document.getElementById('registerClubName').value.trim();
   const referral = document.getElementById('registerReferral').value.trim();
+  const submitBtn = document.querySelector('#registerForm button[type="submit"]');
+  const originalText = submitBtn ? submitBtn.textContent : 'Buat Akun';
 
   if (!username || !email || !password || !clubName) {
     alert('❌ Semua field wajib diisi!');
@@ -113,6 +136,11 @@ async function handleRegister() {
   if (password.length < 6) {
     alert('❌ Password minimal 6 karakter!');
     return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Memproses...';
   }
 
   try {
@@ -146,18 +174,29 @@ async function handleRegister() {
 
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(credential.user, { displayName: username });
-    await getOrCreateProfile(credential.user, {
+    await credential.user.getIdToken();
+    await ensureFirestoreReady(3, 1000);
+    await withFirestoreRetry(() => getOrCreateProfile(credential.user, {
       username,
       club_name: clubName,
       referred_by: referral || null
-    });
-    await getOrCreateTeam(credential.user, clubName);
+    }), 3, 1000);
+    await withFirestoreRetry(() => getOrCreateTeam(credential.user, clubName), 3, 1000);
     await signOut(auth);
 
     alert('✅ Registrasi berhasil! Silakan login.');
     showLogin();
   } catch (err) {
-    alert('❌ Registrasi gagal: ' + (err.message || err.code));
+    if (isFirestoreOfflineError(err)) {
+      alert('❌ Gagal terhubung ke server, cek koneksi / buka di tab baru');
+    } else {
+      alert('❌ Registrasi gagal: ' + (err.message || err.code));
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
   }
 }
 

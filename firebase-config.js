@@ -5,6 +5,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
   initializeFirestore,
+  memoryLocalCache,
+  enableNetwork,
   doc,
   getDoc,
   getDocs,
@@ -30,12 +32,13 @@ export const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// Gunakan experimentalForceLongPolling agar koneksi Firestore stabil di browser/iframe/proxy
+// Paksa long-polling dan memoryLocalCache (tanpa IndexedDB persistence) agar stabil di preview iframe
 export const db = initializeFirestore(
   app,
   {
     experimentalForceLongPolling: true,
-    useFetchStreams: false
+    useFetchStreams: false,
+    localCache: memoryLocalCache()
   },
   firebaseConfig.firestoreDatabaseId || undefined
 );
@@ -49,6 +52,75 @@ export const OperationType = {
   GET: 'get',
   WRITE: 'write'
 };
+
+export function isFirestoreOfflineError(error) {
+  const code = String(error?.code || '').toLowerCase();
+  const msg = String(error?.message || error || '').toLowerCase();
+  return (
+    code === 'unavailable' ||
+    code === 'failed-precondition' ||
+    msg.includes('client is offline') ||
+    msg.includes('could not reach cloud firestore backend') ||
+    msg.includes('failed to get document') ||
+    msg.includes('unavailable') ||
+    msg.includes('network') ||
+    msg.includes('gagal terhubung ke server')
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function withFirestoreRetry(operation, maxRetries = 3, delayMs = 1000) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isFirestoreOfflineError(error) || attempt === maxRetries) {
+        throw error;
+      }
+      try {
+        await enableNetwork(db);
+      } catch (_) {
+        // Abaikan error enableNetwork sementara dan lanjutkan jeda retry
+      }
+      await sleep(delayMs);
+    }
+  }
+  throw lastError;
+}
+
+// Pastikan Firestore backend sudah siap menerima request sebelum query login
+export async function ensureFirestoreReady(maxRetries = 3, delayMs = 1000) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await enableNetwork(db);
+      await getDocFromServer(doc(db, 'test', 'connection'));
+      return true;
+    } catch (error) {
+      const code = String(error?.code || '').toLowerCase();
+      // permission-denied atau not-found berarti server Firestore merespons dan online
+      if (code === 'permission-denied' || code === 'not-found') {
+        return true;
+      }
+      lastError = error;
+      if (!isFirestoreOfflineError(error)) {
+        return true;
+      }
+      if (attempt < maxRetries) {
+        await sleep(delayMs);
+      }
+    }
+  }
+  const offlineErr = new Error('Gagal terhubung ke server, cek koneksi / buka di tab baru');
+  offlineErr.code = 'unavailable';
+  offlineErr.cause = lastError;
+  throw offlineErr;
+}
 
 export function handleFirestoreError(error, operationType, path) {
   const errInfo = {
@@ -93,14 +165,14 @@ export function getCurrentUserOnce() {
   });
 }
 
-// Helper: Ambil profile user sekali dengan getDoc (buat default jika belum ada)
+// Helper: Ambil profile user sekali dengan getDoc + retry (buat default jika belum ada)
 export async function getOrCreateProfile(user, defaults = {}) {
   if (!user || !user.uid) return null;
   const path = `profiles/${user.uid}`;
   const profileRef = doc(db, 'profiles', user.uid);
   let snap;
   try {
-    snap = await getDoc(profileRef);
+    snap = await withFirestoreRetry(() => getDoc(profileRef), 3, 1000);
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, path);
   }
@@ -136,21 +208,21 @@ export async function getOrCreateProfile(user, defaults = {}) {
   };
 
   try {
-    await setDoc(profileRef, newProfile);
+    await withFirestoreRetry(() => setDoc(profileRef, newProfile), 3, 1000);
     return newProfile;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
   }
 }
 
-// Helper: Ambil team milik user sekali dengan getDocs (buat default jika belum ada)
+// Helper: Ambil team milik user sekali dengan getDocs + retry (buat default jika belum ada)
 export async function getOrCreateTeam(user, clubNameFallback = null) {
   if (!user || !user.uid) return null;
   const path = 'teams';
   let snap;
   try {
     const q = query(collection(db, 'teams'), where('user_id', '==', user.uid));
-    snap = await getDocs(q);
+    snap = await withFirestoreRetry(() => getDocs(q), 3, 1000);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path);
   }
@@ -186,7 +258,7 @@ export async function getOrCreateTeam(user, clubNameFallback = null) {
   };
 
   try {
-    const teamRef = await addDoc(collection(db, 'teams'), newTeam);
+    const teamRef = await withFirestoreRetry(() => addDoc(collection(db, 'teams'), newTeam), 3, 1000);
     return { id: teamRef.id, ...newTeam };
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
