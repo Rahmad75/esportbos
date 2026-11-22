@@ -6,39 +6,58 @@ import {
 import {
   auth,
   db,
+  ensureFirestoreReady,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  handleFirestoreError,
+  isFirestoreOfflineError,
+  OperationType,
+  withFirestoreRetry
 } from './firebase-config.js';
 
+let currentUser = null;
 let currentUserId = null;
 let currentTeamId = null;
 let userGold = 0;
 let hiredStaff = [];
+let isOfflineFallback = false;
+let bgRetryTimer = null;
+let bgRetryCount = 0;
+const MAX_BG_RETRIES = 3;
 
 const availableStaff = [
-  { id: 'coach', name: 'Head Coach', icon: '📋', desc: 'Meningkatkan Moral Tim', baseCost: 5000, bonus: '+2 Moral Tim' },
-  { id: 'analyst', name: 'Data Analyst', icon: '📊', desc: 'Meningkatkan XP Pertandingan', baseCost: 7500, bonus: '+5% Match XP' },
-  { id: 'physio', name: 'Physiotherapist', icon: '🩺', desc: 'Mempercepat Pemulihan Stamina', baseCost: 6000, bonus: '+10% Stamina Recovery' },
+  { id: 'coach', name: 'Head Coach (Pelatih)', icon: '📋', desc: 'Meningkatkan Moral Tim', baseCost: 5000, bonus: '+2 Moral Tim' },
+  { id: 'analyst', name: 'Data Analyst (Analis)', icon: '📊', desc: 'Meningkatkan XP Pertandingan', baseCost: 7500, bonus: '+5% Match XP' },
+  { id: 'physio', name: 'Physiotherapist (Dokter Tim)', icon: '🩺', desc: 'Mempercepat Pemulihan Stamina', baseCost: 6000, bonus: '+10% Stamina Recovery' },
   { id: 'manager', name: 'Team Manager', icon: '💼', desc: 'Meningkatkan Pendapatan Sponsor', baseCost: 10000, bonus: '+5% Sponsor Income' }
 ];
 
+const defaultOfflineBonusPreview = [
+  { id: 'coach', level: 1 }
+];
+
 async function handleLogout() {
+  if (bgRetryTimer) clearTimeout(bgRetryTimer);
   await signOut(auth);
   window.location.href = 'index.html';
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-  const user = await getCurrentUserOnce();
-  if (!user) { window.location.href = 'index.html'; return; }
-  currentUserId = user.uid;
+function setLoadingState() {
+  const grid = document.getElementById('staffGrid');
+  const summary = document.getElementById('bonusSummary');
+  if (grid) {
+    grid.innerHTML = '<p style="grid-column: 1 / -1; color: #aaa; text-align: center; padding: 20px 0;">Memuat staff...</p>';
+  }
+  if (summary) {
+    summary.innerHTML = '<p style="color: #aaa; text-align: center;">Memuat staff...</p>';
+  }
+}
 
-  const profile = await getOrCreateProfile(user);
-  const team = await getOrCreateTeam(user, profile?.club_name);
-
+function applyProfileAndTeamUI(profile, team) {
   if (profile) {
     userGold = profile.gold || 0;
-    const username = profile.username || user.email.split('@')[0];
+    const username = profile.username || currentUser?.email?.split('@')[0] || 'Manager';
     document.getElementById('userName').textContent = username;
     document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
     document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
@@ -48,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   if (team) {
     currentTeamId = team.id;
-    hiredStaff = team.hired_staff || [];
+    hiredStaff = Array.isArray(team.hired_staff) ? team.hired_staff : [];
 
     document.getElementById('clubName').textContent = team.team_name;
     document.getElementById('clubRank').textContent = `${team.wins}W - ${team.draws}D - ${team.losses}L`;
@@ -57,15 +76,92 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('moralText').textContent = `Moral: ${team.moral}%`;
     document.getElementById('moralBar').style.width = `${team.moral}%`;
   }
+}
 
-  renderStaffGrid();
-  renderBonusSummary();
+async function fetchLiveStaffData() {
+  await ensureFirestoreReady(3, 1000);
+  const profile = await withFirestoreRetry(() => getOrCreateProfile(currentUser), 3, 1000);
+  const team = await withFirestoreRetry(() => getOrCreateTeam(currentUser, profile?.club_name), 3, 1000);
+  applyProfileAndTeamUI(profile, team);
+}
+
+function scheduleBackgroundRetry() {
+  if (bgRetryTimer || bgRetryCount >= MAX_BG_RETRIES) return;
+  bgRetryTimer = setTimeout(async () => {
+    bgRetryTimer = null;
+    bgRetryCount += 1;
+    try {
+      await fetchLiveStaffData();
+      isOfflineFallback = false;
+      bgRetryCount = 0;
+      renderStaffGrid();
+      renderBonusSummary();
+    } catch (_) {
+      scheduleBackgroundRetry();
+    }
+  }, 5000);
+}
+
+async function loadStaffPage(showLoading = true) {
+  if (bgRetryTimer) {
+    clearTimeout(bgRetryTimer);
+    bgRetryTimer = null;
+  }
+  if (showLoading) {
+    setLoadingState();
+  }
+
+  try {
+    await fetchLiveStaffData();
+    isOfflineFallback = false;
+    bgRetryCount = 0;
+    renderStaffGrid();
+    renderBonusSummary();
+  } catch (err) {
+    console.error('Gagal memuat data staff dari Firestore:', err);
+    isOfflineFallback = true;
+    const username = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Manager';
+    const userNameEl = document.getElementById('userName');
+    const clubNameEl = document.getElementById('clubName');
+    if (userNameEl && userNameEl.textContent === 'Loading...') userNameEl.textContent = username;
+    if (clubNameEl && clubNameEl.textContent === 'Loading...') clubNameEl.textContent = `${username} FC`;
+    renderStaffGrid();
+    renderBonusSummary();
+    scheduleBackgroundRetry();
+  }
+}
+
+function retryLoadStaff() {
+  bgRetryCount = 0;
+  loadStaffPage(true);
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  setLoadingState();
+  const user = await getCurrentUserOnce();
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUser = user;
+  currentUserId = user.uid;
+  await loadStaffPage(true);
 });
 
 function renderStaffGrid() {
   const grid = document.getElementById('staffGrid');
-  grid.innerHTML = availableStaff.map(staff => {
-    const hired = hiredStaff.find(h => h.id === staff.id);
+  if (!grid) return;
+
+  const activeList = isOfflineFallback && hiredStaff.length === 0 ? defaultOfflineBonusPreview : hiredStaff;
+
+  const offlineBanner = isOfflineFallback
+    ? `
+      <div style="grid-column: 1 / -1; background: rgba(255, 107, 107, 0.12); border: 1px solid #ff6b6b; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #fff;">
+        <span style="font-size: 13px; color: #ffd6d6;">⚠️ Gagal terhubung ke server, buka di tab baru. Menampilkan daftar staff default sementara.</span>
+        <button type="button" onclick="retryLoadStaff()" style="padding: 8px 14px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; white-space: nowrap;">Coba Lagi</button>
+      </div>
+    `
+    : '';
+
+  const cardsHtml = availableStaff.map(staff => {
+    const hired = activeList.find(h => h.id === staff.id);
     const level = hired ? hired.level : 0;
     const cost = staff.baseCost * (level + 1);
     const isHired = level > 0;
@@ -85,31 +181,46 @@ function renderStaffGrid() {
       </div>
     `;
   }).join('');
+
+  grid.innerHTML = offlineBanner + cardsHtml;
 }
 
 function renderBonusSummary() {
   const summaryDiv = document.getElementById('bonusSummary');
-  if (hiredStaff.length === 0) {
+  if (!summaryDiv) return;
+
+  const listToRender = isOfflineFallback && hiredStaff.length === 0 ? defaultOfflineBonusPreview : hiredStaff;
+
+  if (listToRender.length === 0) {
     summaryDiv.innerHTML = '<p style="color: #999; text-align: center;">Belum ada staff yang direkrut. Rekrut staff untuk mendapatkan bonus!</p>';
     return;
   }
 
-  summaryDiv.innerHTML = hiredStaff.map(h => {
+  const itemsHtml = listToRender.map(h => {
     const staff = availableStaff.find(s => s.id === h.id);
+    if (!staff) return '';
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #16213e; border-radius: 8px; margin-bottom: 10px; color: white; border-left: 4px solid #00d4ff;">
         <div>
-          <strong style="color: #00d4ff;">${staff.name}</strong> (Level ${h.level})
+          <strong style="color: #00d4ff;">${staff.name}</strong> (Level ${h.level})${isOfflineFallback ? ' <span style="font-size:11px;color:#ffd700;">(Default Offline)</span>' : ''}
           <p style="font-size: 12px; color: #aaa; margin: 5px 0 0 0;">${staff.bonus}</p>
         </div>
         <div style="font-size: 24px;">${staff.icon}</div>
       </div>
     `;
   }).join('');
+
+  summaryDiv.innerHTML = itemsHtml || '<p style="color: #999; text-align: center;">Belum ada staff yang direkrut. Rekrut staff untuk mendapatkan bonus!</p>';
 }
 
 async function handleStaffAction(staffId) {
+  if (isOfflineFallback || !currentTeamId || !currentUserId) {
+    alert('❌ Gagal terhubung ke server, buka di tab baru atau klik Coba Lagi sebelum merekrut staff.');
+    return;
+  }
+
   const staff = availableStaff.find(s => s.id === staffId);
+  if (!staff) return;
   const hired = hiredStaff.find(h => h.id === staffId);
   const level = hired ? hired.level : 0;
   const cost = staff.baseCost * (level + 1);
@@ -121,28 +232,40 @@ async function handleStaffAction(staffId) {
 
   if (!confirm(`${hired ? 'Upgrade' : 'Rekrut'} ${staff.name} ke Level ${level + 1} seharga ${cost.toLocaleString('id-ID')} Gold?`)) return;
 
-  const newGold = userGold - cost;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+  try {
+    const newGold = userGold - cost;
+    await withFirestoreRetry(() => updateDoc(doc(db, 'profiles', currentUserId), {
+      gold: newGold,
+      updated_at: new Date().toISOString()
+    }), 3, 1000);
+    userGold = newGold;
+    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
 
-  if (hired) {
-    hired.level += 1;
-  } else {
-    hiredStaff.push({ id: staffId, level: 1 });
+    const updatedStaff = hiredStaff.map(item => ({ ...item }));
+    const existingItem = updatedStaff.find(h => h.id === staffId);
+    if (existingItem) {
+      existingItem.level += 1;
+    } else {
+      updatedStaff.push({ id: staffId, level: 1 });
+    }
+
+    await withFirestoreRetry(() => updateDoc(doc(db, 'teams', currentTeamId), {
+      hired_staff: updatedStaff,
+      updated_at: new Date().toISOString()
+    }), 3, 1000);
+    hiredStaff = updatedStaff;
+
+    const newLevel = existingItem ? existingItem.level : 1;
+    alert(`✅ ${staff.name} berhasil ${hired ? 'di-upgrade' : 'direkrut'} ke Level ${newLevel}!`);
+    renderStaffGrid();
+    renderBonusSummary();
+  } catch (err) {
+    if (isFirestoreOfflineError(err)) {
+      alert('❌ Gagal terhubung ke server, buka di tab baru');
+    } else {
+      handleFirestoreError(err, OperationType.UPDATE, `teams/${currentTeamId}`);
+    }
   }
-
-  await updateDoc(doc(db, 'teams', currentTeamId), {
-    hired_staff: hiredStaff,
-    updated_at: new Date().toISOString()
-  });
-
-  alert(`✅ ${staff.name} berhasil ${hired ? 'di-upgrade' : 'direkrut'} ke Level ${hired ? hired.level : 1}!`);
-  renderStaffGrid();
-  renderBonusSummary();
 }
 
 function closeStaffModal() {
@@ -152,3 +275,4 @@ function closeStaffModal() {
 window.handleLogout = handleLogout;
 window.handleStaffAction = handleStaffAction;
 window.closeStaffModal = closeStaffModal;
+window.retryLoadStaff = retryLoadStaff;
