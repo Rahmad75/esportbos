@@ -7,9 +7,11 @@ import {
   auth,
   db,
   ensureFirestoreReady,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
   getOrCreateTeam,
+  getSafeUserAvatarUrl,
   handleFirestoreError,
   isFirestoreOfflineError,
   OperationType,
@@ -59,7 +61,11 @@ function applyProfileAndTeamUI(profile, team) {
     userGold = profile.gold || 0;
     const username = profile.username || currentUser?.email?.split('@')[0] || 'Manager';
     document.getElementById('userName').textContent = username;
-    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    const navAvatar = document.getElementById('navAvatar');
+    if (navAvatar) {
+      navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+      navAvatar.src = getSafeUserAvatarUrl(profile, username);
+    }
     document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
     document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
     document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');

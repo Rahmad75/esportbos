@@ -8,9 +8,12 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  getPlayerAvatarUrl,
+  getSafeUserAvatarUrl
 } from './firebase-config.js';
 
 async function handleLogout() {
@@ -32,7 +35,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (profile) {
       const username = profile.username || user.email.split('@')[0];
       document.getElementById('userName').textContent = username;
-      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      const navAvatar = document.getElementById('navAvatar');
+      if (navAvatar) {
+        navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+        navAvatar.src = getSafeUserAvatarUrl(profile, username);
+      }
       document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
       document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
       document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
@@ -66,20 +73,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (players && players.length > 0) {
       totalPlayersEl.textContent = players.length;
-      rosterGrid.innerHTML = players.map(player => `
-        <div class="player-card" onclick="showPlayerDetail('${player.id}', '${player.name}', '${player.position}', ${player.overall_rating}, ${player.market_value || 0})" style="cursor: pointer; background: #1a1a2e; border-radius: 10px; padding: 15px; color: white; text-align: center; border: 1px solid #333; transition: transform 0.2s;">
+      rosterGrid.innerHTML = players.map(player => {
+        const avatarUrl = getPlayerAvatarUrl(player);
+        const safeName = String(player.name || 'Pemain').replace(/'/g, "\\'");
+        const safeGender = String(player.gender || '').replace(/'/g, "\\'");
+        return `
+        <div class="player-card" onclick="showPlayerDetail('${player.id}', '${safeName}', '${player.position}', ${player.overall_rating}, ${player.market_value || 0}, '${safeGender}')" style="cursor: pointer; background: #1a1a2e; border-radius: 10px; padding: 15px; color: white; text-align: center; border: 1px solid #333; transition: transform 0.2s;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
             <span style="background: #00d4ff; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">${player.position}</span>
             <span style="background: #ffd700; color: #000; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 14px;">${player.overall_rating}</span>
           </div>
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${player.name}" alt="${player.name}" style="width: 80px; height: 80px; border-radius: 50%; background: #333; margin-bottom: 10px;">
+          <img src="${avatarUrl}" alt="${player.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); margin-bottom: 10px;">
           <h4 style="margin: 5px 0; color: #fff;">${player.name}</h4>
           <p style="font-size: 12px; color: #aaa; margin: 0;">${player.nationality || 'ID'} • ${player.age || 18} Thn</p>
           <div style="margin-top: 10px; color: #28a745; font-weight: bold;">
             💰 ${(player.market_value || 0).toLocaleString('id-ID')}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     } else {
       totalPlayersEl.textContent = '0';
       rosterGrid.innerHTML = `
@@ -97,13 +109,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 });
 
-function showPlayerDetail(id, name, position, rating, value) {
+function showPlayerDetail(id, name, position, rating, value, gender = '') {
   const modal = document.getElementById('playerModal');
   const body = document.getElementById('modalBody');
+  const avatarUrl = getPlayerAvatarUrl({ id, name, gender });
 
   body.innerHTML = `
     <div style="text-align: center; padding: 20px;">
-      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${name}" style="width: 120px; height: 120px; border-radius: 50%; background: #333; margin-bottom: 15px;">
+      <img src="${avatarUrl}" alt="${name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); margin-bottom: 15px;">
       <h2 style="color: #00d4ff; margin: 0;">${name}</h2>
       <p style="color: #aaa; margin-top: 5px;">${position} • Rating: <strong style="color: #ffd700;">${rating}</strong></p>
       <hr style="border-color: #333; margin: 20px 0;">

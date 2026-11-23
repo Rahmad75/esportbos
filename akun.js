@@ -14,10 +14,12 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   storage,
   getCurrentUserOnce,
   getOrCreateProfile,
   getOrCreateTeam,
+  getSafeUserAvatarUrl,
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
@@ -95,10 +97,18 @@ async function removeAvatar() {
     });
 
     const username = document.getElementById('usernameInput').value || 'default';
-    const defaultAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + username;
+    const defaultAvatar = getSafeUserAvatarUrl({ id: currentUserId }, username);
 
-    document.getElementById('profileAvatar').src = defaultAvatar;
-    document.getElementById('navAvatar').src = defaultAvatar;
+    const profileImg = document.getElementById('profileAvatar');
+    const navImg = document.getElementById('navAvatar');
+    if (profileImg) {
+      profileImg.onerror = () => { profileImg.onerror = null; profileImg.src = FALLBACK_AVATAR_URL; };
+      profileImg.src = defaultAvatar;
+    }
+    if (navImg) {
+      navImg.onerror = () => { navImg.onerror = null; navImg.src = FALLBACK_AVATAR_URL; };
+      navImg.src = defaultAvatar;
+    }
 
     alert('Foto profil dihapus.');
   } catch (err) {
@@ -196,9 +206,17 @@ document.addEventListener('DOMContentLoaded', async function() {
       document.getElementById('countryInput').value = profile.country || 'ID';
       document.getElementById('cityInput').value = profile.city || '';
 
-      const avatarUrl = profile.avatar_url || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + username);
-      document.getElementById('profileAvatar').src = avatarUrl;
-      document.getElementById('navAvatar').src = avatarUrl;
+      const avatarUrl = getSafeUserAvatarUrl(profile, username);
+      const profileImg = document.getElementById('profileAvatar');
+      const navImg = document.getElementById('navAvatar');
+      if (profileImg) {
+        profileImg.onerror = () => { profileImg.onerror = null; profileImg.src = FALLBACK_AVATAR_URL; };
+        profileImg.src = avatarUrl;
+      }
+      if (navImg) {
+        navImg.onerror = () => { navImg.onerror = null; navImg.src = FALLBACK_AVATAR_URL; };
+        navImg.src = avatarUrl;
+      }
 
       document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
       document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');

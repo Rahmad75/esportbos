@@ -10,9 +10,12 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  getPlayerAvatarUrl,
+  getSafeUserAvatarUrl
 } from './firebase-config.js';
 
 let currentUserId = null;
@@ -50,14 +53,18 @@ async function loadPlayers() {
       return;
     }
 
-    grid.innerHTML = players.map(p => `
+    grid.innerHTML = players.map(p => {
+      const avatarUrl = getPlayerAvatarUrl(p);
+      const safeName = String(p.name || 'Pemain').replace(/'/g, "\\'");
+      return `
       <div style="background:#16213e;padding:15px;border-radius:8px;border:1px solid #333;text-align:center;color:white;">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width:60px;height:60px;border-radius:50%;margin-bottom:10px;">
+        <img src="${avatarUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #FFD700;box-shadow:0 4px 14px rgba(0,0,0,0.55);margin-bottom:10px;">
         <h4 style="margin:5px 0;color:#00d4ff;">${p.name}</h4>
         <p style="font-size:12px;color:#aaa;">${p.position} • Rating: <strong style="color:#ffd700;">${p.overall_rating}</strong></p>
-        <button onclick="trainPlayer('${p.id}', '${p.name}', ${p.overall_rating})" style="margin-top:10px;width:100%;padding:8px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;">Latih Pemain</button>
+        <button onclick="trainPlayer('${p.id}', '${safeName}', ${p.overall_rating})" style="margin-top:10px;width:100%;padding:8px;background:#28a745;color:white;border:none;border-radius:5px;cursor:pointer;">Latih Pemain</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   } catch (err) {
     console.error('Error loading players:', err);
   }
@@ -99,7 +106,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (profile) {
       const username = profile.username || user.email.split('@')[0];
       document.getElementById('userName').textContent = username;
-      document.getElementById('navAvatar').src = profile.avatar_url || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + username);
+      const navAvatar = document.getElementById('navAvatar');
+      if (navAvatar) {
+        navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+        navAvatar.src = getSafeUserAvatarUrl(profile, username);
+      }
       document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
       document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
       document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');

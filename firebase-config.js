@@ -264,3 +264,64 @@ export async function getOrCreateTeam(user, clubNameFallback = null) {
     handleFirestoreError(error, OperationType.CREATE, path);
   }
 }
+
+export const FALLBACK_AVATAR_URL = 'https://randomuser.me/api/portraits/men/32.jpg';
+
+export function isIllustrationAvatarUrl(url) {
+  if (!url || typeof url !== 'string') return true;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('dicebear') ||
+    lower.includes('avataaars') ||
+    lower.includes('bottts') ||
+    lower.includes('initials') ||
+    lower.includes('.svg') ||
+    lower.startsWith('data:image/svg')
+  );
+}
+
+function computeDeterministicAvatarIndex(seedValue) {
+  const str = String(seedValue ?? '1').trim();
+  if (!str) return 1;
+  if (/^\d+$/.test(str)) {
+    return Number(str) % 99;
+  }
+  const marketIdMatch = str.match(/^m(\d+)$/i);
+  if (marketIdMatch) {
+    return Number(marketIdMatch[1]) % 99;
+  }
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash * 31) + str.charCodeAt(i)) >>> 0;
+  }
+  return hash % 99;
+}
+
+function isFemaleGender(playerOrGender) {
+  const g = String(
+    typeof playerOrGender === 'object' && playerOrGender !== null
+      ? (playerOrGender.gender || playerOrGender.sex || '')
+      : (playerOrGender || '')
+  ).trim().toLowerCase();
+  return g === 'female' || g === 'woman' || g === 'women' || g === 'f' || g === 'p' || g === 'perempuan' || g === 'cewek';
+}
+
+// Selalu gunakan foto portrait fotorealistik deterministik dari randomuser.me (abaikan avatar ilustrasi lama)
+export function getPlayerAvatarUrl(player, fallbackSeed = '') {
+  const idSource = (typeof player === 'object' && player !== null)
+    ? (player.id || player.player_id || player.name || fallbackSeed || '1')
+    : (player || fallbackSeed || '1');
+  const index = computeDeterministicAvatarIndex(idSource);
+  const folder = isFemaleGender(player) ? 'women' : 'men';
+  return `https://randomuser.me/api/portraits/${folder}/${index}.jpg`;
+}
+
+// Untuk profil/navbar user: gunakan foto upload asli jika bukan ilustrasi/SVG, selain itu randomuser.me deterministik
+export function getSafeUserAvatarUrl(profile, fallbackSeed = 'manager') {
+  if (profile && !isIllustrationAvatarUrl(profile.avatar_url)) {
+    return profile.avatar_url;
+  }
+  const idSource = profile?.id || fallbackSeed || 'manager';
+  const index = computeDeterministicAvatarIndex(idSource);
+  return `https://randomuser.me/api/portraits/men/${index}.jpg`;
+}

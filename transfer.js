@@ -11,9 +11,12 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
   getOrCreateTeam,
+  getPlayerAvatarUrl,
+  getSafeUserAvatarUrl,
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
@@ -41,7 +44,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       userGold = profile.gold || 0;
       const username = profile.username || user.email.split('@')[0];
       document.getElementById('userName').textContent = username;
-      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      const navAvatar = document.getElementById('navAvatar');
+      if (navAvatar) {
+        navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+        navAvatar.src = getSafeUserAvatarUrl(profile, username);
+      }
       document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
       document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
       document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
@@ -110,15 +117,19 @@ async function renderMarket() {
     return;
   }
 
-  grid.innerHTML = filtered.map(p => `
+  grid.innerHTML = filtered.map(p => {
+    const avatarUrl = getPlayerAvatarUrl(p);
+    const safeName = String(p.name || 'Pemain').replace(/'/g, "\\'");
+    return `
     <div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; color: white;">
-      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width: 60px; height: 60px; border-radius: 50%; background: #0f3460; margin-bottom: 10px;">
+      <img src="${avatarUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); margin-bottom: 10px;">
       <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
       <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
       <p style="font-size: 14px; color: #28a745; font-weight: bold; margin: 10px 0;">💰 ${p.market_value.toLocaleString('id-ID')} Gold</p>
-      <button onclick="buyPlayer('${p.id}', '${p.name}', ${p.market_value}, '${p.position}', ${p.overall_rating})" style="width: 100%; padding: 8px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Beli Pemain</button>
+      <button onclick="buyPlayer('${p.id}', '${safeName}', ${p.market_value}, '${p.position}', ${p.overall_rating})" style="width: 100%; padding: 8px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Beli Pemain</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function renderMyTeam() {
@@ -142,15 +153,19 @@ async function renderMyTeam() {
     return;
   }
 
-  grid.innerHTML = players.map(p => `
+  grid.innerHTML = players.map(p => {
+    const avatarUrl = getPlayerAvatarUrl(p);
+    const safeName = String(p.name || 'Pemain').replace(/'/g, "\\'");
+    return `
     <div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; color: white;">
-      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}" style="width: 60px; height: 60px; border-radius: 50%; background: #0f3460; margin-bottom: 10px;">
+      <img src="${avatarUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); margin-bottom: 10px;">
       <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
       <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
       <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">Nilai Jual: 💰 ${Math.floor((p.market_value || 0) * 0.8).toLocaleString('id-ID')} Gold</p>
-      <button onclick="sellPlayer('${p.id}', '${p.name}', ${p.market_value || 0}, '${p.position}')" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
+      <button onclick="sellPlayer('${p.id}', '${safeName}', ${p.market_value || 0}, '${p.position}')" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function buyPlayer(playerId, playerName, price, position = 'Mid', rating = 80) {

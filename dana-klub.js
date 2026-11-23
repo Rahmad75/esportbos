@@ -8,9 +8,11 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
   getOrCreateTeam,
+  getSafeUserAvatarUrl,
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
@@ -218,7 +220,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       const currency = profile.currency || 0;
 
       document.getElementById('userName').textContent = username;
-      document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+      const navAvatar = document.getElementById('navAvatar');
+      if (navAvatar) {
+        navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+        navAvatar.src = getSafeUserAvatarUrl(profile, username);
+      }
 
       document.getElementById('diamondBalance').textContent = diamonds.toLocaleString('id-ID');
       document.getElementById('goldBalance').textContent = gold.toLocaleString('id-ID');

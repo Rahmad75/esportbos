@@ -6,9 +6,11 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  getSafeUserAvatarUrl
 } from './firebase-config.js';
 
 let currentUserId = null;
@@ -40,7 +42,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     userGold = profile.gold || 0;
     const username = profile.username || user.email.split('@')[0];
     document.getElementById('userName').textContent = username;
-    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    const navAvatar = document.getElementById('navAvatar');
+    if (navAvatar) {
+      navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+      navAvatar.src = getSafeUserAvatarUrl(profile, username);
+    }
     document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
     document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
     document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');

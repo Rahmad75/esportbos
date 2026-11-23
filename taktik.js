@@ -11,9 +11,12 @@ import {
 import {
   auth,
   db,
+  FALLBACK_AVATAR_URL,
   getCurrentUserOnce,
   getOrCreateProfile,
-  getOrCreateTeam
+  getOrCreateTeam,
+  getPlayerAvatarUrl,
+  getSafeUserAvatarUrl
 } from './firebase-config.js';
 
 let currentUserId = null;
@@ -37,7 +40,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (profile) {
     const username = profile.username || user.email.split('@')[0];
     document.getElementById('userName').textContent = username;
-    document.getElementById('navAvatar').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+    const navAvatar = document.getElementById('navAvatar');
+    if (navAvatar) {
+      navAvatar.onerror = () => { navAvatar.onerror = null; navAvatar.src = FALLBACK_AVATAR_URL; };
+      navAvatar.src = getSafeUserAvatarUrl(profile, username);
+    }
     document.getElementById('diamondBalance').textContent = (profile.diamonds || 0).toLocaleString('id-ID');
     document.getElementById('goldBalance').textContent = (profile.gold || 0).toLocaleString('id-ID');
     document.getElementById('currencyBalance').textContent = (profile.currency || 0).toLocaleString('id-ID');
@@ -82,13 +89,21 @@ function openPositionPicker(pos) {
   if (myPlayers.length === 0) {
     list.innerHTML = '<p style="text-align:center;color:#aaa;">Belum ada pemain</p>';
   } else {
-    list.innerHTML = myPlayers.map(p => `
-      <div onclick="assignPlayer('${pos}','${p.name}',${p.overall_rating})"
-           style="padding:10px;border-bottom:1px solid #333;cursor:pointer;">
-        <strong>${p.name}</strong> (${p.position}) -
-        <span style="color:#ffd700;">${p.overall_rating}</span>
+    list.innerHTML = myPlayers.map(p => {
+      const avatarUrl = getPlayerAvatarUrl(p);
+      const safeName = String(p.name || 'Pemain').replace(/'/g, "\\'");
+      const safeGender = String(p.gender || '').replace(/'/g, "\\'");
+      return `
+      <div onclick="assignPlayer('${pos}','${safeName}',${p.overall_rating},'${p.id}','${safeGender}')"
+           style="display:flex;align-items:center;gap:14px;padding:12px;border-bottom:1px solid #333;cursor:pointer;">
+        <img src="${avatarUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #FFD700;box-shadow:0 4px 14px rgba(0,0,0,0.55);flex-shrink:0;">
+        <div style="text-align:left;">
+          <strong style="color:#fff;font-size:15px;">${p.name}</strong>
+          <div style="color:#aaa;font-size:12px;margin-top:4px;">${p.position} • Rating <span style="color:#ffd700;font-weight:bold;">${p.overall_rating}</span></div>
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
   modal.style.display = 'flex';
   modal.style.position = 'fixed';
@@ -104,11 +119,19 @@ function closePlayerPicker() {
   document.getElementById('playerPickerModal').style.display = 'none';
 }
 
-function assignPlayer(pos, name, rating) {
-  currentFormation[pos] = { name, rating };
-  document.getElementById(`slot-${pos}`).innerHTML =
-    `<span style="font-size:10px;color:#fff;">${name}</span><br><span style="color:#ffd700;">${rating}</span>`;
-  document.getElementById(`slot-${pos}`).style.background = '#00d4ff';
+function renderSlotPlayer(pos, player) {
+  const slotEl = document.getElementById(`slot-${pos}`);
+  if (!slotEl || !player) return;
+  const matched = myPlayers.find(p => p.id === player.id || p.name === player.name);
+  const avatarUrl = getPlayerAvatarUrl(matched || player);
+  slotEl.innerHTML = `<img src="${avatarUrl}" alt="${player.name || pos}" class="slot-avatar" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid #FFD700;box-shadow:0 4px 12px rgba(0,0,0,0.55);">`;
+  slotEl.classList.add('filled');
+  slotEl.title = `${player.name} (${player.rating})`;
+}
+
+function assignPlayer(pos, name, rating, id = '', gender = '') {
+  currentFormation[pos] = { id: id || undefined, name, rating, gender: gender || undefined };
+  renderSlotPlayer(pos, currentFormation[pos]);
   closePlayerPicker();
   calculateSynergy();
 }
@@ -116,8 +139,11 @@ function assignPlayer(pos, name, rating) {
 function resetFormation() {
   ['top', 'jungle', 'mid', 'adc', 'support'].forEach(pos => {
     currentFormation[pos] = null;
-    document.getElementById(`slot-${pos}`).innerHTML = '<span class="slot-icon">❓</span>';
-    document.getElementById(`slot-${pos}`).style.background = 'transparent';
+    const slotEl = document.getElementById(`slot-${pos}`);
+    slotEl.innerHTML = '<span class="slot-icon">❓</span>';
+    slotEl.classList.remove('filled');
+    slotEl.style.background = 'transparent';
+    slotEl.title = '';
   });
   calculateSynergy();
 }
@@ -155,9 +181,7 @@ async function loadTacticsFromFirebase(teamId) {
         currentFormation = data.formation;
         for (const [pos, player] of Object.entries(currentFormation)) {
           if (player) {
-            document.getElementById(`slot-${pos}`).innerHTML =
-              `<span style="font-size:10px;color:#fff;">${player.name}</span><br><span style="color:#ffd700;">${player.rating}</span>`;
-            document.getElementById(`slot-${pos}`).style.background = '#00d4ff';
+            renderSlotPlayer(pos, player);
           }
         }
       }
