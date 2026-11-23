@@ -20,6 +20,7 @@ import {
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
+import { advanceMarketTurn, formatTurnNotification } from './market-engine.js';
 
 let currentUserId = null;
 let currentTeamId = null;
@@ -165,7 +166,10 @@ async function simulateMatch() {
       duration_minutes: 30
     });
 
-    alert(`✅ Pertandingan Selesai!\n\nReward: ${result === 'win' ? '10,000' : result === 'draw' ? '2,000' : '500'} Currency\nMatch ke-${newMatchCount}/3 hari ini\nSisa match: ${3 - newMatchCount}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
+    const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1 });
+    const marketNote = formatTurnNotification(marketUpdate.latestEntry);
+
+    alert(`✅ Pertandingan Selesai!\n\nReward: ${result === 'win' ? '10,000' : result === 'draw' ? '2,000' : '500'} Currency\nMatch ke-${newMatchCount}/3 hari ini\nSisa match: ${3 - newMatchCount}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
   } catch (err) {
     console.error('Error saving match:', err);
     handleFirestoreError(err, OperationType.WRITE, `teams/${currentTeamId}/matches`);
