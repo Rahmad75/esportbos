@@ -12,18 +12,29 @@ import {
   getOrCreateTeam,
   getSafeUserAvatarUrl
 } from './firebase-config.js';
+import { loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, executeServerSpend } from './economy-client.js';
 
 let currentUserId = null;
 let currentTeamId = null;
 let userGold = 0;
 let stadiumData = {};
+let economyConfig = null;
+let stadiumLevels = {};
 
-const stadiumLevels = {
-  1: { name: 'Gaming House Sederhana', capacity: 100, ticketPrice: 50, income: 5000, upgradeCost: 15000, icon: '🏠' },
-  2: { name: 'Arena Esport', capacity: 500, ticketPrice: 50, income: 25000, upgradeCost: 50000, icon: '🏟️' },
-  3: { name: 'Stadion Nasional', capacity: 2000, ticketPrice: 50, income: 100000, upgradeCost: 200000, icon: '🏛️' },
-  4: { name: 'Super Arena', capacity: 10000, ticketPrice: 100, income: 500000, upgradeCost: null, icon: '🌌' }
-};
+function buildStadiumLevelsFromConfig(cfg) {
+  const range = cfg.defaultPrices.upgrades.stadiumGold;
+  const min = Number(range.min);
+  const max = Number(range.max);
+  const mid = Math.round((min + max) / 2);
+  const sinkTicketHint = Number(cfg.weeklySink.stadiumMaintenanceCurrency);
+  return {
+    1: { name: 'Gaming House Sederhana', capacity: 100, ticketPrice: 1, income: min, upgradeCost: min, icon: '🏠' },
+    2: { name: 'Arena Esport', capacity: 500, ticketPrice: 1, income: mid, upgradeCost: mid, icon: '🏟️' },
+    3: { name: 'Stadion Nasional', capacity: 2000, ticketPrice: 1, income: max, upgradeCost: max, icon: '🏛️' },
+    4: { name: 'Super Arena', capacity: 10000, ticketPrice: 1, income: max, upgradeCost: null, icon: '🌌', maintenanceRef: sinkTicketHint }
+  };
+}
 
 async function handleLogout() {
   await signOut(auth);
@@ -31,6 +42,8 @@ async function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  economyConfig = await loadEconomyConfig();
+  stadiumLevels = buildStadiumLevelsFromConfig(economyConfig);
   const user = await getCurrentUserOnce();
   if (!user) { window.location.href = 'index.html'; return; }
   currentUserId = user.uid;
@@ -161,23 +174,23 @@ async function upgradeStadion(targetLevel) {
 
   if (!confirm(`Yakin ingin upgrade ke ${nextLevelData.name} seharga ${cost.toLocaleString('id-ID')} Gold?`)) return;
 
-  const newGold = userGold - cost;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+  try {
+    const serverRes = await executeServerSpend({ action: 'stadion_upgrade', currentLevel });
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
-  stadiumData.level = targetLevel;
-  await updateDoc(doc(db, 'teams', currentTeamId), {
-    stadium_level: targetLevel,
-    updated_at: new Date().toISOString()
-  });
+    stadiumData.level = targetLevel;
+    await updateDoc(doc(db, 'teams', currentTeamId), {
+      stadium_level: targetLevel,
+      updated_at: new Date().toISOString()
+    });
 
-  alert(`✅ Stadion berhasil di-upgrade ke ${nextLevelData.name}!`);
-  renderStadionOverview();
-  renderUpgradeStages();
+    alert(`✅ Stadion berhasil di-upgrade ke ${nextLevelData.name}!`);
+    renderStadionOverview();
+    renderUpgradeStages();
+  } catch (err) {
+    alert(`⚠️ ${err.message || 'Gagal upgrade stadion.'}`);
+  }
 }
 
 async function claimTicketIncome() {
@@ -186,27 +199,7 @@ async function claimTicketIncome() {
     return;
   }
 
-  const incomeToClaim = stadiumData.pendingIncome;
-
-  const newGold = userGold + incomeToClaim;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
-
-  stadiumData.pendingIncome = 0;
-  stadiumData.totalIncome += incomeToClaim;
-
-  await updateDoc(doc(db, 'teams', currentTeamId), {
-    pending_stadium_income: 0,
-    total_stadium_income: stadiumData.totalIncome,
-    updated_at: new Date().toISOString()
-  });
-
-  showStadionModal('💵 Klaim Berhasil!', `Anda berhasil mengklaim <strong style="color: #28a745;">${incomeToClaim.toLocaleString('id-ID')} Gold</strong> dari penjualan tiket.`);
-  renderIncomeTab();
+  alert('⚠️ Pendapatan tiket stadion sedang dalam proses migrasi ke validasi server (Economy v2).');
 }
 
 function showStadionModal(title, message) {

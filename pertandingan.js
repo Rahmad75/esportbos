@@ -21,10 +21,13 @@ import {
   OperationType
 } from './firebase-config.js';
 import { advanceMarketTurn, formatTurnNotification } from './market-engine.js';
+import { getMatchReward, loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, claimServerMatchReward } from './economy-client.js';
 
 let currentUserId = null;
 let currentTeamId = null;
 let currentTeamName = 'My Club';
+let economyConfig = null;
 
 function handleLogout() {
   signOut(auth).then(() => { window.location.href = 'index.html'; });
@@ -74,8 +77,13 @@ async function simulateMatch() {
     matchesToday = team.matches_played_today || 0;
   }
 
-  if (matchesToday >= 3) {
-    alert('⚠️ Batas harian tercapai!\nAnda sudah memainkan 3 pertandingan hari ini.\nKembali besok untuk match selanjutnya.\n\nJadwal reset: 00:00 WIB');
+  if (!economyConfig) {
+    economyConfig = await loadEconomyConfig();
+  }
+  const maxMatchesPerDay = Number(economyConfig.matchReward.maxMatchesPerDay);
+
+  if (matchesToday >= maxMatchesPerDay) {
+    alert(`⚠️ Batas harian tercapai!\nAnda sudah memainkan ${maxMatchesPerDay} pertandingan hari ini.\nKembali besok untuk match selanjutnya.\n\nJadwal reset: 00:00 WIB`);
     return;
   }
 
@@ -135,10 +143,26 @@ async function simulateMatch() {
     </div>
   `;
 
-  await giveMatchReward(result);
+  let rewardResp;
+  try {
+    rewardResp = await claimServerMatchReward({
+      result,
+      opponent: randomOpponent,
+      matchId: `MCH-${Date.now()}`
+    });
+  } catch (err) {
+    alert(`⚠️ ${err.message || 'Validasi reward pertandingan gagal di server.'}`);
+    btn.disabled = false;
+    btn.textContent = ' MAIN LAGI!';
+    btn.style.background = '#28a745';
+    return;
+  }
+
+  const matchRewardAmount = Number(rewardResp.reward || getMatchReward(economyConfig, result));
+  applyServerWalletToDOM(rewardResp.wallet);
 
   try {
-    const newMatchCount = matchesToday + 1;
+    const newMatchCount = Number(rewardResp.matchesToday || (matchesToday + 1));
     const wins = (team?.wins || 0) + (result === 'win' ? 1 : 0);
     const draws = (team?.draws || 0) + (result === 'draw' ? 1 : 0);
     const losses = (team?.losses || 0) + (result === 'lose' ? 1 : 0);
@@ -163,13 +187,14 @@ async function simulateMatch() {
       match_date: new Date().toISOString(),
       user_id: currentUserId,
       result: result,
+      reward_currency: matchRewardAmount,
       duration_minutes: 30
     });
 
-    const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1 });
+    const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1, economyConfig });
     const marketNote = formatTurnNotification(marketUpdate.latestEntry);
 
-    alert(`✅ Pertandingan Selesai!\n\nReward: ${result === 'win' ? '10,000' : result === 'draw' ? '2,000' : '500'} Currency\nMatch ke-${newMatchCount}/3 hari ini\nSisa match: ${3 - newMatchCount}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
+    alert(`✅ Pertandingan Selesai!\n\nReward (Validasi Server): +${matchRewardAmount.toLocaleString('id-ID')} Currency\nSaldo Currency: ${Number(rewardResp.wallet?.currency || 0).toLocaleString('id-ID')}\nMatch ke-${newMatchCount}/${maxMatchesPerDay} hari ini\nSisa match: ${Math.max(0, maxMatchesPerDay - newMatchCount)}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
   } catch (err) {
     console.error('Error saving match:', err);
     handleFirestoreError(err, OperationType.WRITE, `teams/${currentTeamId}/matches`);
@@ -180,33 +205,6 @@ async function simulateMatch() {
   }
 
   await loadMatchHistory();
-}
-
-async function giveMatchReward(result) {
-  let reward = 0;
-  if (result === 'win') reward = 10000;
-  else if (result === 'draw') reward = 2000;
-  else if (result === 'lose') reward = 500;
-
-  if (reward > 0 && currentUserId) {
-    try {
-      const profileSnap = await getDoc(doc(db, 'profiles', currentUserId));
-      const profile = profileSnap.exists() ? profileSnap.data() : { currency: 0 };
-      const newBalance = (profile.currency || 0) + reward;
-
-      await updateDoc(doc(db, 'profiles', currentUserId), {
-        currency: newBalance,
-        updated_at: new Date().toISOString()
-      });
-
-      const saldoEl = document.getElementById('currencyBalance');
-      if (saldoEl) saldoEl.textContent = newBalance.toLocaleString('id-ID');
-
-      alert('💰 Reward Pertandingan!\nAnda mendapatkan ' + reward.toLocaleString('id-ID') + ' Currency.');
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `profiles/${currentUserId}`);
-    }
-  }
 }
 
 async function loadMatchHistory() {
@@ -253,6 +251,7 @@ async function loadMatchHistory() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    economyConfig = await loadEconomyConfig();
     const user = await getCurrentUserOnce();
     if (!user) { window.location.href = 'index.html'; return; }
     currentUserId = user.uid;

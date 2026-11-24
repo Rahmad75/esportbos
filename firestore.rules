@@ -199,14 +199,22 @@ service cloud.firestore {
     match /profiles/{userId} {
       allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
       allow list: if isSignedIn() && (resource.data.prediction_score >= 0 || isAdmin());
-      allow create: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming());
+      allow create: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming())
+        && incoming().diamonds == 0
+        && incoming().gold == 0
+        && incoming().currency == 0;
       allow update: if isValidId(userId) && isOwner(userId) && isValidProfile(incoming())
         && incoming().id == existing().id
         && incoming().diff(existing()).affectedKeys().hasOnly([
           'username', 'club_name', 'avatar_url', 'bio', 'country', 'city',
-          'diamonds', 'gold', 'currency',
           'prediction_score', 'prediction_total', 'prediction_correct', 'updated_at'
         ]);
+    }
+
+    match /ledger/{ledgerId} {
+      allow get: if isValidId(ledgerId) && isSignedIn() && (existing().user_id == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.user_id == request.auth.uid || isAdmin());
+      allow create, update, delete: if false;
     }
 
     match /teams/{teamId} {

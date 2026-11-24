@@ -20,11 +20,20 @@ import {
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
+import { loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, executeServerSpend } from './economy-client.js';
 
 let currentTeamId = null;
 let currentTeamName = 'My Club';
 let currentUserId = null;
 let userGold = 0;
+let economyConfig = null;
+
+function getMarketDeductionRate(cfg) {
+  const tax = Number(cfg?.fees?.marketTaxPercent || 0);
+  const listing = Number(cfg?.fees?.listingFeePercent || 0);
+  return (tax + listing) / 100;
+}
 
 async function handleLogout() {
   await signOut(auth);
@@ -33,6 +42,20 @@ async function handleLogout() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    economyConfig = await loadEconomyConfig();
+    const playersCfg = economyConfig.defaultPrices.players;
+    const lowEl = document.getElementById('filterBudgetLow');
+    const midEl = document.getElementById('filterBudgetMid');
+    const highEl = document.getElementById('filterBudgetHigh');
+    if (lowEl) lowEl.textContent = `Rookie (${playersCfg.rookieGold.min} - ${playersCfg.rookieGold.max} Gold)`;
+    if (midEl) midEl.textContent = `Mid (${playersCfg.midGold.min.toLocaleString('id-ID')} - ${playersCfg.midGold.max.toLocaleString('id-ID')} Gold)`;
+    if (highEl) highEl.textContent = `Top (${playersCfg.topGold.min.toLocaleString('id-ID')} - ${playersCfg.topGold.max.toLocaleString('id-ID')} Gold)`;
+
+    const sellInfoEl = document.getElementById('sellInfoText');
+    if (sellInfoEl) {
+      sellInfoEl.textContent = `Pilih pemain untuk dilepas ke pasar transfer (Market tax ${economyConfig.fees.marketTaxPercent}% + listing fee ${economyConfig.fees.listingFeePercent}%).`;
+    }
+
     const user = await getCurrentUserOnce();
     if (!user) { window.location.href = 'index.html'; return; }
     currentUserId = user.uid;
@@ -97,19 +120,21 @@ async function renderMarket() {
     return;
   }
 
+  const playersCfg = economyConfig.defaultPrices.players;
   if (marketPlayers.length === 0) {
     marketPlayers = [
-      { id: 'm1', name: 'Faker Jr.', position: 'Mid', overall_rating: 85, market_value: 12000, nationality: 'KR' },
-      { id: 'm2', name: 'Jungle King', position: 'Jungle', overall_rating: 82, market_value: 8500, nationality: 'ID' },
-      { id: 'm3', name: 'Top Gap', position: 'Top', overall_rating: 79, market_value: 6000, nationality: 'ID' },
-      { id: 'm4', name: 'ADC Carry', position: 'ADC', overall_rating: 88, market_value: 18000, nationality: 'KR' }
+      { id: 'm1', name: 'Faker Jr.', position: 'Mid', overall_rating: 85, market_value: Number(playersCfg.topGold.min), nationality: 'KR' },
+      { id: 'm2', name: 'Jungle King', position: 'Jungle', overall_rating: 82, market_value: Number(playersCfg.midGold.max), nationality: 'ID' },
+      { id: 'm3', name: 'Top Gap', position: 'Top', overall_rating: 79, market_value: Number(playersCfg.midGold.min), nationality: 'ID' },
+      { id: 'm4', name: 'ADC Carry', position: 'ADC', overall_rating: 88, market_value: Number(playersCfg.topGold.max), nationality: 'KR' },
+      { id: 'm5', name: 'Rookie Star', position: 'Support', overall_rating: 70, market_value: Number(playersCfg.rookieGold.max), nationality: 'ID' }
     ].filter(p => posFilter === 'all' || p.position === posFilter);
   }
 
   let filtered = marketPlayers;
-  if (budgetFilter === 'low') filtered = filtered.filter(p => p.market_value < 5000);
-  else if (budgetFilter === 'mid') filtered = filtered.filter(p => p.market_value >= 5000 && p.market_value <= 15000);
-  else if (budgetFilter === 'high') filtered = filtered.filter(p => p.market_value > 15000);
+  if (budgetFilter === 'low') filtered = filtered.filter(p => p.market_value <= Number(playersCfg.rookieGold.max));
+  else if (budgetFilter === 'mid') filtered = filtered.filter(p => p.market_value >= Number(playersCfg.midGold.min) && p.market_value <= Number(playersCfg.midGold.max));
+  else if (budgetFilter === 'high') filtered = filtered.filter(p => p.market_value >= Number(playersCfg.topGold.min));
 
   const grid = document.getElementById('marketGrid');
   if (filtered.length === 0) {
@@ -153,15 +178,17 @@ async function renderMyTeam() {
     return;
   }
 
+  const netMultiplier = 1 - getMarketDeductionRate(economyConfig);
   grid.innerHTML = players.map(p => {
     const avatarUrl = getPlayerAvatarUrl(p);
     const safeName = String(p.name || 'Pemain').replace(/'/g, "\\'");
+    const estSellPrice = Math.floor((p.market_value || 0) * netMultiplier);
     return `
     <div style="background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center; color: white;">
       <img src="${avatarUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR_URL}';" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55); margin-bottom: 10px;">
       <h4 style="margin: 5px 0; color: #00d4ff;">${p.name}</h4>
       <p style="font-size: 12px; color: #aaa;">${p.position} • Rating: <strong style="color: #ffd700;">${p.overall_rating}</strong></p>
-      <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">Nilai Jual: 💰 ${Math.floor((p.market_value || 0) * 0.8).toLocaleString('id-ID')} Gold</p>
+      <p style="font-size: 14px; color: #ffd700; font-weight: bold; margin: 10px 0;">Nilai Jual: 💰 ${estSellPrice.toLocaleString('id-ID')} Gold</p>
       <button onclick="sellPlayer('${p.id}', '${safeName}', ${p.market_value || 0}, '${p.position}')" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Jual Pemain</button>
     </div>
   `;
@@ -178,13 +205,13 @@ async function buyPlayer(playerId, playerName, price, position = 'Mid', rating =
   if (!confirm(`Yakin ingin membeli ${playerName} seharga ${price.toLocaleString('id-ID')} Gold?`)) return;
 
   try {
-    const newGold = userGold - price;
-    await updateDoc(doc(db, 'profiles', currentUserId), {
-      gold: newGold,
-      updated_at: new Date().toISOString()
+    const serverRes = await executeServerSpend({
+      action: 'transfer_buy',
+      price,
+      playerName
     });
-    userGold = newGold;
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
     if (playerId.startsWith('m')) {
       await addDoc(collection(db, 'players'), {
@@ -218,24 +245,25 @@ async function buyPlayer(playerId, playerName, price, position = 'Mid', rating =
     await renderMyTeam();
     await renderHistory();
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'players/transfers');
+    alert(`⚠️ ${err.message || 'Gagal membeli pemain.'}`);
   }
 }
 
 async function sellPlayer(playerId, playerName, price, position = 'Mid') {
   if (!currentUserId || !currentTeamId) return alert('Data tim belum siap.');
-  const sellPrice = Math.floor(price * 0.8);
+  const netMultiplier = 1 - getMarketDeductionRate(economyConfig);
+  const sellPrice = Math.floor(price * netMultiplier);
 
   if (!confirm(`Yakin ingin menjual ${playerName}? Anda akan mendapat ${sellPrice.toLocaleString('id-ID')} Gold.`)) return;
 
   try {
-    const newGold = userGold + sellPrice;
-    await updateDoc(doc(db, 'profiles', currentUserId), {
-      gold: newGold,
-      updated_at: new Date().toISOString()
+    const serverRes = await executeServerSpend({
+      action: 'transfer_sell',
+      marketValue: price,
+      playerName
     });
-    userGold = newGold;
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
     await updateDoc(doc(db, 'players', playerId), {
       team_id: null,
@@ -249,7 +277,7 @@ async function sellPlayer(playerId, playerName, price, position = 'Mid') {
       player_position: String(position).slice(0, 32),
       player_name: String(playerName).slice(0, 80),
       to_team_name: 'Free Agent',
-      bid_amount: sellPrice,
+      bid_amount: serverRes.amount || sellPrice,
       created_at: new Date().toISOString()
     });
 
@@ -258,7 +286,7 @@ async function sellPlayer(playerId, playerName, price, position = 'Mid') {
     await renderMyTeam();
     await renderHistory();
   } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'players/transfers');
+    alert(`⚠️ ${err.message || 'Gagal menjual pemain.'}`);
   }
 }
 

@@ -17,6 +17,8 @@ import {
   OperationType,
   withFirestoreRetry
 } from './firebase-config.js';
+import { loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, executeServerSpend } from './economy-client.js';
 
 let currentUser = null;
 let currentUserId = null;
@@ -28,12 +30,22 @@ let bgRetryTimer = null;
 let bgRetryCount = 0;
 const MAX_BG_RETRIES = 3;
 
+let economyConfig = null;
 const availableStaff = [
-  { id: 'coach', name: 'Head Coach (Pelatih)', icon: '📋', desc: 'Meningkatkan Moral Tim', baseCost: 5000, bonus: '+2 Moral Tim' },
-  { id: 'analyst', name: 'Data Analyst (Analis)', icon: '📊', desc: 'Meningkatkan XP Pertandingan', baseCost: 7500, bonus: '+5% Match XP' },
-  { id: 'physio', name: 'Physiotherapist (Dokter Tim)', icon: '🩺', desc: 'Mempercepat Pemulihan Stamina', baseCost: 6000, bonus: '+10% Stamina Recovery' },
-  { id: 'manager', name: 'Team Manager', icon: '💼', desc: 'Meningkatkan Pendapatan Sponsor', baseCost: 10000, bonus: '+5% Sponsor Income' }
+  { id: 'coach', name: 'Head Coach (Pelatih)', icon: '📋', desc: 'Meningkatkan Moral Tim', tierIndex: 0, bonus: '+2 Moral Tim' },
+  { id: 'physio', name: 'Physiotherapist (Dokter Tim)', icon: '🩺', desc: 'Mempercepat Pemulihan Stamina', tierIndex: 1, bonus: '+10% Stamina Recovery' },
+  { id: 'analyst', name: 'Data Analyst (Analis)', icon: '📊', desc: 'Meningkatkan XP Pertandingan', tierIndex: 2, bonus: '+5% Match XP' },
+  { id: 'manager', name: 'Team Manager', icon: '💼', desc: 'Meningkatkan Pendapatan Sponsor', tierIndex: 3, bonus: '+5% Sponsor Income' }
 ];
+
+function getStaffBaseCost(staff) {
+  const range = economyConfig?.defaultPrices?.staff?.regularGold;
+  if (!range) return 0;
+  const min = Number(range.min);
+  const max = Number(range.max);
+  const steps = Math.max(1, availableStaff.length - 1);
+  return Math.round(min + ((max - min) * staff.tierIndex) / steps);
+}
 
 const defaultOfflineBonusPreview = [
   { id: 'coach', level: 1 }
@@ -144,6 +156,11 @@ function retryLoadStaff() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   setLoadingState();
+  try {
+    economyConfig = await loadEconomyConfig();
+  } catch (err) {
+    console.error('Gagal memuat economy.config.json:', err);
+  }
   const user = await getCurrentUserOnce();
   if (!user) { window.location.href = 'index.html'; return; }
   currentUser = user;
@@ -169,7 +186,7 @@ function renderStaffGrid() {
   const cardsHtml = availableStaff.map(staff => {
     const hired = activeList.find(h => h.id === staff.id);
     const level = hired ? hired.level : 0;
-    const cost = staff.baseCost * (level + 1);
+    const cost = getStaffBaseCost(staff) * (level + 1);
     const isHired = level > 0;
 
     return `
@@ -229,7 +246,7 @@ async function handleStaffAction(staffId) {
   if (!staff) return;
   const hired = hiredStaff.find(h => h.id === staffId);
   const level = hired ? hired.level : 0;
-  const cost = staff.baseCost * (level + 1);
+  const cost = getStaffBaseCost(staff) * (level + 1);
 
   if (userGold < cost) {
     alert(`❌ Gold tidak cukup! Dibutuhkan ${cost.toLocaleString('id-ID')} Gold.`);
@@ -239,13 +256,13 @@ async function handleStaffAction(staffId) {
   if (!confirm(`${hired ? 'Upgrade' : 'Rekrut'} ${staff.name} ke Level ${level + 1} seharga ${cost.toLocaleString('id-ID')} Gold?`)) return;
 
   try {
-    const newGold = userGold - cost;
-    await withFirestoreRetry(() => updateDoc(doc(db, 'profiles', currentUserId), {
-      gold: newGold,
-      updated_at: new Date().toISOString()
-    }), 3, 1000);
-    userGold = newGold;
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+    const serverRes = await executeServerSpend({
+      action: 'staff_hire',
+      staffId,
+      currentLevel: level
+    });
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
     const updatedStaff = hiredStaff.map(item => ({ ...item }));
     const existingItem = updatedStaff.find(h => h.id === staffId);
@@ -269,7 +286,7 @@ async function handleStaffAction(staffId) {
     if (isFirestoreOfflineError(err)) {
       alert('❌ Gagal terhubung ke server, buka di tab baru');
     } else {
-      handleFirestoreError(err, OperationType.UPDATE, `teams/${currentTeamId}`);
+      alert(`⚠️ ${err.message || 'Gagal merekrut staff.'}`);
     }
   }
 }

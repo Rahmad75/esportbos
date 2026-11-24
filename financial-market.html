@@ -129,24 +129,24 @@
                 </div>
             </div>
 
-            <!-- Panel Grafik Market Turn-Based -->
+            <!-- Panel Grafik Kurs Market Economy v2 -->
             <div class="panel raised" style="background: #0f1b38; padding: 25px; border-radius: 15px; margin-bottom: 20px; color: white; border: 1px solid #1f3668;">
                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 14px;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <span id="marketTurnBadge" style="display: inline-block; padding: 6px 14px; background: #00d4ff; color: #061229; font-weight: 800; font-size: 13px; border-radius: 6px; letter-spacing: 0.8px;">TURN #1</span>
-                            <h3 style="margin: 0; font-size: 20px; color: #ffffff;">📊 Grafik Kurs Market</h3>
+                            <h3 style="margin: 0; font-size: 20px; color: #ffffff;">📊 Kurs Resmi Economy v2</h3>
                         </div>
-                        <p style="margin: 8px 0 0 0; font-size: 13px; color: #9db2d9;">Harga akan berubah setelah match / exchange berikutnya</p>
+                        <p id="marketSubtitle" style="margin: 8px 0 0 0; font-size: 13px; color: #9db2d9;">Kurs tetap mengacu langsung ke economy.config.json (konversi satu arah: Currency → Gold → Diamond)</p>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <div style="background: #13254d; border: 1px solid #24417a; border-radius: 8px; padding: 8px 12px; font-size: 12px;">
-                            <span style="color: #9db2d9;">Diamond/Gold:</span>
-                            <strong id="headerDiamondRate" style="color: #00d4ff; margin-left: 4px;">1.0000</strong>
+                            <span style="color: #9db2d9;">1 Diamond =</span>
+                            <strong id="headerDiamondRate" style="color: #00d4ff; margin-left: 4px;">Memuat...</strong>
                         </div>
                         <div style="background: #13254d; border: 1px solid #24417a; border-radius: 8px; padding: 8px 12px; font-size: 12px;">
-                            <span style="color: #9db2d9;">Gold/Currency:</span>
-                            <strong id="headerGoldRate" style="color: #ffd700; margin-left: 4px;">0.09566</strong>
+                            <span style="color: #9db2d9;">1 Gold =</span>
+                            <strong id="headerGoldRate" style="color: #ffd700; margin-left: 4px;">Memuat...</strong>
                         </div>
                         <button id="nextTurnBtn" onclick="handleNextTurn()" style="padding: 10px 18px; background: #ffd700; color: #071226; border: none; border-radius: 8px; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);">⏭️ Next Turn</button>
                     </div>
@@ -161,17 +161,17 @@
                 <div class="chart-legend" style="display: flex; gap: 24px; justify-content: center; margin-top: 14px; flex-wrap: wrap;">
                     <span class="legend-item" style="display: flex; align-items: center; gap: 8px; color: #d6e4ff; font-size: 13px;">
                         <span style="width: 14px; height: 14px; background: #00d4ff; border-radius: 50%; display: inline-block;"></span>
-                        Diamond/Gold (<strong id="legendDiamondPrice" style="color: #00d4ff;">1.0000</strong>)
+                        Diamond → Gold (<strong id="legendDiamondPrice" style="color: #00d4ff;">-</strong>)
                     </span>
                     <span class="legend-item" style="display: flex; align-items: center; gap: 8px; color: #d6e4ff; font-size: 13px;">
                         <span style="width: 14px; height: 14px; background: #ffd700; border-radius: 50%; display: inline-block;"></span>
-                        Gold/Currency (<strong id="legendGoldPrice" style="color: #ffd700;">0.09566</strong>)
+                        Gold → Currency (<strong id="legendGoldPrice" style="color: #ffd700;">-</strong>)
                     </span>
                 </div>
 
                 <!-- 5 Riwayat Perubahan Turn Terakhir -->
                 <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #1e3566;">
-                    <h4 style="margin: 0 0 12px 0; font-size: 15px; color: #cfe0ff;">🕒 5 Riwayat Perubahan Terakhir</h4>
+                    <h4 style="margin: 0 0 12px 0; font-size: 15px; color: #cfe0ff;">🕒 5 Riwayat Turn Terakhir</h4>
                     <div id="marketHistoryList" style="display: flex; flex-direction: column; gap: 8px;">
                         <p style="color: #8da4cf; font-size: 13px; margin: 0;">Memuat riwayat turn...</p>
                     </div>
@@ -182,29 +182,26 @@
             <div class="panel raised" style="background: #0f1b38; padding: 25px; border-radius: 15px; margin-bottom: 20px; color: white; border: 1px solid #1f3668;">
                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;">
                     <div>
-                        <h3 style="margin: 0;">💱 Exchange Mata Uang</h3>
-                        <p class="info-text" style="color: #9db2d9; margin: 6px 0 0 0; font-size: 13px;">Exchange 10000 Currency menjadi Gold &bull; Kurs mengikuti turn saat ini &bull; Melakukan Exchange memajukan 1 Turn</p>
+                        <h3 style="margin: 0;">💱 Konversi Satu Arah (Economy v2)</h3>
+                        <p id="exchangeSubtitle" class="info-text" style="color: #9db2d9; margin: 6px 0 0 0; font-size: 13px;">Memuat aturan konversi dari economy.config.json...</p>
                     </div>
                     <div id="quickExchangeCard" style="background: #13254d; border: 1px solid #ffd700; border-radius: 10px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                        <span id="quickExchangePreview" style="font-size: 14px; color: #ffd700; font-weight: 700;">10.000 Currency = 956.60 Gold</span>
-                        <button type="button" onclick="applyQuickExchange10k()" style="padding: 6px 12px; background: #ffd700; color: #071226; border: none; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer;">Pakai 10.000 Currency</button>
+                        <span id="quickExchangePreview" style="font-size: 14px; color: #ffd700; font-weight: 700;">Memuat simulasi konversi...</span>
+                        <button type="button" onclick="applyQuickMatchSample()" style="padding: 6px 12px; background: #ffd700; color: #071226; border: none; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer;">Isi Contoh 1 Match</button>
                     </div>
                 </div>
 
                 <div class="exchange-box" id="exchangeBox" style="background: #132043; padding: 20px; border-radius: 12px; border: 1px solid #1e3566;">
                     <div class="exchange-direction-tabs" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <button class="direction-tab active" data-direction="currency-gold" onclick="setExchangeDirection('currency-gold', this)" style="padding: 8px 16px; background: #00d4ff; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🎟️ Currency → 🟡 Gold</button>
-                        <button class="direction-tab" data-direction="diamond-gold" onclick="setExchangeDirection('diamond-gold', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">💎 → 🟡 Gold</button>
-                        <button class="direction-tab" data-direction="gold-diamond" onclick="setExchangeDirection('gold-diamond', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">🟡 → 💎 Diamond</button>
-                        <button class="direction-tab" data-direction="gold-currency" onclick="setExchangeDirection('gold-currency', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">🟡 → 🎟️ Currency</button>
-                        <button class="direction-tab" data-direction="diamond-currency" onclick="setExchangeDirection('diamond-currency', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">💎 → 🎟️ Currency</button>
-                        <button class="direction-tab" data-direction="currency-diamond" onclick="setExchangeDirection('currency-diamond', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">🎟️ → 💎 Diamond</button>
+                        <button class="direction-tab" data-direction="gold-diamond" onclick="setExchangeDirection('gold-diamond', this)" style="padding: 8px 16px; background: #1e3260; color: white; border: none; border-radius: 6px; cursor: pointer;">🟡 Gold → 💎 Diamond</button>
+                        <button class="direction-tab" data-direction="diamond-currency" onclick="setExchangeDirection('diamond-currency', this)" style="padding: 8px 16px; background: #2b1d2e; color: #fca5a5; border: 1px solid #7f1d1d; border-radius: 6px; cursor: pointer;">🔒 Diamond → Currency (Diblokir)</button>
                     </div>
 
                     <div class="exchange-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
                         <div class="exchange-input-group">
                             <label id="fromLabel" style="display: block; color: #9db2d9; font-size: 12px; margin-bottom: 5px;">Dari (Currency)</label>
-                            <input type="number" id="exchangeAmount" min="1" value="10000" placeholder="Jumlah" oninput="calculateExchange()" style="width: 100%; padding: 12px; background: #0a1734; color: white; border: 1px solid #27447f; border-radius: 6px; font-size: 16px;">
+                            <input type="number" id="exchangeAmount" min="1" value="" placeholder="Masukkan jumlah" oninput="calculateExchange()" style="width: 100%; padding: 12px; background: #0a1734; color: white; border: 1px solid #27447f; border-radius: 6px; font-size: 16px;">
                             <span class="balance-hint" id="fromBalance" style="display: block; color: #00d4ff; font-size: 12px; margin-top: 5px;">Saldo: 0 Currency</span>
                         </div>
 
@@ -212,10 +209,10 @@
 
                         <div class="exchange-input-group">
                             <label id="toLabel" style="display: block; color: #9db2d9; font-size: 12px; margin-bottom: 5px;">Ke (Gold)</label>
-                            <input type="text" id="exchangeResult" readonly placeholder="Hasil" style="width: 100%; padding: 12px; background: #0a1734; color: #ffd700; border: 1px solid #27447f; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                            <input type="text" id="exchangeResult" readonly placeholder="Hasil bersih setelah biaya" style="width: 100%; padding: 12px; background: #0a1734; color: #ffd700; border: 1px solid #27447f; border-radius: 6px; font-size: 16px; font-weight: bold;">
                             <div style="display: flex; justify-content: space-between; margin-top: 6px; flex-wrap: wrap; gap: 8px;">
-                                <span class="rate-info" id="rateInfo" style="color: #9db2d9; font-size: 12px;">Kurs Turn #1: 1 Currency = 0.09566 Gold</span>
-                                <span class="fee-info" id="feeInfo" style="color: #4ade80; font-size: 12px;">Biaya: 0% (Kurs Turn Saat Ini)</span>
+                                <span class="rate-info" id="rateInfo" style="color: #9db2d9; font-size: 12px;">Memuat kurs...</span>
+                                <span class="fee-info" id="feeInfo" style="color: #fbbf24; font-size: 12px;">Memuat biaya...</span>
                             </div>
                         </div>
 
@@ -235,7 +232,7 @@
 
             <div class="panel raised" style="background: #0f1b38; padding: 25px; border-radius: 15px; color: white; border: 1px solid #1f3668;">
                 <h3>💸 Withdraw Diamond</h3>
-                <p class="info-text" style="color: #9db2d9; margin-bottom: 20px;">Minimum WD: 2,500 Diamonds (net). Pajak platform: 15%</p>
+                <p id="withdrawSubtitle" class="info-text" style="color: #9db2d9; margin-bottom: 20px;">Memuat aturan withdraw dari economy.config.json...</p>
 
                 <div class="withdraw-box" style="background: #132043; padding: 20px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; border: 1px solid #1e3566;">
                     <div class="withdraw-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; flex: 1;">
@@ -244,16 +241,16 @@
                             <strong id="withdrawBalance" style="color: #00d4ff;">0</strong>
                         </div>
                         <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0a1734; border-radius: 5px;">
-                            <span style="color: #9db2d9;">Minimum WD (net):</span>
-                            <strong style="color: #fff;">2,500</strong>
+                            <span style="color: #9db2d9;">Minimum WD (gross):</span>
+                            <strong id="minWithdrawAmount" style="color: #fff;">-</strong>
                         </div>
                         <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0a1734; border-radius: 5px;">
-                            <span style="color: #9db2d9;">Yang harus dikirim (gross):</span>
-                            <strong id="grossAmount" style="color: #ffd700;">2,941</strong>
+                            <span style="color: #9db2d9;">Fee Withdraw:</span>
+                            <strong id="withdrawFeeLabel" style="color: #ffd700;">-</strong>
                         </div>
                         <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px; background: #0a1734; border-radius: 5px;">
-                            <span style="color: #9db2d9;">Nilai Rupiah (net):</span>
-                            <strong style="color: #28a745;">Rp 500,000</strong>
+                            <span style="color: #9db2d9;">Terima Bersih (net):</span>
+                            <strong id="withdrawNetUsdt" style="color: #28a745;">-</strong>
                         </div>
                     </div>
                     <button class="btn-futuristic btn-large" onclick="requestWithdraw()" style="padding: 15px 30px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; white-space: nowrap;">💸 Request Withdraw</button>

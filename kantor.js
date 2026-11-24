@@ -1,12 +1,8 @@
 import { signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where
+  updateDoc
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   auth,
@@ -17,28 +13,39 @@ import {
   getOrCreateTeam,
   getSafeUserAvatarUrl
 } from './firebase-config.js';
+import { getWeeklySinkBreakdown, loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, executeServerSpend, settleServerWeeklySink } from './economy-client.js';
 
 let currentUserId = null;
 let currentTeamId = null;
 let userCurrency = 0;
 let userGold = 0;
 let teamData = null;
-let playerCount = 0;
+let economyConfig = null;
+let facilityLevels = {};
+let availableSponsorsList = [];
 
-const facilityLevels = {
-  1: { name: 'Ruko Sederhana', maxSlots: 2, cost: 10000, bonusPop: 0 },
-  2: { name: 'Gedung Bertingkat', maxSlots: 4, cost: 25000, bonusPop: 5 },
-  3: { name: 'Kantor Mewah', maxSlots: 6, cost: 50000, bonusPop: 10 },
-  4: { name: 'Markas Esports', maxSlots: 8, cost: 100000, bonusPop: 15 }
-};
+function buildKantorConfig(cfg) {
+  const range = cfg.defaultPrices.upgrades.stadiumGold;
+  const min = Number(range.min);
+  const max = Number(range.max);
+  const step = (idx) => Math.round(min + ((max - min) * idx) / 3);
+  facilityLevels = {
+    1: { name: 'Ruko Sederhana', maxSlots: 2, cost: step(0), bonusPop: 0 },
+    2: { name: 'Gedung Bertingkat', maxSlots: 4, cost: step(1), bonusPop: 5 },
+    3: { name: 'Kantor Mewah', maxSlots: 6, cost: step(2), bonusPop: 10 },
+    4: { name: 'Markas Esports', maxSlots: 8, cost: step(3), bonusPop: 15 }
+  };
 
-const availableSponsorsList = [
-  { id: 'sp1', name: 'Red Bull Esports', income: 1500, reqPop: 50, icon: '🐂' },
-  { id: 'sp2', name: 'Logitech G', income: 2000, reqPop: 60, icon: '🖱️' },
-  { id: 'sp3', name: 'Razer', income: 2500, reqPop: 70, icon: '🐍' },
-  { id: 'sp4', name: 'Intel', income: 3000, reqPop: 80, icon: '💻' },
-  { id: 'sp5', name: 'NVIDIA', income: 4000, reqPop: 90, icon: '💚' }
-];
+  const eventSponsorBonus = Number(cfg.matchReward.eventBonusCurrency || 0);
+  availableSponsorsList = [
+    { id: 'sp1', name: 'Red Bull Esports', income: eventSponsorBonus, reqPop: 50, icon: '🐂' },
+    { id: 'sp2', name: 'Logitech G', income: eventSponsorBonus, reqPop: 60, icon: '🖱️' },
+    { id: 'sp3', name: 'Razer', income: eventSponsorBonus, reqPop: 70, icon: '🐍' },
+    { id: 'sp4', name: 'Intel', income: eventSponsorBonus, reqPop: 80, icon: '💻' },
+    { id: 'sp5', name: 'NVIDIA', income: eventSponsorBonus, reqPop: 90, icon: '💚' }
+  ];
+}
 
 async function handleLogout() {
   await signOut(auth);
@@ -46,17 +53,15 @@ async function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+  economyConfig = await loadEconomyConfig();
+  buildKantorConfig(economyConfig);
+
   const user = await getCurrentUserOnce();
   if (!user) { window.location.href = 'index.html'; return; }
   currentUserId = user.uid;
 
   const profile = await getOrCreateProfile(user);
   const team = await getOrCreateTeam(user, profile?.club_name);
-
-  if (team) {
-    const pSnap = await getDocs(query(collection(db, 'players'), where('owner_id', '==', currentUserId)));
-    playerCount = pSnap.docs.filter(d => d.data().team_id === team.id).length;
-  }
 
   if (profile) {
     userCurrency = profile.currency || 0;
@@ -103,7 +108,8 @@ function updateFinanceUI() {
     return sum + (sp ? sp.income : 0);
   }, 0);
 
-  const weeklyExpense = 1000 + (playerCount * 200);
+  const sink = getWeeklySinkBreakdown(economyConfig);
+  const weeklyExpense = sink.total;
   const netProfit = weeklyIncome - weeklyExpense;
 
   document.getElementById('currentBalance').textContent = userCurrency.toLocaleString('id-ID');
@@ -117,44 +123,20 @@ function updateFinanceUI() {
 
 async function claimWeeklyIncome() {
   try {
-    const teamSnap = await getDoc(doc(db, 'teams', currentTeamId));
-    const team = teamSnap.exists() ? teamSnap.data() : null;
-
-    if (team && team.last_claim_at) {
-      const lastClaim = new Date(team.last_claim_at);
-      const now = new Date();
-      const diffDays = (now - lastClaim) / (1000 * 60 * 60 * 24);
-
-      if (diffDays < 7) {
-        const sisaHari = Math.ceil(7 - diffDays);
-        alert('⏳ Anda sudah klaim minggu ini! Tunggu ' + sisaHari + ' hari lagi.');
-        return;
-      }
-    }
-
-    const income = 5000;
-    const expense = 0;
-    const profit = income - expense;
-
-    const profileSnap = await getDoc(doc(db, 'profiles', currentUserId));
-    const profile = profileSnap.exists() ? profileSnap.data() : { currency: 0 };
-
-    const newCurrency = (profile.currency || 0) + profit;
-    await updateDoc(doc(db, 'profiles', currentUserId), {
-      currency: newCurrency,
-      updated_at: new Date().toISOString()
-    });
+    const serverRes = await settleServerWeeklySink();
+    applyServerWalletToDOM(serverRes.wallet);
+    userCurrency = Number(serverRes.wallet.currency || 0);
 
     await updateDoc(doc(db, 'teams', currentTeamId), {
       last_claim_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
 
-    alert('✅ Klaim Berhasil!\nAnda mendapatkan gaji mingguan sebesar ' + profit.toLocaleString('id-ID') + ' Currency.');
+    alert(`✅ Settlement Mingguan Selesai (Validasi Server & Tercatat di Ledger)!\nPemasukan Sponsor/Event: +${Number(serverRes.income).toLocaleString('id-ID')} Currency\nBiaya Wajib Mingguan (Sink): -${Number(serverRes.expense).toLocaleString('id-ID')} Currency\nNet: ${Number(serverRes.netChange).toLocaleString('id-ID')} Currency\nSaldo Sekarang: ${userCurrency.toLocaleString('id-ID')} Currency`);
     location.reload();
   } catch (err) {
     console.error('Error claiming:', err);
-    alert(' Gagal klaim. Coba lagi.');
+    alert(`⚠️ ${err.message || 'Gagal memproses settlement mingguan.'}`);
   }
 }
 
@@ -270,23 +252,23 @@ async function upgradeFacility() {
 
   if (!confirm(`Yakin ingin upgrade fasilitas ke "${nextData.name}" seharga ${nextData.cost.toLocaleString('id-ID')} Gold?`)) return;
 
-  const newGold = userGold - nextData.cost;
-  await updateDoc(doc(db, 'profiles', currentUserId), {
-    gold: newGold,
-    updated_at: new Date().toISOString()
-  });
-  userGold = newGold;
-  document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+  try {
+    const serverRes = await executeServerSpend({ action: 'kantor_upgrade', currentLevel });
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
-  await updateDoc(doc(db, 'teams', currentTeamId), {
-    facility_level: currentLevel + 1,
-    updated_at: new Date().toISOString()
-  });
-  teamData.facility_level = currentLevel + 1;
+    await updateDoc(doc(db, 'teams', currentTeamId), {
+      facility_level: currentLevel + 1,
+      updated_at: new Date().toISOString()
+    });
+    teamData.facility_level = currentLevel + 1;
 
-  alert(`✅ Fasilitas berhasil di-upgrade ke ${nextData.name}!`);
-  updateFacilityUI();
-  renderSponsors();
+    alert(`✅ Fasilitas berhasil di-upgrade ke ${nextData.name}!`);
+    updateFacilityUI();
+    renderSponsors();
+  } catch (err) {
+    alert(`⚠️ ${err.message || 'Gagal upgrade fasilitas.'}`);
+  }
 }
 
 function showKantorModal(title, message) {

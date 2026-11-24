@@ -168,6 +168,31 @@
         "created_at": { "type": "string", "maxLength": 64 }
       },
       "required": ["role"]
+    },
+    "Ledger": {
+      "title": "Ledger",
+      "description": "Immutable append-only financial ledger recording every currency movement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "seq": { "type": "number" },
+        "waktu": { "type": "string", "maxLength": 64 },
+        "user_id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "akun": { "type": "string", "maxLength": 160 },
+        "jenis_transaksi": { "type": "string", "enum": ["masuk", "keluar"] },
+        "kategori": { "type": "string", "maxLength": 64 },
+        "mata_uang": { "type": "string", "enum": ["currency", "gold", "diamond"] },
+        "jumlah": { "type": "number" },
+        "fee": { "type": "number" },
+        "saldo_sebelum": { "type": "number" },
+        "saldo_sesudah": { "type": "number" },
+        "ref_id": { "type": "string", "maxLength": 128 },
+        "keterangan": { "type": "string", "maxLength": 256 }
+      },
+      "required": [
+        "id", "seq", "waktu", "user_id", "akun", "jenis_transaksi",
+        "kategori", "mata_uang", "jumlah", "saldo_sebelum", "saldo_sesudah"
+      ]
     }
   },
   "firestore": {
@@ -206,6 +231,10 @@
     "/transactions/{transactionId}": {
       "schema": { "$ref": "#/entities/Transaction" },
       "description": "User financial transactions"
+    },
+    "/ledger/{ledgerId}": {
+      "schema": { "$ref": "#/entities/Ledger" },
+      "description": "Immutable append-only financial ledger entries (read-only for owner/admin)"
     }
   }
 }

@@ -1,6 +1,11 @@
 {
   "version": "2.0.0",
   "name": "Economy v2",
+  "starterBalance": {
+    "diamonds": 0,
+    "gold": 0,
+    "currency": 0
+  },
   "rates": {
     "diamondToUsdt": 1,
     "diamondToGold": 1000,

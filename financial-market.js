@@ -1,12 +1,7 @@
 import { signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
   addDoc,
-  collection,
-  doc,
-  getDocs,
-  query,
-  updateDoc,
-  where
+  collection
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import {
   auth,
@@ -17,51 +12,77 @@ import {
   getOrCreateProfile,
   getOrCreateTeam,
   getSafeUserAvatarUrl,
-  handleFirestoreError,
-  OperationType,
   withFirestoreRetry
 } from './firebase-config.js';
+import {
+  convertCurrencyToGold,
+  convertGoldToDiamond,
+  getWithdrawSummary,
+  loadEconomyConfig
+} from './economy-config.js';
 import {
   advanceMarketTurn,
   formatTurnNotification,
   loadMarketState,
   syncMarketWithMatches
 } from './market-engine.js';
+import {
+  applyServerWalletToDOM,
+  executeServerConversion,
+  fetchServerLedger,
+  requestServerWithdraw
+} from './economy-client.js';
 
 let currentUserId = null;
 let userBalances = { diamond: 0, gold: 0, currency: 0 };
-let currentMarketState = loadMarketState().state;
+let economyConfig = null;
+let currentMarketState = null;
 let currentExchange = 'currency-gold';
 
-function getDynamicRates(state) {
-  const d2g = state.diamondToGold;
-  const g2c = state.goldToCurrency;
+function getDynamicRates(cfg) {
+  const diamondToGold = Number(cfg.rates.diamondToGold);
+  const goldToCurrency = Number(cfg.rates.goldToCurrency);
+  const currencyToGoldFee = Number(cfg.fees.currencyToGoldFeePercent);
+  const goldToDiamondFee = Number(cfg.fees.goldToDiamondFeePercent);
+  const reverseBlocked = !cfg.fees.allowReverseDiamondToCurrencyWithoutFeeAndCap && !cfg.fees.reverseConversion?.enabled;
+
   return {
-    'currency-gold': { from: 'Currency', to: 'Gold', rate: g2c, fee: 0 },
-    'gold-currency': { from: 'Gold', to: 'Currency', rate: 1 / g2c, fee: 0 },
-    'diamond-gold': { from: 'Diamond', to: 'Gold', rate: d2g, fee: 0 },
-    'gold-diamond': { from: 'Gold', to: 'Diamond', rate: 1 / d2g, fee: 0 },
-    'diamond-currency': { from: 'Diamond', to: 'Currency', rate: d2g / g2c, fee: 0 },
-    'currency-diamond': { from: 'Currency', to: 'Diamond', rate: g2c / d2g, fee: 0 }
+    'currency-gold': {
+      from: 'Currency',
+      to: 'Gold',
+      rate: 1 / goldToCurrency,
+      feePercent: currencyToGoldFee,
+      blocked: false
+    },
+    'gold-diamond': {
+      from: 'Gold',
+      to: 'Diamond',
+      rate: 1 / diamondToGold,
+      feePercent: goldToDiamondFee,
+      blocked: false
+    },
+    'diamond-currency': {
+      from: 'Diamond',
+      to: 'Currency',
+      rate: Number(cfg.rates.diamondToCurrency),
+      feePercent: 0,
+      blocked: reverseBlocked
+    }
   };
 }
 
 function updateBalanceDisplays() {
   document.querySelectorAll('[data-balance="diamond"]').forEach(el => {
-    el.textContent = userBalances.diamond.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    el.textContent = userBalances.diamond.toLocaleString('id-ID', { maximumFractionDigits: 4 });
   });
   document.querySelectorAll('[data-balance="gold"]').forEach(el => {
-    el.textContent = userBalances.gold.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    el.textContent = userBalances.gold.toLocaleString('id-ID', { maximumFractionDigits: 4 });
   });
   document.querySelectorAll('[data-balance="currency"]').forEach(el => {
     el.textContent = userBalances.currency.toLocaleString('id-ID', { maximumFractionDigits: 2 });
   });
   const wdEl = document.getElementById('withdrawBalance');
-  if (wdEl) wdEl.textContent = userBalances.diamond.toLocaleString('id-ID', { maximumFractionDigits: 2 });
-}
-
-function formatPrice(value, decimals = 4) {
-  return Number(value).toFixed(decimals);
+  if (wdEl) wdEl.textContent = userBalances.diamond.toLocaleString('id-ID', { maximumFractionDigits: 4 });
 }
 
 function showMarketNotification(message, variant = 'info') {
@@ -83,28 +104,55 @@ function showExchangeFeedback(message, isError = false) {
   el.textContent = message;
 }
 
+function renderWithdrawPolicyUI(cfg) {
+  const wd = getWithdrawSummary(cfg, cfg.withdraw.minDiamond);
+  const subtitle = document.getElementById('withdrawSubtitle');
+  if (subtitle) {
+    subtitle.textContent = `Minimum WD: ${wd.minDiamond} Diamond | Fee: ${wd.feePercent}% (terima bersih ${wd.netUsdt} USDT) | Cooldown: ${wd.cooldownDays} hari | Umur akun min: ${wd.minAccountAgeDays} hari | Sistem: ${wd.processingMode.toUpperCase()} (wajib KYC, maks ${wd.maxActiveRequests} request aktif)`;
+  }
+
+  const minEl = document.getElementById('minWithdrawAmount');
+  if (minEl) minEl.textContent = `${wd.minDiamond} Diamond`;
+
+  const feeEl = document.getElementById('withdrawFeeLabel');
+  if (feeEl) feeEl.textContent = `${wd.feePercent}% (-${wd.feeDiamond} Diamond)`;
+
+  const netEl = document.getElementById('withdrawNetUsdt');
+  if (netEl) netEl.textContent = `${wd.netUsdt} USDT`;
+}
+
 function renderMarketUI(state) {
   currentMarketState = state;
+  if (!economyConfig) return;
 
   const badge = document.getElementById('marketTurnBadge');
   if (badge) badge.textContent = `TURN #${state.turn}`;
 
+  const d2g = Number(economyConfig.rates.diamondToGold);
+  const g2c = Number(economyConfig.rates.goldToCurrency);
+
   const headerDiamond = document.getElementById('headerDiamondRate');
-  if (headerDiamond) headerDiamond.textContent = formatPrice(state.diamondToGold, 4);
+  if (headerDiamond) headerDiamond.textContent = `${d2g.toLocaleString('id-ID')} Gold`;
 
   const headerGold = document.getElementById('headerGoldRate');
-  if (headerGold) headerGold.textContent = formatPrice(state.goldToCurrency, 5);
+  if (headerGold) headerGold.textContent = `${g2c.toLocaleString('id-ID')} Currency`;
 
   const legendDiamond = document.getElementById('legendDiamondPrice');
-  if (legendDiamond) legendDiamond.textContent = formatPrice(state.diamondToGold, 4);
+  if (legendDiamond) legendDiamond.textContent = `1 D = ${d2g.toLocaleString('id-ID')} G`;
 
   const legendGold = document.getElementById('legendGoldPrice');
-  if (legendGold) legendGold.textContent = formatPrice(state.goldToCurrency, 5);
+  if (legendGold) legendGold.textContent = `1 G = ${g2c.toLocaleString('id-ID')} C`;
+
+  const exSub = document.getElementById('exchangeSubtitle');
+  if (exSub) {
+    exSub.textContent = `Konversi satu arah: Currency → Gold (fee ${economyConfig.fees.currencyToGoldFeePercent}%) dan Gold → Diamond (fee ${economyConfig.fees.goldToDiamondFeePercent}%). Konversi balik Diamond → Currency diblokir tanpa fee & cap.`;
+  }
 
   const quickPreview = document.getElementById('quickExchangePreview');
   if (quickPreview) {
-    const goldOut = (10000 * state.goldToCurrency).toFixed(2);
-    quickPreview.textContent = `10.000 Currency = ${goldOut} Gold`;
+    const sampleCurrency = Number(economyConfig.matchReward.perMatchCurrency);
+    const conv = convertCurrencyToGold(economyConfig, sampleCurrency);
+    quickPreview.textContent = `${sampleCurrency.toLocaleString('id-ID')} Currency (1 Match) → ${conv.netGold.toFixed(2)} Gold (setelah fee ${conv.feePercent}%)`;
   }
 
   drawTurnMarketChart(state);
@@ -123,21 +171,14 @@ function renderMarketHistory(history) {
   }
 
   container.innerHTML = recentFive.map(item => {
-    const dPct = Number(item.diamondChangePct || 0);
-    const gPct = Number(item.goldChangePct || 0);
-    const dSign = dPct > 0 ? '+' : '';
-    const gSign = gPct > 0 ? '+' : '';
-    const dColor = dPct > 0 ? '#4ade80' : dPct < 0 ? '#f87171' : '#9db2d9';
     const causeText = item.cause || 'Next Turn';
-
     return `
       <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; padding:10px 14px; background:#0b1733; border:1px solid #1d3566; border-radius:8px; font-size:13px; color:#dbeafe;">
         <div>
           <strong style="color:#00d4ff;">Turn #${item.turn}:</strong>
-          <span>Diamond/Gold ${Number(item.prevDiamondToGold).toFixed(2)} ke ${Number(item.diamondToGold).toFixed(2)}</span>
-          <span style="color:${dColor}; font-weight:700;">(${dSign}${dPct.toFixed(1)}%)</span>
+          <span>1 Diamond = ${Number(item.diamondToGold).toLocaleString('id-ID')} Gold</span>
           <span style="color:#64748b; margin:0 6px;">•</span>
-          <span style="color:#fde68a;">Gold/Currency ${Number(item.prevGoldToCurrency).toFixed(5)} ke ${Number(item.goldToCurrency).toFixed(5)} (${gSign}${gPct.toFixed(1)}%)</span>
+          <span style="color:#fde68a;">1 Gold = ${Number(item.goldToCurrency).toLocaleString('id-ID')} Currency</span>
         </div>
         <div style="color:#9db2d9; font-size:12px; font-weight:600;">Penyebab: <span style="color:#fff;">${causeText}</span></div>
       </div>
@@ -158,7 +199,6 @@ function drawTurnMarketChart(state) {
 
   ctx.clearRect(0, 0, width, height);
 
-  // Dark blue background gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
   bgGrad.addColorStop(0, '#071229');
   bgGrad.addColorStop(1, '#0c1b3b');
@@ -166,7 +206,7 @@ function drawTurnMarketChart(state) {
   ctx.fillRect(0, 0, width, height);
 
   const leftPad = 50;
-  const rightPad = 165;
+  const rightPad = 185;
   const topPad = 32;
   const bottomPad = 36;
   const plotLeft = leftPad;
@@ -176,7 +216,6 @@ function drawTurnMarketChart(state) {
   const plotWidth = plotRight - plotLeft;
   const plotHeight = plotBottom - plotTop;
 
-  // Grid lines
   ctx.strokeStyle = '#182d59';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
@@ -196,41 +235,22 @@ function drawTurnMarketChart(state) {
     ctx.stroke();
   }
 
-  // Compute Y ranges independently so both lines remain legible across turns
   const diamondVals = history.map(h => Number(h.diamondToGold));
   const goldVals = history.map(h => Number(h.goldToCurrency));
 
-  const dMinRaw = Math.min(...diamondVals);
-  const dMaxRaw = Math.max(...diamondVals);
-  const dSpan = Math.max(dMaxRaw - dMinRaw, 0.08);
-  const dMin = dMinRaw - dSpan * 0.45;
-  const dMax = dMaxRaw + dSpan * 0.25;
+  const dBase = diamondVals[diamondVals.length - 1];
+  const gBase = goldVals[goldVals.length - 1];
 
-  const gMinRaw = Math.min(...goldVals);
-  const gMaxRaw = Math.max(...goldVals);
-  const gSpan = Math.max(gMaxRaw - gMinRaw, 0.008);
-  const gMin = gMinRaw - gSpan * 0.25;
-  const gMax = gMaxRaw + gSpan * 0.45;
+  const getX = (index, total) => (total <= 1 ? plotRight : plotLeft + (index / (total - 1)) * plotWidth);
 
-  const getY = (val, min, max) => {
-    const ratio = (val - min) / Math.max(max - min, 1e-9);
-    return plotBottom - ratio * plotHeight;
-  };
-
-  const getX = (index, total) => {
-    if (total <= 1) return plotRight;
-    return plotLeft + (index / (total - 1)) * plotWidth;
-  };
-
-  const drawSeries = (vals, min, max, strokeColor) => {
-    const pts = vals.map((v, i) => ({ x: getX(i, vals.length), y: getY(v, min, max), val: v }));
+  const drawFlatOrSeries = (vals, yPos, strokeColor) => {
+    const pts = vals.map((_, i) => ({ x: getX(i, vals.length), y: yPos }));
 
     if (pts.length === 1) {
-      // Single initial point at right edge with subtle dashed baseline from left
       ctx.save();
       ctx.setLineDash([6, 6]);
       ctx.strokeStyle = strokeColor;
-      ctx.globalAlpha = 0.55;
+      ctx.globalAlpha = 0.6;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(plotLeft, pts[0].y);
@@ -241,8 +261,6 @@ function drawTurnMarketChart(state) {
       ctx.save();
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 3;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
       ctx.beginPath();
       pts.forEach((p, idx) => {
         if (idx === 0) ctx.moveTo(p.x, p.y);
@@ -251,7 +269,6 @@ function drawTurnMarketChart(state) {
       ctx.stroke();
       ctx.restore();
 
-      // Small history vertex dots
       ctx.fillStyle = strokeColor;
       for (let i = 0; i < pts.length - 1; i++) {
         ctx.beginPath();
@@ -260,7 +277,6 @@ function drawTurnMarketChart(state) {
       }
     }
 
-    // Static dot at right edge
     const last = pts[pts.length - 1];
     ctx.save();
     ctx.fillStyle = '#071229';
@@ -270,7 +286,6 @@ function drawTurnMarketChart(state) {
     ctx.arc(last.x, last.y, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-
     ctx.fillStyle = strokeColor;
     ctx.beginPath();
     ctx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
@@ -280,21 +295,11 @@ function drawTurnMarketChart(state) {
     return last;
   };
 
-  const lastDiamondPt = drawSeries(diamondVals, dMin, dMax, '#00d4ff');
-  const lastGoldPt = drawSeries(goldVals, gMin, gMax, '#ffd700');
+  const yDiamond = plotTop + plotHeight * 0.34;
+  const yGold = plotTop + plotHeight * 0.66;
 
-  // Price labels at the right edge (prevent vertical overlap)
-  let labelDiamondY = lastDiamondPt.y;
-  let labelGoldY = lastGoldPt.y;
-  if (Math.abs(labelDiamondY - labelGoldY) < 30) {
-    if (labelDiamondY <= labelGoldY) {
-      labelDiamondY = Math.max(plotTop + 14, labelDiamondY - 14);
-      labelGoldY = Math.min(plotBottom - 14, labelDiamondY + 30);
-    } else {
-      labelGoldY = Math.max(plotTop + 14, labelGoldY - 14);
-      labelDiamondY = Math.min(plotBottom - 14, labelGoldY + 30);
-    }
-  }
+  const lastDiamondPt = drawFlatOrSeries(diamondVals, yDiamond, '#00d4ff');
+  const lastGoldPt = drawFlatOrSeries(goldVals, yGold, '#ffd700');
 
   const drawPriceTag = (x, y, text, color) => {
     ctx.save();
@@ -319,10 +324,9 @@ function drawTurnMarketChart(state) {
     ctx.restore();
   };
 
-  drawPriceTag(lastDiamondPt.x, labelDiamondY, `D/G ${Number(state.diamondToGold).toFixed(4)}`, '#00d4ff');
-  drawPriceTag(lastGoldPt.x, labelGoldY, `G/C ${Number(state.goldToCurrency).toFixed(5)}`, '#ffd700');
+  drawPriceTag(lastDiamondPt.x, lastDiamondPt.y, `1 D = ${dBase.toLocaleString('id-ID')} G`, '#00d4ff');
+  drawPriceTag(lastGoldPt.x, lastGoldPt.y, `1 G = ${gBase.toLocaleString('id-ID')} C`, '#ffd700');
 
-  // Turn X-axis labels
   ctx.fillStyle = '#7f98c7';
   ctx.font = '11px monospace';
   ctx.textAlign = 'center';
@@ -340,7 +344,8 @@ function drawTurnMarketChart(state) {
 }
 
 function refreshExchangePanel() {
-  const rates = getDynamicRates(currentMarketState);
+  if (!economyConfig || !currentMarketState) return;
+  const rates = getDynamicRates(economyConfig);
   const config = rates[currentExchange];
   if (!config) return;
 
@@ -349,21 +354,38 @@ function refreshExchangePanel() {
   const rateInfo = document.getElementById('rateInfo');
   const feeInfo = document.getElementById('feeInfo');
   const fromBalance = document.getElementById('fromBalance');
+  const executeBtn = document.getElementById('executeExchangeBtn');
 
   if (fromLabel) fromLabel.textContent = `Dari (${config.from})`;
   if (toLabel) toLabel.textContent = `Ke (${config.to})`;
 
-  const formattedRate = config.rate < 0.5
-    ? config.rate.toFixed(5)
-    : config.rate.toFixed(4);
-  if (rateInfo) {
-    rateInfo.textContent = `Kurs Turn #${currentMarketState.turn}: 1 ${config.from} = ${formattedRate} ${config.to}`;
+  if (config.blocked) {
+    if (rateInfo) rateInfo.textContent = 'Konversi balik Diamond → Currency tidak diizinkan tanpa fee & cap.';
+    if (feeInfo) feeInfo.textContent = 'Status: DIBLOKIR (Aturan Economy v2)';
+    if (executeBtn) {
+      executeBtn.disabled = true;
+      executeBtn.style.background = '#475569';
+      executeBtn.textContent = '🔒 KONVERSI BALIK DIBLOKIR';
+    }
+  } else {
+    if (rateInfo) {
+      if (currentExchange === 'currency-gold') {
+        rateInfo.textContent = `Kurs Turn #${currentMarketState.turn}: ${Number(economyConfig.rates.goldToCurrency).toLocaleString('id-ID')} Currency = 1 Gold`;
+      } else {
+        rateInfo.textContent = `Kurs Turn #${currentMarketState.turn}: ${Number(economyConfig.rates.diamondToGold).toLocaleString('id-ID')} Gold = 1 Diamond`;
+      }
+    }
+    if (feeInfo) feeInfo.textContent = `Biaya konversi: ${config.feePercent}%`;
+    if (executeBtn) {
+      executeBtn.disabled = false;
+      executeBtn.style.background = '#28a745';
+      executeBtn.textContent = '💱 TUKAR SEKARANG';
+    }
   }
-  if (feeInfo) feeInfo.textContent = 'Biaya: 0% (Kurs Turn Saat Ini)';
 
   const balanceKey = config.from.toLowerCase();
   if (fromBalance) {
-    fromBalance.textContent = `Saldo: ${(userBalances[balanceKey] || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${config.from}`;
+    fromBalance.textContent = `Saldo: ${(userBalances[balanceKey] || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })} ${config.from}`;
   }
 
   calculateExchange();
@@ -374,54 +396,58 @@ function setExchangeDirection(direction, btn, preserveAmount = false) {
 
   document.querySelectorAll('.direction-tab').forEach(b => {
     b.classList.remove('active');
-    b.style.background = '#1e3260';
-    b.style.color = 'white';
+    const isBlockedTab = b.dataset.direction === 'diamond-currency';
+    b.style.background = isBlockedTab ? '#2b1d2e' : '#1e3260';
+    b.style.color = isBlockedTab ? '#fca5a5' : 'white';
   });
   if (btn) {
     btn.classList.add('active');
-    btn.style.background = '#00d4ff';
-    btn.style.color = '#000';
+    btn.style.background = direction === 'diamond-currency' ? '#7f1d1d' : '#00d4ff';
+    btn.style.color = direction === 'diamond-currency' ? '#fecaca' : '#000';
   }
 
   const amountEl = document.getElementById('exchangeAmount');
-  if (amountEl && !preserveAmount) {
-    amountEl.value = direction === 'currency-gold' ? '10000' : '';
+  if (amountEl && !preserveAmount && economyConfig) {
+    amountEl.value = direction === 'currency-gold' ? String(economyConfig.matchReward.perMatchCurrency) : '';
   }
 
   refreshExchangePanel();
 }
 
-function applyQuickExchange10k() {
+function applyQuickMatchSample() {
+  if (!economyConfig) return;
   const tabBtn = document.querySelector('.direction-tab[data-direction="currency-gold"]');
   setExchangeDirection('currency-gold', tabBtn, true);
   const amountEl = document.getElementById('exchangeAmount');
-  if (amountEl) amountEl.value = '10000';
+  if (amountEl) amountEl.value = String(economyConfig.matchReward.perMatchCurrency);
   calculateExchange();
 }
 
 function calculateExchange() {
   const amountEl = document.getElementById('exchangeAmount');
   const resultEl = document.getElementById('exchangeResult');
-  if (!amountEl || !resultEl) return;
+  if (!amountEl || !resultEl || !economyConfig) return;
 
   const amount = parseFloat(amountEl.value) || 0;
-  const rates = getDynamicRates(currentMarketState);
+  const rates = getDynamicRates(economyConfig);
   const config = rates[currentExchange];
-  if (!config || amount <= 0) {
-    resultEl.value = '';
+  if (!config || config.blocked || amount <= 0) {
+    resultEl.value = config?.blocked ? 'Diblokir oleh aturan Economy v2' : '';
     return;
   }
 
-  const netAmount = amount * (1 - config.fee);
-  const result = netAmount * config.rate;
-  resultEl.value = result.toFixed(2);
+  const conv = currentExchange === 'currency-gold'
+    ? convertCurrencyToGold(economyConfig, amount)
+    : convertGoldToDiamond(economyConfig, amount);
+  const netOut = currentExchange === 'currency-gold' ? conv.netGold : conv.netDiamond;
+  resultEl.value = netOut.toFixed(currentExchange === 'gold-diamond' ? 4 : 2);
 }
 
 function handleNextTurn() {
-  const { state, latestEntry } = advanceMarketTurn('Next Turn');
+  if (!economyConfig) return;
+  const { state, latestEntry } = advanceMarketTurn('Next Turn', { economyConfig });
   renderMarketUI(state);
-  const pct = Number(latestEntry?.diamondChangePct || 0);
-  showMarketNotification(formatTurnNotification(latestEntry), pct >= 0 ? 'up' : 'down');
+  showMarketNotification(formatTurnNotification(latestEntry), 'info');
 }
 
 async function handleLogout() {
@@ -430,104 +456,103 @@ async function handleLogout() {
 }
 
 async function executeExchange() {
+  if (!economyConfig) return;
+  const rates = getDynamicRates(economyConfig);
+  const config = rates[currentExchange];
+
+  if (!config || config.blocked) {
+    showExchangeFeedback('🔒 Konversi balik Diamond → Currency tidak diizinkan tanpa fee dan batas harian.', true);
+    return;
+  }
+
   const amount = parseFloat(document.getElementById('exchangeAmount').value);
   if (!amount || amount <= 0) {
     showExchangeFeedback('❌ Masukkan jumlah yang valid!', true);
     return;
   }
 
-  const rates = getDynamicRates(currentMarketState);
-  const config = rates[currentExchange];
-  const feeAmount = amount * config.fee;
-  const netAmount = amount - feeAmount;
-  const result = Number((netAmount * config.rate).toFixed(2));
-
-  const fromKey = config.from.toLowerCase();
-  const toBalanceKey = config.to.toLowerCase();
-
-  if ((userBalances[fromKey] || 0) < amount) {
-    showExchangeFeedback(`❌ Saldo ${config.from} tidak cukup! Saldo Anda: ${(userBalances[fromKey] || 0).toLocaleString('id-ID')}`, true);
+  let serverRes;
+  try {
+    serverRes = await executeServerConversion({ direction: currentExchange, amount });
+  } catch (err) {
+    showExchangeFeedback(`❌ ${err.message || 'Gagal memproses exchange di server.'}`, true);
     return;
   }
 
-  const fromField = fromKey === 'diamond' ? 'diamonds' : fromKey;
-  const toField = toBalanceKey === 'diamond' ? 'diamonds' : toBalanceKey;
-
-  const updates = {
-    updated_at: new Date().toISOString(),
-    [fromField]: Number((userBalances[fromKey] - amount).toFixed(2)),
-    [toField]: Number((userBalances[toBalanceKey] + result).toFixed(2))
+  const wallet = serverRes.wallet;
+  userBalances = {
+    diamond: Number(wallet.diamond || 0),
+    gold: Number(wallet.gold || 0),
+    currency: Number(wallet.currency || 0)
   };
+  applyServerWalletToDOM(wallet);
+  updateBalanceDisplays();
 
+  const conv = serverRes.conversion;
   try {
-    await withFirestoreRetry(() => updateDoc(doc(db, 'profiles', currentUserId), updates), 3, 1000);
     await withFirestoreRetry(() => addDoc(collection(db, 'transactions'), {
       user_id: currentUserId,
       type: 'exchange',
       from_currency: config.from,
       to_currency: config.to,
-      amount_from: amount,
-      amount_to: result,
-      fee: feeAmount,
-      market_turn: currentMarketState.turn,
+      amount_from: conv.amountFrom,
+      amount_to: conv.amountTo,
+      fee: conv.feeAmount,
       status: 'completed',
       created_at: new Date().toISOString()
     }), 3, 1000);
-  } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'profiles/transactions');
-    showExchangeFeedback('❌ Gagal memproses exchange ke server. Coba lagi.', true);
-    return;
+  } catch (_) {
+    // Server ledger sudah mencatat transaksi permanen
   }
 
-  userBalances[fromKey] = updates[fromField];
-  userBalances[toBalanceKey] = updates[toField];
-  updateBalanceDisplays();
-
-  const { state, latestEntry } = advanceMarketTurn('Exchange');
+  const { state, latestEntry } = advanceMarketTurn('Exchange', { economyConfig });
   renderMarketUI(state);
-  const pct = Number(latestEntry?.diamondChangePct || 0);
-  showMarketNotification(formatTurnNotification(latestEntry), pct >= 0 ? 'up' : 'down');
-  showExchangeFeedback(`✅ Berhasil menukar ${amount.toLocaleString('id-ID')} ${config.from} menjadi ${result.toFixed(2)} ${config.to} pada Turn #${state.turn - 1}!`, false);
+  showMarketNotification(formatTurnNotification(latestEntry), 'info');
+  showExchangeFeedback(`✅ Berhasil menukar ${conv.amountFrom.toLocaleString('id-ID')} ${config.from} menjadi ${conv.amountTo} ${config.to} (fee ${conv.feePercent}% — Validasi Server).`, false);
 
   await loadTransactions();
 }
 
 async function requestWithdraw() {
-  const netRequired = 2500;
-  const grossRequired = Math.ceil(netRequired / 0.85);
+  if (!economyConfig) return;
+  const wd = getWithdrawSummary(economyConfig, economyConfig.withdraw.minDiamond);
 
-  if (userBalances.diamond < grossRequired) {
-    showExchangeFeedback(`❌ Saldo Diamond tidak cukup untuk withdraw (butuh ${grossRequired.toLocaleString('id-ID')} Diamond gross).`, true);
+  if (userBalances.diamond < wd.minDiamond) {
+    showExchangeFeedback(`❌ Saldo Diamond tidak cukup! Minimum withdraw: ${wd.minDiamond} Diamond (terima bersih ${wd.netUsdt} USDT setelah fee ${wd.feePercent}%).`, true);
     return;
   }
 
-  if (!window.confirm(`Yakin ingin request withdraw ${grossRequired.toLocaleString('id-ID')} Diamond?\n\n(Net yang diterima: ${netRequired.toLocaleString('id-ID')} Diamond ≈ Rp 500.000)`)) return;
+  if (!window.confirm(`Yakin ingin request withdraw ${wd.minDiamond} Diamond?\n\nFee ${wd.feePercent}% (-${wd.feeDiamond} Diamond)\nNet yang diterima: ${wd.netUsdt} USDT\nStatus: Antrean (Queue)`)) return;
 
-  const newBalance = userBalances.diamond - grossRequired;
+  let serverRes;
   try {
-    await withFirestoreRetry(() => updateDoc(doc(db, 'profiles', currentUserId), {
-      diamonds: newBalance,
-      updated_at: new Date().toISOString()
-    }), 3, 1000);
-    userBalances.diamond = newBalance;
+    serverRes = await requestServerWithdraw(wd.minDiamond);
+  } catch (err) {
+    showExchangeFeedback(`❌ ${err.message || 'Withdraw ditolak server.'}`, true);
+    return;
+  }
 
+  const wallet = serverRes.wallet;
+  userBalances.diamond = Number(wallet.diamond || 0);
+  applyServerWalletToDOM(wallet);
+  updateBalanceDisplays();
+
+  try {
     await withFirestoreRetry(() => addDoc(collection(db, 'transactions'), {
       user_id: currentUserId,
       type: 'withdraw',
       from_currency: 'Diamond',
-      amount_from: grossRequired,
-      amount_to: netRequired,
-      fee: grossRequired - netRequired,
+      amount_from: serverRes.withdraw.grossDiamond,
+      amount_to: serverRes.withdraw.netUsdt,
+      fee: serverRes.withdraw.feeDiamond,
       status: 'pending',
       created_at: new Date().toISOString()
     }), 3, 1000);
-  } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'profiles/transactions');
-    return;
+  } catch (_) {
+    // Server ledger sudah mencatat request withdraw permanen
   }
 
-  updateBalanceDisplays();
-  showExchangeFeedback('✅ Permintaan Withdraw berhasil diajukan! Admin akan memproses dalam 1x24 jam.', false);
+  showExchangeFeedback('✅ Permintaan Withdraw berhasil masuk antrean server (queue)!', false);
   await loadTransactions();
 }
 
@@ -535,65 +560,59 @@ async function loadTransactions() {
   const list = document.getElementById('transactionList');
   if (!currentUserId || !list) return;
 
-  let data = [];
+  let entries = [];
   try {
-    const q = query(collection(db, 'transactions'), where('user_id', '==', currentUserId));
-    const snap = await withFirestoreRetry(() => getDocs(q), 3, 1000);
-    data = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 10);
+    const res = await fetchServerLedger(20);
+    entries = Array.isArray(res.entries) ? res.entries : [];
   } catch (err) {
-    handleFirestoreError(err, OperationType.LIST, 'transactions');
-    list.innerHTML = '<p style="text-align:center; color:#f87171; padding:20px;">Gagal memuat transaksi dari server.</p>';
+    list.innerHTML = '<p style="text-align:center; color:#f87171; padding:20px;">Gagal memuat Ledger dari server.</p>';
     return;
   }
 
-  if (!data || data.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:#9db2d9; padding:20px;">Belum ada transaksi.</p>';
+  if (entries.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:#9db2d9; padding:20px;">Belum ada catatan Ledger di server.</p>';
     return;
   }
 
-  list.innerHTML = data.map(t => {
-    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    let desc = '';
-    if (t.type === 'exchange') {
-      desc = `Exchange: ${Number(t.amount_from).toLocaleString('id-ID')} ${t.from_currency} → ${parseFloat(t.amount_to).toFixed(2)} ${t.to_currency}`;
-    } else if (t.type === 'withdraw') {
-      desc = `Withdraw: ${Number(t.amount_from).toLocaleString('id-ID')} ${t.from_currency} (Net: ${Number(t.amount_to).toLocaleString('id-ID')})`;
-    } else {
-      desc = `${t.type}: ${t.amount_to} ${t.to_currency || ''}`;
-    }
-
-    const statusColor = t.status === 'completed' ? '#28a745' : (t.status === 'pending' ? '#ffc107' : '#ff6b6b');
-
-    return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; border-bottom:1px solid #1e3566; color:white;">
-        <div>
-          <div style="font-weight:bold; color:#00d4ff;">${desc}</div>
-          <div style="font-size:12px; color:#9db2d9;">${date}</div>
+  list.innerHTML = `
+    <div style="margin-bottom:10px; font-size:12px; color:#86efac;">🔒 Ledger Server Permanen (hanya-baca, tidak dapat diedit atau dihapus)</div>
+    ${entries.map(item => {
+      const date = new Date(item.waktu).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      const isMasuk = item.jenis_transaksi === 'masuk';
+      const badgeBg = isMasuk ? '#22c55e' : '#ef4444';
+      const sign = isMasuk ? '+' : '-';
+      const unit = String(item.mata_uang || '').toUpperCase();
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px; border-bottom:1px solid #1e3566; color:white;">
+          <div>
+            <div style="font-weight:bold; color:#00d4ff;">${item.keterangan || item.kategori}</div>
+            <div style="font-size:12px; color:#9db2d9;">${date} • Akun: ${item.akun}</div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:2px;">Saldo: ${Number(item.saldo_sebelum).toLocaleString('id-ID')} → <strong>${Number(item.saldo_sesudah).toLocaleString('id-ID')} ${unit}</strong></div>
+          </div>
+          <div style="text-align:right; white-space:nowrap;">
+            <div style="font-weight:bold; color:${isMasuk ? '#86efac' : '#fca5a5'}; margin-bottom:4px;">${sign}${Number(item.jumlah).toLocaleString('id-ID')} ${unit}</div>
+            <span style="background:${badgeBg}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold;">${item.jenis_transaksi.toUpperCase()}</span>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <span style="background:${statusColor}; color:#000; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${t.status.toUpperCase()}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('')}
+  `;
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // Immediately render turn-based market from localStorage (resumes without resetting)
-  const initialLoad = loadMarketState();
-  renderMarketUI(initialLoad.state);
-  if (initialLoad.advancedByGameTurn > 0 && initialLoad.latestEntry) {
-    const pct = Number(initialLoad.latestEntry.diamondChangePct || 0);
-    showMarketNotification(formatTurnNotification(initialLoad.latestEntry), pct >= 0 ? 'up' : 'down');
-  }
-
-  const defaultTab = document.querySelector('.direction-tab[data-direction="currency-gold"]');
-  setExchangeDirection('currency-gold', defaultTab, false);
-
   try {
+    economyConfig = await loadEconomyConfig();
+    renderWithdrawPolicyUI(economyConfig);
+
+    const initialLoad = loadMarketState({ economyConfig });
+    renderMarketUI(initialLoad.state);
+    if (initialLoad.advancedByGameTurn > 0 && initialLoad.latestEntry) {
+      showMarketNotification(formatTurnNotification(initialLoad.latestEntry), 'info');
+    }
+
+    const defaultTab = document.querySelector('.direction-tab[data-direction="currency-gold"]');
+    setExchangeDirection('currency-gold', defaultTab, false);
+
     const user = await getCurrentUserOnce();
     if (!user) { window.location.href = 'index.html'; return; }
     currentUserId = user.uid;
@@ -630,12 +649,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       document.getElementById('moralBar').style.width = `${team.moral || 0}%`;
 
       const totalMatches = (team.wins || 0) + (team.draws || 0) + (team.losses || 0);
-      const matchSync = syncMarketWithMatches(totalMatches);
+      const matchSync = syncMarketWithMatches(totalMatches, { economyConfig });
       if (matchSync.advancedCount > 0) {
         renderMarketUI(matchSync.state);
         if (matchSync.latestEntry) {
-          const pct = Number(matchSync.latestEntry.diamondChangePct || 0);
-          showMarketNotification(formatTurnNotification(matchSync.latestEntry), pct >= 0 ? 'up' : 'down');
+          showMarketNotification(formatTurnNotification(matchSync.latestEntry), 'info');
         }
       }
     }
@@ -648,7 +666,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 window.handleLogout = handleLogout;
 window.setExchangeDirection = setExchangeDirection;
-window.applyQuickExchange10k = applyQuickExchange10k;
+window.applyQuickMatchSample = applyQuickMatchSample;
 window.calculateExchange = calculateExchange;
 window.executeExchange = executeExchange;
 window.requestWithdraw = requestWithdraw;

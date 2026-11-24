@@ -20,19 +20,34 @@ import {
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
+import { loadEconomyConfig } from './economy-config.js';
+import { applyServerWalletToDOM, executeServerSpend } from './economy-client.js';
 
 let currentTeamId = null;
 let currentUserId = null;
 let userGold = 0;
 let academyLevel = 1;
+let economyConfig = null;
+let academyData = {};
 
-const academyData = {
-  1: { cost: 500, quality: 'Basic', maxPotential: 75, upgradeCost: 5000 },
-  2: { cost: 800, quality: 'Advanced', maxPotential: 85, upgradeCost: 10000 },
-  3: { cost: 1200, quality: 'Elite', maxPotential: 92, upgradeCost: 20000 },
-  4: { cost: 1800, quality: 'Master', maxPotential: 97, upgradeCost: 40000 },
-  5: { cost: 2500, quality: 'Legendary', maxPotential: 99, upgradeCost: null }
-};
+function buildAcademyDataFromConfig(cfg) {
+  const rookie = cfg.defaultPrices.players.rookieGold;
+  const upg = cfg.defaultPrices.upgrades.academyGold;
+  const rMin = Number(rookie.min);
+  const rMax = Number(rookie.max);
+  const uMin = Number(upg.min);
+  const uMax = Number(upg.max);
+  const scoutStep = (lvl) => Math.round(rMin + ((rMax - rMin) * (lvl - 1)) / 4);
+  const upgStep = (lvl) => Math.round(uMin + ((uMax - uMin) * (lvl - 1)) / 3);
+
+  return {
+    1: { cost: scoutStep(1), quality: 'Basic', maxPotential: 75, upgradeCost: upgStep(1) },
+    2: { cost: scoutStep(2), quality: 'Advanced', maxPotential: 85, upgradeCost: upgStep(2) },
+    3: { cost: scoutStep(3), quality: 'Elite', maxPotential: 92, upgradeCost: upgStep(3) },
+    4: { cost: scoutStep(4), quality: 'Master', maxPotential: 97, upgradeCost: upgStep(4) },
+    5: { cost: scoutStep(5), quality: 'Legendary', maxPotential: 99, upgradeCost: null }
+  };
+}
 
 const playerNames = ['Rizky','Bagus','Dimas','Fajar','Galih','Hendra','Irfan','Joko','Kevin','Lukman','Maulana','Naufal','Omar','Putra','Raka','Sandi','Taufik','Umar','Vino','Wahyu','Yoga','Zidan','Aldi','Bayu','Candra','Dwiki','Eka','Firman','Gilang','Hafiz'];
 const positions = ['Top','Jungle','Mid','ADC','Support'];
@@ -60,21 +75,18 @@ async function scoutPlayer() {
   }
 
   try {
-    userGold -= academyData[academyLevel].cost;
-    try {
-      await updateDoc(doc(db, 'profiles', currentUserId), {
-        gold: userGold,
-        updated_at: new Date().toISOString()
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `profiles/${currentUserId}`);
-    }
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
+    const serverRes = await executeServerSpend({ action: 'akademi_scout', academyLevel });
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
 
     const name = playerNames[Math.floor(Math.random() * playerNames.length)];
     const position = positions[Math.floor(Math.random() * positions.length)];
     const potential = Math.floor(Math.random() * (academyData[academyLevel].maxPotential - 60)) + 60;
     const overall = Math.floor(Math.random() * 20) + 50;
+
+    const rookieMin = Number(economyConfig.defaultPrices.players.rookieGold.min);
+    const rookieMax = Number(economyConfig.defaultPrices.players.rookieGold.max);
+    const rookieValue = Math.round(rookieMin + ((rookieMax - rookieMin) * Math.max(0, overall - 50)) / 20);
 
     try {
       await addDoc(collection(db, 'players'), {
@@ -85,7 +97,7 @@ async function scoutPlayer() {
         overall_rating: overall,
         potential: potential,
         age: Math.floor(Math.random() * 5) + 16,
-        market_value: overall * 100,
+        market_value: rookieValue,
         is_academy: true,
         recruited_at: new Date().toISOString()
       });
@@ -97,7 +109,7 @@ async function scoutPlayer() {
     await loadScoutedPlayers();
   } catch (err) {
     console.error('Error scouting:', err);
-    alert('Gagal scout pemain. Coba lagi.');
+    alert(`⚠️ ${err.message || 'Gagal scout pemain. Coba lagi.'}`);
   }
 }
 
@@ -119,25 +131,22 @@ async function upgradeAcademy() {
   }
 
   try {
-    userGold -= cost;
+    const serverRes = await executeServerSpend({ action: 'akademi_upgrade', academyLevel });
+    applyServerWalletToDOM(serverRes.wallet);
+    userGold = Number(serverRes.wallet.gold || 0);
     academyLevel = nextLevel;
 
-    await updateDoc(doc(db, 'profiles', currentUserId), {
-      gold: userGold,
-      updated_at: new Date().toISOString()
-    });
     await updateDoc(doc(db, 'teams', currentTeamId), {
       academy_level: academyLevel,
       updated_at: new Date().toISOString()
     });
 
-    document.getElementById('goldBalance').textContent = userGold.toLocaleString('id-ID');
     alert('Akademi berhasil di-upgrade ke level ' + academyLevel + '!');
     renderAcademyLevels();
     updateAcademyDisplay();
   } catch (err) {
     console.error('Error upgrading:', err);
-    alert('Gagal upgrade akademi.');
+    alert(`⚠️ ${err.message || 'Gagal upgrade akademi.'}`);
   }
 }
 
@@ -215,6 +224,8 @@ async function loadScoutedPlayers() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    economyConfig = await loadEconomyConfig();
+    academyData = buildAcademyDataFromConfig(economyConfig);
     const user = await getCurrentUserOnce();
     if (!user) { window.location.href = 'index.html'; return; }
     currentUserId = user.uid;

@@ -1,15 +1,40 @@
 const express = require('express');
 const path = require('path');
+const { createEconomyService, mountEconomyRoutes } = require('./economy-server');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const economyService = createEconomyService({ rootDir: __dirname });
 
 app.use(express.json());
+
+// Lindungi file internal server, ledger, dan aturan security dari akses static HTTP langsung
+app.use((req, res, next) => {
+  const reqPath = (req.path || '').toLowerCase();
+  if (
+    reqPath === '/data' ||
+    reqPath.startsWith('/data/') ||
+    reqPath === '/economy-server.js' ||
+    reqPath === '/server.js' ||
+    reqPath === '/package.json' ||
+    reqPath === '/package-lock.json' ||
+    reqPath === '/firestore.rules' ||
+    reqPath === '/firebase-blueprint.json' ||
+    reqPath === '/security_spec.md' ||
+    reqPath.startsWith('/.')
+  ) {
+    return res.status(403).json({ error: 'Akses langsung ke file internal server ditolak.' });
+  }
+  return next();
+});
+
 app.use(express.static(__dirname, {
   extensions: ['html']
 }));
 
 app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/firebase')));
+
+mountEconomyRoutes(app, economyService);
 
 // Endpoint pengganti Supabase Edge Function: verify-captcha-
 app.post('/api/verify-captcha', async (req, res) => {

@@ -135,9 +135,9 @@ sync();
                         </select>
                         <select id="filterBudget" onchange="renderMarket()" style="padding: 8px; background: #16213e; color: white; border: 1px solid #333; border-radius: 5px;">
                             <option value="all">Semua Harga</option>
-                            <option value="low">< 5.000 Gold</option>
-                            <option value="mid">5.000 - 15.000 Gold</option>
-                            <option value="high">> 15.000 Gold</option>
+                            <option value="low" id="filterBudgetLow">Rookie</option>
+                            <option value="mid" id="filterBudgetMid">Mid</option>
+                            <option value="high" id="filterBudgetHigh">Top</option>
                         </select>
                     </div>
                     <div class="market-grid" id="marketGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
@@ -150,7 +150,7 @@ sync();
             <div id="tab-myteam" class="tab-content" style="display:none;">
                 <div class="panel raised">
                     <h3>👕 Daftar Pemain Tim Saya</h3>
-                    <p class="info-text">Pilih pemain untuk dilepas ke pasar transfer (Dijual dengan harga 80% dari nilai pasar).</p>
+                    <p id="sellInfoText" class="info-text">Memuat aturan pajak & biaya listing pasar dari economy.config.json...</p>
                     <div class="market-grid" id="myTeamGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
                         <!-- Diisi JS -->
                     </div>

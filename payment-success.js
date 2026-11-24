@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  getDoc,
   getDocs,
   query,
   updateDoc,
@@ -46,18 +45,6 @@ async function processPayment() {
       await updateDoc(doc(db, 'transactions', transaction.id), {
         status: 'completed',
         completed_at: new Date().toISOString()
-      });
-
-      const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
-      const profile = profileSnap.exists() ? profileSnap.data() : { diamonds: 0, gold: 0 };
-
-      const newDiamonds = (profile.diamonds || 0) + (transaction.diamonds || 0);
-      const newGold = (profile.gold || 0) + (transaction.gold || 0);
-
-      await updateDoc(doc(db, 'profiles', user.uid), {
-        diamonds: newDiamonds,
-        gold: newGold,
-        updated_at: new Date().toISOString()
       });
 
       document.getElementById('status').innerHTML =

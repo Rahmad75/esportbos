@@ -16,10 +16,14 @@ import {
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
+import { getMatchReward, getWeeklySinkBreakdown, loadEconomyConfig } from './economy-config.js';
+import { fetchServerLedger } from './economy-client.js';
 
 let allTransactions = [];
+let allLedgerEntries = [];
 let currentFilter = 'all';
 let currentUserId = null;
+let economyConfig = null;
 
 async function handleLogout() {
   await signOut(auth);
@@ -46,50 +50,50 @@ function renderTransactions() {
   const container = document.getElementById('transactionList');
   if (!container) return;
 
-  let filtered = allTransactions;
+  const sourceList = allLedgerEntries;
+  let filtered = sourceList;
   if (currentFilter === 'income') {
-    filtered = allTransactions.filter(t => t.type === 'topup' || (t.type === 'exchange' && Number(t.amount_to || 0) > 0));
+    filtered = sourceList.filter(t => t.jenis_transaksi === 'masuk');
   } else if (currentFilter === 'expense') {
-    filtered = allTransactions.filter(t => t.type === 'withdraw');
+    filtered = sourceList.filter(t => t.jenis_transaksi === 'keluar');
   } else if (currentFilter === 'exchange') {
-    filtered = allTransactions.filter(t => t.type === 'exchange');
+    filtered = sourceList.filter(t => t.kategori === 'konversi_keluar' || t.kategori === 'konversi_masuk');
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">Belum ada transaksi.</p>';
+    container.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">Belum ada catatan Ledger.</p>';
     return;
   }
 
-  container.innerHTML = filtered.slice(0, 50).map(t => {
-    const date = t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-';
-    const isWithdraw = t.type === 'withdraw';
-    const amountClass = isWithdraw ? 'expense' : 'income';
-    const amountSign = isWithdraw ? '-' : '+';
-    const displayAmount = t.type === 'topup'
-      ? `${(t.diamonds || 0).toLocaleString('id-ID')} Diamond`
-      : t.type === 'exchange'
-        ? `${Number(t.amount_to || 0).toLocaleString('id-ID')} ${t.to_currency || ''}`
-        : `${Number(t.amount_from || t.amount || 0).toLocaleString('id-ID')} ${t.from_currency || 'Diamond'}`;
+  container.innerHTML = `
+    <div style="margin-bottom:10px; font-size:12px; color:#28a745; font-weight:600;">🔒 Ledger Keuangan Permanen (Validasi Server — tidak dapat diubah atau dihapus)</div>
+    ${filtered.slice(0, 50).map(item => {
+      const date = item.waktu ? new Date(item.waktu).toLocaleString('id-ID') : '-';
+      const isMasuk = item.jenis_transaksi === 'masuk';
+      const amountClass = isMasuk ? 'income' : 'expense';
+      const amountSign = isMasuk ? '+' : '-';
+      const unit = String(item.mata_uang || 'currency').toUpperCase();
+      const iconCategory = item.kategori?.includes('match') ? 'match'
+        : item.kategori?.includes('konversi') ? 'exchange'
+        : item.kategori?.includes('withdraw') ? 'withdraw'
+        : item.kategori?.includes('gaji') ? 'wage'
+        : item.kategori?.includes('stadion') ? 'maintenance'
+        : (isMasuk ? 'income' : 'expense');
 
-    const desc = t.type === 'exchange'
-      ? `Exchange: ${t.amount_from} ${t.from_currency} → ${Number(t.amount_to || 0).toFixed(2)} ${t.to_currency}`
-      : t.type === 'withdraw'
-        ? `Withdraw: ${t.amount_from} ${t.from_currency || 'Diamond'}`
-        : `Top-Up Paket ${(t.package || 'Starter').toUpperCase()}`;
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-icon">${getTransactionIcon(t.type)}</div>
-        <div class="transaction-details">
-          <div class="transaction-title">${desc}</div>
-          <div class="transaction-date">${date} • ${(t.status || 'pending').toUpperCase()}</div>
+      return `
+        <div class="transaction-item">
+          <div class="transaction-icon">${getTransactionIcon(iconCategory)}</div>
+          <div class="transaction-details">
+            <div class="transaction-title">${item.keterangan || item.kategori}</div>
+            <div class="transaction-date">${date} • Akun: ${item.akun} • Saldo: ${Number(item.saldo_sebelum).toLocaleString('id-ID')} → ${Number(item.saldo_sesudah).toLocaleString('id-ID')} ${unit}</div>
+          </div>
+          <div class="transaction-amount ${amountClass}">
+            ${amountSign}${Number(item.jumlah).toLocaleString('id-ID')} ${unit}
+          </div>
         </div>
-        <div class="transaction-amount ${amountClass}">
-          ${amountSign}${displayAmount}
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('')}
+  `;
 }
 
 function filterTransactions(filter, btnEl) {
@@ -101,20 +105,22 @@ function filterTransactions(filter, btnEl) {
 }
 
 function exportTransactions() {
-  if (!allTransactions || allTransactions.length === 0) {
-    alert('Belum ada transaksi untuk diekspor.');
+  if (!allLedgerEntries || allLedgerEntries.length === 0) {
+    alert('Belum ada catatan Ledger untuk diekspor.');
     return;
   }
-  const rows = [['Tanggal', 'Tipe', 'Status', 'Dari', 'Jumlah Dari', 'Ke', 'Jumlah Ke']];
-  allTransactions.forEach(t => {
+  const rows = [['Waktu', 'Akun', 'Jenis Transaksi', 'Kategori', 'Mata Uang', 'Jumlah', 'Saldo Sebelum', 'Saldo Sesudah', 'Keterangan']];
+  allLedgerEntries.forEach(item => {
     rows.push([
-      t.created_at || '',
-      t.type || '',
-      t.status || '',
-      t.from_currency || '',
-      String(t.amount_from ?? t.amount ?? 0),
-      t.to_currency || '',
-      String(t.amount_to ?? t.diamonds ?? 0)
+      item.waktu || '',
+      item.akun || '',
+      item.jenis_transaksi || '',
+      item.kategori || '',
+      item.mata_uang || '',
+      String(item.jumlah ?? 0),
+      String(item.saldo_sebelum ?? 0),
+      String(item.saldo_sesudah ?? 0),
+      item.keterangan || ''
     ]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -122,7 +128,7 @@ function exportTransactions() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'laporan-dana-klub.csv';
+  a.download = 'ledger-dana-klub.csv';
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -131,20 +137,29 @@ function renderSummaryAndProjection(profile, team, matches, players) {
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
 
+  const matchDescEl = document.getElementById('matchRewardDesc');
+  if (matchDescEl && economyConfig) {
+    const winR = getMatchReward(economyConfig, 'win').toLocaleString('id-ID');
+    const drawR = getMatchReward(economyConfig, 'draw').toLocaleString('id-ID');
+    const loseR = getMatchReward(economyConfig, 'lose').toLocaleString('id-ID');
+    matchDescEl.textContent = `Menang: +${winR} Currency | Seri: +${drawR} Currency | Kalah: +${loseR} Currency`;
+  }
+
   let matchIncomeTotal = 0;
   let weeklyMatchIncome = 0;
   matches.forEach(m => {
-    const reward = m.result === 'win' ? 10000 : (m.result === 'draw' ? 2000 : 500);
+    const reward = Number.isFinite(Number(m.reward_currency))
+      ? Number(m.reward_currency)
+      : getMatchReward(economyConfig, m.result);
     matchIncomeTotal += reward;
     if (m.match_date && new Date(m.match_date) >= weekAgo) {
       weeklyMatchIncome += reward;
     }
   });
 
-  const activeSponsorsCount = Array.isArray(team?.active_sponsors) ? team.active_sponsors.length : 0;
-  const weeklySponsorIncome = activeSponsorsCount * 2000;
+  const weeklySponsorIncome = Number(economyConfig?.matchReward?.eventBonusCurrency || 0);
   const ticketIncomeTotal = team?.total_stadium_income || 0;
-  const predictionIncomeTotal = (profile?.prediction_correct || 0) * 500;
+  const predictionIncomeTotal = 0;
   const topupDiamonds = allTransactions
     .filter(t => t.type === 'topup' && (t.status === 'completed' || t.status === 'success'))
     .reduce((sum, t) => sum + Number(t.diamonds || 0), 0);
@@ -152,13 +167,13 @@ function renderSummaryAndProjection(profile, team, matches, players) {
   const playerCount = players.length;
   const staffCount = Array.isArray(team?.hired_staff) ? team.hired_staff.length : 0;
   const stadiumLevel = team?.stadium_level || 1;
-  const academyLevel = team?.academy_level || 1;
 
-  const playerWages = playerCount * 15;
-  const staffWages = staffCount * 10;
-  const stadiumMaint = stadiumLevel * 25;
-  const academyCost = academyLevel * 20;
-  const weeklyExpense = playerWages + staffWages + stadiumMaint + academyCost;
+  const sink = getWeeklySinkBreakdown(economyConfig);
+  const playerWages = sink.playerSalaries;
+  const staffWages = sink.staffSalaries;
+  const stadiumMaint = sink.stadiumMaintenance;
+  const academyCost = sink.youthAcademy;
+  const weeklyExpense = sink.total;
 
   const weeklyIncome = weeklyMatchIncome + weeklySponsorIncome;
   const netBalance = weeklyIncome - weeklyExpense;
@@ -169,7 +184,7 @@ function renderSummaryAndProjection(profile, team, matches, players) {
 
   document.getElementById('incomeBreakdown').innerHTML = `
     <li>Pertandingan: ${weeklyMatchIncome.toLocaleString('id-ID')}</li>
-    <li>Sponsor: ${weeklySponsorIncome.toLocaleString('id-ID')}</li>
+    <li>Bonus/Event: ${weeklySponsorIncome.toLocaleString('id-ID')}</li>
   `;
   document.getElementById('expenseBreakdown').innerHTML = `
     <li>Gaji Pemain & Staff: ${(playerWages + staffWages).toLocaleString('id-ID')}</li>
@@ -203,6 +218,7 @@ function renderSummaryAndProjection(profile, team, matches, players) {
 
 document.addEventListener('DOMContentLoaded', async function() {
   try {
+    economyConfig = await loadEconomyConfig();
     const user = await getCurrentUserOnce();
     if (!user) {
       window.location.href = 'index.html';
@@ -252,6 +268,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     let matches = [];
     let players = [];
+
+    try {
+      const ledgerRes = await fetchServerLedger(100);
+      allLedgerEntries = Array.isArray(ledgerRes.entries) ? ledgerRes.entries : [];
+    } catch (err) {
+      console.error('Gagal memuat ledger server:', err);
+      allLedgerEntries = [];
+    }
 
     try {
       const txSnap = await getDocs(query(collection(db, 'transactions'), where('user_id', '==', currentUserId)));

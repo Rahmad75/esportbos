@@ -18,6 +18,7 @@ import {
   getDocFromServer
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
+import { loadEconomyConfig } from './economy-config.js';
 
 // Konfigurasi Firebase (selaras dengan firebase-applet-config.json)
 export const firebaseConfig = {
@@ -165,6 +166,32 @@ export function getCurrentUserOnce() {
   });
 }
 
+async function overlayServerWalletBalances(user, profileData) {
+  try {
+    if (!user || typeof user.getIdToken !== 'function' || typeof fetch !== 'function') {
+      return profileData;
+    }
+    const token = await user.getIdToken();
+    const res = await fetch('/api/economy/wallet', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return profileData;
+    const payload = await res.json();
+    if (payload && payload.success && payload.wallet) {
+      return {
+        ...profileData,
+        diamonds: Number(payload.wallet.diamond ?? 0),
+        gold: Number(payload.wallet.gold ?? 0),
+        currency: Number(payload.wallet.currency ?? 0)
+      };
+    }
+  } catch (_) {
+    // Fallback gracefully jika offline sementara
+  }
+  return profileData;
+}
+
 // Helper: Ambil profile user sekali dengan getDoc + retry (buat default jika belum ada)
 export async function getOrCreateProfile(user, defaults = {}) {
   if (!user || !user.uid) return null;
@@ -178,7 +205,7 @@ export async function getOrCreateProfile(user, defaults = {}) {
   }
 
   if (snap && snap.exists()) {
-    return { id: snap.id, ...snap.data() };
+    return overlayServerWalletBalances(user, { id: snap.id, ...snap.data() });
   }
 
   const rawUsername = (defaults.username || (user.email ? user.email.split('@')[0] : 'Manager') || 'Manager').trim();
@@ -187,6 +214,9 @@ export async function getOrCreateProfile(user, defaults = {}) {
   const safeClubName = rawClub.slice(0, 80) || 'My Club FC';
   const safeReferral = (defaults.referral_code || ('ESB-' + Math.random().toString(36).substring(2, 8).toUpperCase())).slice(0, 32);
   const safeReferredBy = defaults.referred_by ? String(defaults.referred_by).trim().slice(0, 128) : null;
+
+  const economyCfg = await loadEconomyConfig();
+  const starter = economyCfg.starterBalance;
 
   const newProfile = {
     id: user.uid,
@@ -198,9 +228,9 @@ export async function getOrCreateProfile(user, defaults = {}) {
     bio: '',
     country: 'ID',
     city: '',
-    diamonds: 0,
-    gold: 10000,
-    currency: 5000,
+    diamonds: Number(starter.diamonds),
+    gold: Number(starter.gold),
+    currency: Number(starter.currency),
     prediction_score: 0,
     prediction_total: 0,
     prediction_correct: 0,
@@ -209,7 +239,7 @@ export async function getOrCreateProfile(user, defaults = {}) {
 
   try {
     await withFirestoreRetry(() => setDoc(profileRef, newProfile), 3, 1000);
-    return newProfile;
+    return overlayServerWalletBalances(user, newProfile);
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
   }

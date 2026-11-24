@@ -16,6 +16,8 @@ import {
   handleFirestoreError,
   OperationType
 } from './firebase-config.js';
+import { loadEconomyConfig } from './economy-config.js';
+import { adminResetServerWallet } from './economy-client.js';
 
 const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
@@ -180,16 +182,15 @@ async function clearData() {
 }
 
 async function resetEconomy() {
-  if (!confirm('⚠️ Yakin ingin mereset dana klub Anda ke 10.000 Gold?')) return;
+  const cfg = await loadEconomyConfig();
+  const starter = cfg.starterBalance;
+  if (!confirm(`⚠️ Yakin ingin mereset saldo keuangan ke saldo awal (${starter.diamonds} Diamond, ${starter.gold} Gold, ${starter.currency} Currency)?`)) return;
   try {
-    await updateDoc(doc(db, 'profiles', currentUser.uid), {
-      gold: 10000,
-      updated_at: new Date().toISOString()
-    });
-    alert('✅ Ekonomi berhasil direset ke 10.000 Gold!');
+    await adminResetServerWallet();
+    alert(`✅ Saldo server berhasil direset ke ${starter.diamonds} Diamond, ${starter.gold} Gold, ${starter.currency} Currency!`);
     await loadAdminData();
   } catch (err) {
-    handleFirestoreError(err, OperationType.UPDATE, `profiles/${currentUser.uid}`);
+    alert(`⚠️ ${err.message || 'Gagal reset saldo server.'}`);
   }
 }
 

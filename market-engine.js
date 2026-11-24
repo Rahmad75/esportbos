@@ -1,10 +1,7 @@
+import { getLoadedEconomyConfig } from './economy-config.js';
+
 export const MARKET_STORAGE_KEY = 'market_turn';
 export const GAME_TURN_KEY = 'game_turn';
-export const INITIAL_DIAMOND_TO_GOLD = 1.0;
-export const INITIAL_GOLD_TO_CURRENCY = 0.09566;
-export const DIAMOND_VOLATILITY = 0.05;
-export const GOLD_VOLATILITY = 0.004;
-export const MIN_MARKET_PRICE = 0.01;
 export const MAX_MARKET_HISTORY = 50;
 
 function getSafeStorage(customStorage) {
@@ -19,10 +16,29 @@ function getSafeStorage(customStorage) {
   return null;
 }
 
-export function calculateNextPrice(oldPrice, volatility, randomFn = Math.random) {
-  const base = Number.isFinite(Number(oldPrice)) ? Number(oldPrice) : MIN_MARKET_PRICE;
-  const raw = base + (randomFn() - 0.48) * volatility;
-  return Math.max(MIN_MARKET_PRICE, Number(raw.toFixed(6)));
+function resolveEconomyConfig(economyConfig) {
+  const cfg = economyConfig || getLoadedEconomyConfig();
+  if (!cfg || !cfg.rates) {
+    throw new Error('Economy config belum dimuat dari economy.config.json');
+  }
+  return cfg;
+}
+
+export function getConfigMarketRates(economyConfig) {
+  const cfg = resolveEconomyConfig(economyConfig);
+  const diamondToGold = Number(cfg.rates.diamondToGold);
+  const goldToCurrency = Number(cfg.rates.goldToCurrency);
+  const diamondToCurrency = Number(cfg.rates.diamondToCurrency);
+  const diamondToUsdt = Number(cfg.rates.diamondToUsdt);
+  const currencyToGold = goldToCurrency > 0 ? 1 / goldToCurrency : 0;
+  return {
+    version: cfg.version,
+    diamondToGold,
+    goldToCurrency,
+    diamondToCurrency,
+    diamondToUsdt,
+    currencyToGold
+  };
 }
 
 export function computePercentChange(prevPrice, nextPrice) {
@@ -30,73 +46,79 @@ export function computePercentChange(prevPrice, nextPrice) {
   return Number((((nextPrice - prevPrice) / prevPrice) * 100).toFixed(2));
 }
 
-export function createInitialMarketState() {
+export function createInitialMarketState(economyConfig) {
+  const rates = getConfigMarketRates(economyConfig);
   return {
+    version: rates.version,
     turn: 1,
-    diamondToGold: INITIAL_DIAMOND_TO_GOLD,
-    goldToCurrency: INITIAL_GOLD_TO_CURRENCY,
+    diamondToGold: rates.diamondToGold,
+    goldToCurrency: rates.goldToCurrency,
+    diamondToCurrency: rates.diamondToCurrency,
     syncedMatchesCount: null,
     history: [
       {
         turn: 1,
-        diamondToGold: INITIAL_DIAMOND_TO_GOLD,
-        goldToCurrency: INITIAL_GOLD_TO_CURRENCY,
-        prevDiamondToGold: INITIAL_DIAMOND_TO_GOLD,
-        prevGoldToCurrency: INITIAL_GOLD_TO_CURRENCY,
+        diamondToGold: rates.diamondToGold,
+        goldToCurrency: rates.goldToCurrency,
+        prevDiamondToGold: rates.diamondToGold,
+        prevGoldToCurrency: rates.goldToCurrency,
         diamondChangePct: 0,
         goldChangePct: 0,
-        cause: 'Market Dibuka',
+        cause: 'Economy v2 Aktif (Kurs Tetap Config)',
         timestamp: new Date().toISOString()
       }
     ]
   };
 }
 
-function normalizeMarketState(parsed) {
+function normalizeMarketState(parsed, economyConfig) {
   if (!parsed || typeof parsed !== 'object') return null;
+  const rates = getConfigMarketRates(economyConfig);
 
-  const history = Array.isArray(parsed.history)
-    ? parsed.history
-        .filter(item => item && Number.isFinite(Number(item.diamondToGold)) && Number.isFinite(Number(item.goldToCurrency)))
-        .slice(-MAX_MARKET_HISTORY)
-    : [];
+  // Jika data localStorage berasal dari versi ekonomi lama (sebelum Economy v2 / rate lama), sinkronkan ulang ke economy.config.json
+  if (parsed.version !== rates.version) {
+    return null;
+  }
 
   const turn = Number.isFinite(Number(parsed.turn)) && Number(parsed.turn) >= 1
     ? Math.floor(Number(parsed.turn))
-    : (history.length > 0 ? Number(history[history.length - 1].turn) || 1 : 1);
+    : 1;
 
-  const lastHist = history.length > 0 ? history[history.length - 1] : null;
-  const diamondToGold = Math.max(
-    MIN_MARKET_PRICE,
-    Number.isFinite(Number(parsed.diamondToGold))
-      ? Number(parsed.diamondToGold)
-      : (lastHist ? Number(lastHist.diamondToGold) : INITIAL_DIAMOND_TO_GOLD)
-  );
-  const goldToCurrency = Math.max(
-    MIN_MARKET_PRICE,
-    Number.isFinite(Number(parsed.goldToCurrency))
-      ? Number(parsed.goldToCurrency)
-      : (lastHist ? Number(lastHist.goldToCurrency) : INITIAL_GOLD_TO_CURRENCY)
-  );
+  const history = Array.isArray(parsed.history)
+    ? parsed.history
+        .filter(item => item && Number.isFinite(Number(item.turn)))
+        .slice(-MAX_MARKET_HISTORY)
+        .map(item => ({
+          ...item,
+          diamondToGold: rates.diamondToGold,
+          goldToCurrency: rates.goldToCurrency,
+          prevDiamondToGold: rates.diamondToGold,
+          prevGoldToCurrency: rates.goldToCurrency,
+          diamondChangePct: 0,
+          goldChangePct: 0
+        }))
+    : [];
 
   if (history.length === 0) {
     history.push({
       turn,
-      diamondToGold,
-      goldToCurrency,
-      prevDiamondToGold: diamondToGold,
-      prevGoldToCurrency: goldToCurrency,
+      diamondToGold: rates.diamondToGold,
+      goldToCurrency: rates.goldToCurrency,
+      prevDiamondToGold: rates.diamondToGold,
+      prevGoldToCurrency: rates.goldToCurrency,
       diamondChangePct: 0,
       goldChangePct: 0,
-      cause: 'Market Dibuka',
+      cause: 'Economy v2 Aktif (Kurs Tetap Config)',
       timestamp: new Date().toISOString()
     });
   }
 
   return {
+    version: rates.version,
     turn,
-    diamondToGold,
-    goldToCurrency,
+    diamondToGold: rates.diamondToGold,
+    goldToCurrency: rates.goldToCurrency,
+    diamondToCurrency: rates.diamondToCurrency,
     syncedMatchesCount: Number.isFinite(Number(parsed.syncedMatchesCount)) && parsed.syncedMatchesCount !== null
       ? Math.max(0, Math.floor(Number(parsed.syncedMatchesCount)))
       : null,
@@ -117,22 +139,18 @@ export function saveMarketState(state, customStorage) {
   return trimmed;
 }
 
-function stepStateOneTurn(state, cause = 'Next Turn', randomFn = Math.random) {
-  const prevDiamond = state.diamondToGold;
-  const prevGold = state.goldToCurrency;
-
-  const nextDiamond = calculateNextPrice(prevDiamond, DIAMOND_VOLATILITY, randomFn);
-  const nextGold = calculateNextPrice(prevGold, GOLD_VOLATILITY, randomFn);
+function stepStateOneTurn(state, cause = 'Next Turn', economyConfig = null) {
+  const rates = getConfigMarketRates(economyConfig);
   const nextTurn = state.turn + 1;
 
   const entry = {
     turn: nextTurn,
-    diamondToGold: nextDiamond,
-    goldToCurrency: nextGold,
-    prevDiamondToGold: prevDiamond,
-    prevGoldToCurrency: prevGold,
-    diamondChangePct: computePercentChange(prevDiamond, nextDiamond),
-    goldChangePct: computePercentChange(prevGold, nextGold),
+    diamondToGold: rates.diamondToGold,
+    goldToCurrency: rates.goldToCurrency,
+    prevDiamondToGold: rates.diamondToGold,
+    prevGoldToCurrency: rates.goldToCurrency,
+    diamondChangePct: 0,
+    goldChangePct: 0,
     cause,
     timestamp: new Date().toISOString()
   };
@@ -140,14 +158,16 @@ function stepStateOneTurn(state, cause = 'Next Turn', randomFn = Math.random) {
   const nextHistory = [...(state.history || []), entry].slice(-MAX_MARKET_HISTORY);
   return {
     ...state,
+    version: rates.version,
     turn: nextTurn,
-    diamondToGold: nextDiamond,
-    goldToCurrency: nextGold,
+    diamondToGold: rates.diamondToGold,
+    goldToCurrency: rates.goldToCurrency,
+    diamondToCurrency: rates.diamondToCurrency,
     history: nextHistory
   };
 }
 
-export function loadMarketState({ customStorage, syncGameTurn = true, randomFn = Math.random } = {}) {
+export function loadMarketState({ customStorage, syncGameTurn = true, economyConfig = null } = {}) {
   const storage = getSafeStorage(customStorage);
   let state = null;
 
@@ -155,7 +175,7 @@ export function loadMarketState({ customStorage, syncGameTurn = true, randomFn =
     try {
       const raw = storage.getItem(MARKET_STORAGE_KEY);
       if (raw) {
-        state = normalizeMarketState(JSON.parse(raw));
+        state = normalizeMarketState(JSON.parse(raw), economyConfig);
       }
     } catch {
       state = null;
@@ -164,7 +184,7 @@ export function loadMarketState({ customStorage, syncGameTurn = true, randomFn =
 
   let didChange = false;
   if (!state) {
-    state = createInitialMarketState();
+    state = createInitialMarketState(economyConfig);
     didChange = true;
   }
 
@@ -174,7 +194,7 @@ export function loadMarketState({ customStorage, syncGameTurn = true, randomFn =
     if (Number.isFinite(externalTurn) && externalTurn > state.turn) {
       const steps = Math.min(MAX_MARKET_HISTORY, Math.floor(externalTurn - state.turn));
       for (let i = 0; i < steps; i++) {
-        state = stepStateOneTurn(state, 'Turn Game Bertambah', randomFn);
+        state = stepStateOneTurn(state, 'Turn Game Bertambah', economyConfig);
       }
       state.turn = Math.floor(externalTurn);
       if (state.history.length > 0) {
@@ -196,10 +216,10 @@ export function loadMarketState({ customStorage, syncGameTurn = true, randomFn =
   };
 }
 
-export function advanceMarketTurn(cause = 'Next Turn', { customStorage, matchDelta = 0, randomFn = Math.random } = {}) {
+export function advanceMarketTurn(cause = 'Next Turn', { customStorage, matchDelta = 0, economyConfig = null } = {}) {
   const storage = getSafeStorage(customStorage);
-  const { state: currentState } = loadMarketState({ customStorage: storage, syncGameTurn: true, randomFn });
-  let nextState = stepStateOneTurn(currentState, cause, randomFn);
+  const { state: currentState } = loadMarketState({ customStorage: storage, syncGameTurn: true, economyConfig });
+  let nextState = stepStateOneTurn(currentState, cause, economyConfig);
 
   if (matchDelta > 0 && Number.isFinite(nextState.syncedMatchesCount)) {
     nextState.syncedMatchesCount += matchDelta;
@@ -214,9 +234,9 @@ export function advanceMarketTurn(cause = 'Next Turn', { customStorage, matchDel
   };
 }
 
-export function syncMarketWithMatches(totalMatches, { customStorage, randomFn = Math.random } = {}) {
+export function syncMarketWithMatches(totalMatches, { customStorage, economyConfig = null } = {}) {
   const storage = getSafeStorage(customStorage);
-  const { state: loadedState, advancedByGameTurn } = loadMarketState({ customStorage: storage, syncGameTurn: true, randomFn });
+  const { state: loadedState, advancedByGameTurn } = loadMarketState({ customStorage: storage, syncGameTurn: true, economyConfig });
 
   const safeTotal = Number.isFinite(Number(totalMatches)) ? Math.max(0, Math.floor(Number(totalMatches))) : 0;
   let state = loadedState;
@@ -228,7 +248,7 @@ export function syncMarketWithMatches(totalMatches, { customStorage, randomFn = 
   } else if (safeTotal > state.syncedMatchesCount) {
     const steps = Math.min(MAX_MARKET_HISTORY, safeTotal - state.syncedMatchesCount);
     for (let i = 0; i < steps; i++) {
-      state = stepStateOneTurn(state, 'Selesai Match', randomFn);
+      state = stepStateOneTurn(state, 'Selesai Match', economyConfig);
     }
     state.syncedMatchesCount = safeTotal;
     state = saveMarketState(state, storage);
@@ -244,8 +264,5 @@ export function syncMarketWithMatches(totalMatches, { customStorage, randomFn = 
 
 export function formatTurnNotification(entry) {
   if (!entry) return '';
-  const pct = Number(entry.diamondChangePct || 0);
-  const direction = pct >= 0 ? 'naik' : 'turun';
-  const absPct = Math.abs(pct).toFixed(1);
-  return `Market Turn #${entry.turn} - Diamond ${direction} ${absPct}%`;
+  return `Market Turn #${entry.turn} - Kurs tetap sesuai economy.config.json (1 Diamond = ${Number(entry.diamondToGold).toLocaleString('id-ID')} Gold)`;
 }
