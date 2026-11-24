@@ -1,0 +1,76 @@
+{
+  "version": "2.0.0",
+  "name": "Economy v2",
+  "rates": {
+    "diamondToUsdt": 1,
+    "diamondToGold": 1000,
+    "goldToCurrency": 1000,
+    "diamondToCurrency": 1000000
+  },
+  "withdraw": {
+    "minDiamond": 25,
+    "feePercent": 15,
+    "netUsdtAtMinimum": 21.25,
+    "cooldownDays": 30,
+    "minAccountAgeDays": 90,
+    "requireKycBeforeFirstWithdraw": true,
+    "maxActiveRequestsPerAccount": 1,
+    "processingMode": "queue",
+    "instantWithdrawAllowed": false
+  },
+  "fees": {
+    "marketTaxPercent": 5,
+    "listingFeePercent": 1,
+    "currencyToGoldFeePercent": 10,
+    "goldToDiamondFeePercent": 15,
+    "conversionDirection": "one_way_currency_to_gold_to_diamond",
+    "allowReverseDiamondToCurrencyWithoutFeeAndCap": false,
+    "reverseConversion": {
+      "enabled": false,
+      "requiresFeeAndCap": true
+    }
+  },
+  "matchReward": {
+    "perMatchCurrency": 7000,
+    "maxMatchesPerDay": 3,
+    "maxMatchesPerWeek": 21,
+    "winBonusCurrency": 0,
+    "drawBonusCurrency": 0,
+    "lossBonusCurrency": 0,
+    "eventBonusCurrency": 0
+  },
+  "weeklySink": {
+    "playerSalariesCurrency": 12000,
+    "staffSalariesCurrency": 2000,
+    "stadiumMaintenanceCurrency": 3000,
+    "youthAcademyCurrency": 3000,
+    "totalCurrency": 20000
+  },
+  "targets": {
+    "netWeeklyF2pCurrency": 127000,
+    "netWeeklyF2pDiamondEquivalent": 0.127,
+    "f2pMinWithdrawDiamond": 25,
+    "f2pEstimatedWithdrawWeeks": 208,
+    "f2pEstimatedWithdrawYears": 4
+  },
+  "defaultPrices": {
+    "players": {
+      "rookieGold": { "min": 100, "max": 500 },
+      "midGold": { "min": 1000, "max": 2500 },
+      "topGold": { "min": 3000, "max": 5000 }
+    },
+    "staff": {
+      "regularGold": { "min": 100, "max": 1000 },
+      "premiumDiamond": { "min": 5, "max": 20 }
+    },
+    "upgrades": {
+      "stadiumGold": { "min": 1000, "max": 5000 },
+      "academyGold": { "min": 500, "max": 3000 }
+    }
+  },
+  "guards": {
+    "oneKycIdentityPerWithdrawAccount": true,
+    "ledgerImmutable": true,
+    "serverSideValidationRequired": true
+  }
+}
