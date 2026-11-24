@@ -10,6 +10,7 @@ const ADMIN_EMAILS = [
 
 const DEFAULT_MATCH_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 const WEEKLY_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function round4(val) {
   return Math.round((Number(val) + Number.EPSILON) * 10000) / 10000;
@@ -34,6 +35,7 @@ function createEconomyService(options = {}) {
   const firebaseConfigPath = options.firebaseConfigPath || path.join(rootDir, 'firebase-applet-config.json');
   const walletsFile = path.join(dataDir, 'economy-wallets.json');
   const ledgerFile = path.join(dataDir, 'economy-ledger.jsonl');
+  const withdrawQueueFile = path.join(dataDir, 'economy-withdraw-queue.json');
   const nowFn = typeof options.nowFn === 'function' ? options.nowFn : () => Date.now();
   const matchCooldownMs = Number.isFinite(options.matchCooldownMs) ? options.matchCooldownMs : DEFAULT_MATCH_COOLDOWN_MS;
   const weeklyCooldownMs = Number.isFinite(options.weeklyCooldownMs) ? options.weeklyCooldownMs : WEEKLY_COOLDOWN_MS;
@@ -44,6 +46,9 @@ function createEconomyService(options = {}) {
   }
   if (!fs.existsSync(ledgerFile)) {
     fs.writeFileSync(ledgerFile, '', 'utf8');
+  }
+  if (!fs.existsSync(withdrawQueueFile)) {
+    fs.writeFileSync(withdrawQueueFile, JSON.stringify([], null, 2), 'utf8');
   }
 
   let nextSeq = computeInitialSeq(ledgerFile);
@@ -126,6 +131,22 @@ function createEconomyService(options = {}) {
     fs.renameSync(tmpFile, walletsFile);
   }
 
+  function readWithdrawQueue() {
+    try {
+      const raw = fs.readFileSync(withdrawQueueFile, 'utf8');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeWithdrawQueue(queue) {
+    const tmpFile = `${withdrawQueueFile}.tmp.${process.pid}.${crypto.randomBytes(4).toString('hex')}`;
+    fs.writeFileSync(tmpFile, JSON.stringify(queue, null, 2), 'utf8');
+    fs.renameSync(tmpFile, withdrawQueueFile);
+  }
+
   function readAllLedgerEntries() {
     try {
       const content = fs.readFileSync(ledgerFile, 'utf8');
@@ -176,11 +197,25 @@ function createEconomyService(options = {}) {
 
   function getOrCreateWalletUnlocked(wallets, authUser, cfg) {
     const uid = authUser.uid;
+    const authCreatedIso = Number.isFinite(authUser.createdAtMs)
+      ? new Date(authUser.createdAtMs).toISOString()
+      : null;
+
     if (wallets[uid]) {
-      if (authUser.email && !wallets[uid].akun) {
-        wallets[uid].akun = authUser.email;
+      const existing = wallets[uid];
+      if (authUser.email && !existing.akun) {
+        existing.akun = authUser.email;
       }
-      return wallets[uid];
+      if (!existing.accountCreatedAt) {
+        existing.accountCreatedAt = authCreatedIso || existing.created_at || new Date(nowFn()).toISOString();
+      }
+      if (typeof existing.kycVerified !== 'boolean') {
+        existing.kycVerified = false;
+      }
+      if (!existing.kycStatus) {
+        existing.kycStatus = existing.kycVerified ? 'verified' : 'unverified';
+      }
+      return existing;
     }
 
     const starter = cfg.starterBalance;
@@ -196,6 +231,13 @@ function createEconomyService(options = {}) {
       lastMatchAt: null,
       lastWeeklyClaimAt: null,
       activeWithdrawId: null,
+      lastWithdrawAt: null,
+      kycVerified: false,
+      kycStatus: 'unverified',
+      kycSubmittedAt: null,
+      kycVerifiedAt: null,
+      kycIdentityHash: null,
+      accountCreatedAt: authCreatedIso || isoNow,
       totalMatches: 0,
       created_at: isoNow,
       updated_at: isoNow
@@ -550,41 +592,260 @@ function createEconomyService(options = {}) {
     });
   }
 
-  async function requestWithdraw(authUser, body = {}) {
+  function evaluateWithdrawGate(wallet, queue, cfg, requestedDiamond, nowMs) {
+    const wd = cfg.withdraw;
+    const minDiamond = Number(wd.minDiamond);
+    const minAccountAgeDays = Number(wd.minAccountAgeDays);
+    const cooldownDays = Number(wd.cooldownDays);
+    const maxActiveRequests = Number(wd.maxActiveRequestsPerAccount);
+    const requireKyc = Boolean(wd.requireKycBeforeFirstWithdraw);
+
+    const createdMs = new Date(wallet.accountCreatedAt || wallet.created_at || nowMs).getTime();
+    const accountAgeDaysExact = Math.max(0, (nowMs - createdMs) / DAY_MS);
+    const accountAgeDays = Math.floor(accountAgeDaysExact);
+
+    const activeQueueItems = queue.filter((q) => q.user_id === wallet.user_id && q.status === 'queued');
+    const activeCount = Math.max(activeQueueItems.length, wallet.activeWithdrawId ? 1 : 0);
+
+    let cooldownRemainingDays = 0;
+    if (wallet.lastWithdrawAt) {
+      const lastWdMs = new Date(wallet.lastWithdrawAt).getTime();
+      if (Number.isFinite(lastWdMs)) {
+        const elapsedMs = nowMs - lastWdMs;
+        const cooldownMs = cooldownDays * DAY_MS;
+        if (elapsedMs < cooldownMs) {
+          cooldownRemainingDays = Math.ceil((cooldownMs - elapsedMs) / DAY_MS);
+        }
+      }
+    }
+
+    const checks = {
+      noActiveRequestOk: activeCount < maxActiveRequests,
+      cooldownOk: cooldownRemainingDays === 0,
+      minAmountOk: Number.isFinite(requestedDiamond) && requestedDiamond >= minDiamond,
+      sufficientBalanceOk: round4(wallet.diamond) >= requestedDiamond,
+      accountAgeOk: accountAgeDaysExact >= minAccountAgeDays,
+      kycOk: !requireKyc || Boolean(wallet.kycVerified)
+    };
+
+    return {
+      minDiamond,
+      minAccountAgeDays,
+      cooldownDays,
+      maxActiveRequests,
+      requireKyc,
+      accountAgeDays,
+      accountAgeDaysExact: round2(accountAgeDaysExact),
+      activeCount,
+      activeRequestId: activeQueueItems[0]?.id || wallet.activeWithdrawId || null,
+      cooldownRemainingDays,
+      kycVerified: Boolean(wallet.kycVerified),
+      kycStatus: wallet.kycStatus || (wallet.kycVerified ? 'verified' : 'unverified'),
+      checks,
+      eligible: Object.values(checks).every(Boolean)
+    };
+  }
+
+  async function getWithdrawStatus(authUser) {
+    return withUserLock(authUser.uid, () => {
+      const cfg = loadConfig();
+      const wallets = readAllWallets();
+      const existed = Boolean(wallets[authUser.uid]);
+      const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      if (!existed) {
+        writeAllWallets(wallets);
+      }
+      const queue = readWithdrawQueue();
+      const nowMs = nowFn();
+      const gate = evaluateWithdrawGate(wallet, queue, cfg, Number(cfg.withdraw.minDiamond), nowMs);
+      const userQueue = queue.filter((q) => q.user_id === authUser.uid).slice(-10).reverse();
+
+      return {
+        wallet: { ...wallet },
+        gate,
+        queue: userQueue
+      };
+    });
+  }
+
+  async function submitKyc(authUser, body = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
 
+      const fullName = String(body?.fullName || '').trim();
+      const idNumber = String(body?.idNumber || '').trim();
+      const idType = String(body?.idType || 'KTP').trim().slice(0, 20);
+      const walletAddress = String(body?.walletAddress || '').trim();
+
+      if (fullName.length < 3 || fullName.length > 100) {
+        throw createHttpError(400, 'Nama lengkap KYC wajib diisi (3-100 karakter).', 'INVALID_KYC_NAME');
+      }
+      if (idNumber.length < 6 || idNumber.length > 40) {
+        throw createHttpError(400, 'Nomor identitas KYC (KTP/Paspor) tidak valid.', 'INVALID_KYC_ID');
+      }
+      if (walletAddress.length < 10 || walletAddress.length > 128) {
+        throw createHttpError(400, 'Alamat dompet USDT tujuan wajib diisi dengan benar.', 'INVALID_WALLET_ADDRESS');
+      }
+
+      const idHash = crypto.createHash('sha256').update(`${idType}:${idNumber}`).digest('hex');
+      const nowIso = new Date(nowFn()).toISOString();
+
+      wallet.kycStatus = wallet.kycVerified ? 'verified' : 'pending';
+      wallet.kycSubmittedAt = nowIso;
+      wallet.kycFullName = fullName;
+      wallet.kycIdType = idType;
+      wallet.kycIdentityHash = idHash;
+      wallet.kycWalletAddress = walletAddress;
+      wallet.updated_at = nowIso;
+
+      writeAllWallets(wallets);
+      return {
+        wallet: { ...wallet },
+        message: wallet.kycVerified
+          ? 'Akun Anda sudah terverifikasi KYC.'
+          : 'Pengajuan KYC diterima server dan menunggu verifikasi Admin.'
+      };
+    });
+  }
+
+  async function adminVerifyKyc(authUser, body = {}) {
+    const email = String(authUser.email || '').toLowerCase();
+    if (!ADMIN_EMAILS.includes(email)) {
+      throw createHttpError(403, 'Hanya Admin/Owner yang dapat memverifikasi KYC.', 'FORBIDDEN');
+    }
+
+    const targetUid = String(body?.targetUid || authUser.uid).trim();
+    return withUserLock(targetUid, () => {
+      const wallets = readAllWallets();
+      const targetWallet = wallets[targetUid];
+      if (!targetWallet) {
+        throw createHttpError(404, 'Wallet user tidak ditemukan.', 'WALLET_NOT_FOUND');
+      }
+      const nowIso = new Date(nowFn()).toISOString();
+      targetWallet.kycVerified = true;
+      targetWallet.kycStatus = 'verified';
+      targetWallet.kycVerifiedAt = nowIso;
+      targetWallet.updated_at = nowIso;
+      writeAllWallets(wallets);
+      return { wallet: { ...targetWallet } };
+    });
+  }
+
+  async function adminCompleteWithdraw(authUser, body = {}) {
+    const email = String(authUser.email || '').toLowerCase();
+    if (!ADMIN_EMAILS.includes(email)) {
+      throw createHttpError(403, 'Hanya Admin/Owner yang dapat menyelesaikan antrean withdraw.', 'FORBIDDEN');
+    }
+
+    const queue = readWithdrawQueue();
+    const withdrawId = String(body?.withdrawId || '').trim();
+    const targetItem = withdrawId
+      ? queue.find((q) => q.id === withdrawId)
+      : queue.find((q) => q.status === 'queued');
+
+    if (!targetItem) {
+      throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
+    }
+
+    return withUserLock(targetItem.user_id, () => {
+      const wallets = readAllWallets();
+      const targetWallet = wallets[targetItem.user_id];
+      const nowIso = new Date(nowFn()).toISOString();
+
+      targetItem.status = 'completed';
+      targetItem.completed_at = nowIso;
+      writeWithdrawQueue(queue);
+
+      if (targetWallet) {
+        if (targetWallet.activeWithdrawId === targetItem.id) {
+          targetWallet.activeWithdrawId = null;
+        }
+        targetWallet.updated_at = nowIso;
+        writeAllWallets(wallets);
+      }
+
+      return { withdraw: { ...targetItem }, wallet: targetWallet ? { ...targetWallet } : null };
+    });
+  }
+
+  async function requestWithdraw(authUser, body = {}) {
+    return withUserLock(authUser.uid, () => {
+      const cfg = loadConfig();
+      const wallets = readAllWallets();
+      const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      const queue = readWithdrawQueue();
+      const nowMs = nowFn();
+
       const tampered = detectTamperedFields(body, [
-        'fee', 'feePercent', 'netUsdt', 'netDiamond', 'status', 'instant', 'balance', 'user_id'
+        'fee', 'feePercent', 'netUsdt', 'netDiamond', 'status', 'instant',
+        'balance', 'user_id', 'kycVerified', 'accountAgeDays', 'bypassCooldown', 'bypassGate'
       ]);
 
       const wd = cfg.withdraw;
       const requestedDiamond = body?.amount !== undefined ? Number(body.amount) : Number(wd.minDiamond);
+      const gate = evaluateWithdrawGate(wallet, queue, cfg, requestedDiamond, nowMs);
 
-      if (!Number.isFinite(requestedDiamond) || requestedDiamond < Number(wd.minDiamond)) {
-        throw createHttpError(
-          400,
-          `Minimum withdraw adalah ${wd.minDiamond} Diamond.`,
-          'BELOW_MIN_WITHDRAW'
-        );
-      }
-
-      if (wallet.activeWithdrawId) {
+      // 1. Cek anti-spam: maksimal 1 request aktif per akun
+      if (!gate.checks.noActiveRequestOk) {
         throw createHttpError(
           409,
-          `Maksimal ${wd.maxActiveRequestsPerAccount} request withdraw aktif per akun. Request Anda (${wallet.activeWithdrawId}) masih dalam antrean.`,
-          'ACTIVE_WITHDRAW_EXISTS'
+          `Request ditolak server: Maksimal ${gate.maxActiveRequests} request withdraw aktif per akun. Request Anda (${gate.activeRequestId}) masih berada dalam antrean (queue).`,
+          'ACTIVE_WITHDRAW_EXISTS',
+          { gate }
         );
       }
 
-      const beforeDiamond = round4(wallet.diamond);
-      if (beforeDiamond < requestedDiamond) {
+      // 2. Cek cooldown 30 hari antar withdraw
+      if (!gate.checks.cooldownOk) {
+        throw createHttpError(
+          429,
+          `Request ditolak server: Masih dalam masa cooldown withdraw ${gate.cooldownDays} hari. Silakan tunggu ${gate.cooldownRemainingDays} hari lagi.`,
+          'WITHDRAW_COOLDOWN',
+          { gate }
+        );
+      }
+
+      // 3. Cek minimum nominal withdraw (25 Diamond)
+      if (!gate.checks.minAmountOk) {
         throw createHttpError(
           400,
-          `Saldo Diamond tidak cukup! Tersedia ${beforeDiamond} Diamond, minimum withdraw ${wd.minDiamond} Diamond.`,
-          'INSUFFICIENT_DIAMOND'
+          `Request ditolak server: Minimum withdraw adalah ${gate.minDiamond} Diamond.`,
+          'BELOW_MIN_WITHDRAW',
+          { gate }
+        );
+      }
+
+      // 4. Cek kecukupan saldo Diamond server
+      const beforeDiamond = round4(wallet.diamond);
+      if (!gate.checks.sufficientBalanceOk) {
+        throw createHttpError(
+          400,
+          `Request ditolak server: Saldo Diamond tidak cukup! Saldo Anda ${beforeDiamond} Diamond, dibutuhkan minimal ${requestedDiamond} Diamond.`,
+          'INSUFFICIENT_DIAMOND',
+          { gate }
+        );
+      }
+
+      // 5. Cek umur akun minimal 90 hari
+      if (!gate.checks.accountAgeOk) {
+        const kurangHari = Math.max(1, Math.ceil(gate.minAccountAgeDays - gate.accountAgeDaysExact));
+        throw createHttpError(
+          403,
+          `Request ditolak server: Umur akun minimal ${gate.minAccountAgeDays} hari untuk withdraw. Umur akun Anda baru ${gate.accountAgeDays} hari (kurang ${kurangHari} hari lagi).`,
+          'ACCOUNT_TOO_NEW',
+          { gate }
+        );
+      }
+
+      // 6. Cek kewajiban verifikasi KYC sebelum withdraw pertama
+      if (!gate.checks.kycOk) {
+        throw createHttpError(
+          403,
+          'Request ditolak server: Akun belum terverifikasi KYC. Wajib menyelesaikan verifikasi KYC sebelum withdraw pertama.',
+          'KYC_REQUIRED',
+          { gate }
         );
       }
 
@@ -592,12 +853,34 @@ function createEconomyService(options = {}) {
       const feeDiamond = round4(requestedDiamond * (feePercent / 100));
       const netDiamond = round4(requestedDiamond - feeDiamond);
       const netUsdt = round2(netDiamond * Number(cfg.rates.diamondToUsdt));
-      const wdId = `WD-${nowFn()}`;
+      const wdId = `WD-${nowMs}`;
+      const nowIso = new Date(nowMs).toISOString();
 
       const afterDiamond = round4(beforeDiamond - requestedDiamond);
       wallet.diamond = afterDiamond;
       wallet.activeWithdrawId = wdId;
-      wallet.updated_at = new Date(nowFn()).toISOString();
+      wallet.lastWithdrawAt = nowIso;
+      wallet.updated_at = nowIso;
+
+      const queuePosition = queue.filter((q) => q.status === 'queued').length + 1;
+      const queueRecord = {
+        id: wdId,
+        user_id: authUser.uid,
+        akun: wallet.akun,
+        grossDiamond: round4(requestedDiamond),
+        feePercent,
+        feeDiamond,
+        netDiamond,
+        netUsdt,
+        destinationWallet: wallet.kycWalletAddress || null,
+        status: 'queued',
+        queuePosition,
+        processingMode: wd.processingMode,
+        accountAgeDaysAtRequest: gate.accountAgeDays,
+        created_at: nowIso
+      };
+      queue.push(queueRecord);
+      writeWithdrawQueue(queue);
 
       const ledgerEntry = appendImmutableLedgerEntry({
         user_id: authUser.uid,
@@ -610,24 +893,16 @@ function createEconomyService(options = {}) {
         saldo_sebelum: beforeDiamond,
         saldo_sesudah: afterDiamond,
         ref_id: wdId,
-        keterangan: `Withdraw ${requestedDiamond} Diamond → Net ${netUsdt} USDT (fee ${feePercent}%, mode: ${wd.processingMode})`
+        keterangan: `Withdraw ${requestedDiamond} Diamond → Net ${netUsdt} USDT (fee ${feePercent}%, antrean #${queuePosition}, mode: ${wd.processingMode})`
       });
 
       writeAllWallets(wallets);
 
       return {
         wallet: { ...wallet },
-        withdraw: {
-          id: wdId,
-          grossDiamond: round4(requestedDiamond),
-          feeDiamond,
-          feePercent,
-          netDiamond,
-          netUsdt,
-          status: 'pending',
-          processingMode: wd.processingMode
-        },
+        withdraw: queueRecord,
         ledgerEntry,
+        gate: evaluateWithdrawGate(wallet, queue, cfg, Number(wd.minDiamond), nowMs),
         serverValidation: {
           sourceOfTruth: 'economy.config.json',
           ignoredClientFields: tampered
@@ -894,13 +1169,18 @@ function createEconomyService(options = {}) {
     verifyFirebaseIdToken,
     getWallet,
     getLedger,
+    getWithdrawStatus,
+    submitKyc,
+    adminVerifyKyc,
+    adminCompleteWithdraw,
     claimMatchReward,
     executeConversion,
     settleWeeklySink,
     requestWithdraw,
     spendOrTrade,
     adminResetWallet,
-    readAllLedgerEntries
+    readAllLedgerEntries,
+    readWithdrawQueue
   };
 }
 
@@ -924,11 +1204,13 @@ function mountEconomyRoutes(app, service) {
 
   function handleRouteError(res, err) {
     const status = err.status || 500;
-    return res.status(status).json({
+    const body = {
       success: false,
       code: err.code || 'SERVER_ERROR',
       error: err.message || 'Terjadi kesalahan pada server.'
-    });
+    };
+    if (err.details) body.details = err.details;
+    return res.status(status).json(body);
   }
 
   app.get('/api/economy/wallet', requireAuth, async (req, res) => {
@@ -944,6 +1226,42 @@ function mountEconomyRoutes(app, service) {
     try {
       const entries = await service.getLedger(req.authUser, { limit: req.query.limit });
       return res.json({ success: true, immutable: true, entries });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/withdraw-status', requireAuth, async (req, res) => {
+    try {
+      const data = await service.getWithdrawStatus(req.authUser);
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/kyc/submit', requireAuth, async (req, res) => {
+    try {
+      const data = await service.submitKyc(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/kyc/approve', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminVerifyKyc(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/withdraw/complete', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminCompleteWithdraw(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }

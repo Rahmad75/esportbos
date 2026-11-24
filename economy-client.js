@@ -62,6 +62,14 @@ export async function requestServerWithdraw(amount) {
   return economyRequest('/api/economy/withdraw-request', 'POST', amount !== undefined ? { amount } : {});
 }
 
+export async function fetchServerWithdrawStatus() {
+  return economyRequest('/api/economy/withdraw-status', 'GET');
+}
+
+export async function submitServerKyc(payload) {
+  return economyRequest('/api/economy/kyc/submit', 'POST', payload);
+}
+
 export async function executeServerSpend(payload) {
   return economyRequest('/api/economy/spend', 'POST', payload);
 }

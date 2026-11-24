@@ -231,8 +231,32 @@
             </div>
 
             <div class="panel raised" style="background: #0f1b38; padding: 25px; border-radius: 15px; color: white; border: 1px solid #1f3668;">
-                <h3>💸 Withdraw Diamond</h3>
-                <p id="withdrawSubtitle" class="info-text" style="color: #9db2d9; margin-bottom: 20px;">Memuat aturan withdraw dari economy.config.json...</p>
+                <h3>💸 Withdraw Diamond (Server Withdraw Gate)</h3>
+                <p id="withdrawSubtitle" class="info-text" style="color: #9db2d9; margin-bottom: 16px;">Memuat aturan withdraw dari economy.config.json...</p>
+
+                <!-- Checklist Syarat Withdraw (Divalidasi Server) -->
+                <div id="withdrawGateChecklist" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 18px;">
+                    <div style="background: #0a1734; border: 1px solid #1e3566; border-radius: 8px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: #9db2d9;">1. Umur Akun (Min 90 Hari)</div>
+                        <strong id="gateAgeStatus" style="font-size: 13px; color: #cbd5e1;">Memuat...</strong>
+                    </div>
+                    <div style="background: #0a1734; border: 1px solid #1e3566; border-radius: 8px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: #9db2d9;">2. Verifikasi KYC</div>
+                        <strong id="gateKycStatus" style="font-size: 13px; color: #cbd5e1;">Memuat...</strong>
+                    </div>
+                    <div style="background: #0a1734; border: 1px solid #1e3566; border-radius: 8px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: #9db2d9;">3. Saldo Minimum</div>
+                        <strong id="gateBalanceStatus" style="font-size: 13px; color: #cbd5e1;">Memuat...</strong>
+                    </div>
+                    <div style="background: #0a1734; border: 1px solid #1e3566; border-radius: 8px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: #9db2d9;">4. Request Aktif (Maks 1)</div>
+                        <strong id="gateActiveStatus" style="font-size: 13px; color: #cbd5e1;">Memuat...</strong>
+                    </div>
+                    <div style="background: #0a1734; border: 1px solid #1e3566; border-radius: 8px; padding: 10px 12px;">
+                        <div style="font-size: 11px; color: #9db2d9;">5. Cooldown (30 Hari)</div>
+                        <strong id="gateCooldownStatus" style="font-size: 13px; color: #cbd5e1;">Memuat...</strong>
+                    </div>
+                </div>
 
                 <div class="withdraw-box" style="background: #132043; padding: 20px; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; border: 1px solid #1e3566;">
                     <div class="withdraw-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; flex: 1;">
@@ -253,7 +277,40 @@
                             <strong id="withdrawNetUsdt" style="color: #28a745;">-</strong>
                         </div>
                     </div>
-                    <button class="btn-futuristic btn-large" onclick="requestWithdraw()" style="padding: 15px 30px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; white-space: nowrap;">💸 Request Withdraw</button>
+                    <button id="requestWithdrawBtn" class="btn-futuristic btn-large" onclick="requestWithdraw()" style="padding: 15px 30px; background: #ff6b6b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; white-space: nowrap;">💸 Request Withdraw</button>
+                </div>
+
+                <div id="withdrawFeedback" style="display: none; margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;"></div>
+
+                <!-- Pengajuan KYC (wajib sebelum withdraw pertama) -->
+                <div id="kycBox" style="margin-top: 18px; padding: 16px; background: #0a1734; border: 1px solid #1e3566; border-radius: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #00d4ff; font-size: 15px;">🪪 Verifikasi KYC (Wajib Sebelum Withdraw Pertama)</h4>
+                        <span id="kycBadge" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 5px; background: #334155; color: #f8fafc;">BELUM VERIFIKASI</span>
+                    </div>
+                    <div id="kycFormWrapper" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: end;">
+                        <div>
+                            <label style="display: block; font-size: 11px; color: #9db2d9; margin-bottom: 4px;">Nama Lengkap (sesuai KTP)</label>
+                            <input type="text" id="kycFullName" placeholder="Nama lengkap" style="width: 100%; padding: 9px; background: #132043; color: white; border: 1px solid #27447f; border-radius: 6px; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; color: #9db2d9; margin-bottom: 4px;">No. KTP / Paspor</label>
+                            <input type="text" id="kycIdNumber" placeholder="Nomor identitas" style="width: 100%; padding: 9px; background: #132043; color: white; border: 1px solid #27447f; border-radius: 6px; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; color: #9db2d9; margin-bottom: 4px;">Alamat Wallet USDT</label>
+                            <input type="text" id="kycWalletAddress" placeholder="Alamat dompet USDT (TRC20/BEP20)" style="width: 100%; padding: 9px; background: #132043; color: white; border: 1px solid #27447f; border-radius: 6px; box-sizing: border-box;">
+                        </div>
+                        <button type="button" onclick="handleKycSubmit()" style="padding: 10px 16px; background: #00d4ff; color: #061229; border: none; border-radius: 6px; font-weight: 800; cursor: pointer;">📤 Ajukan KYC</button>
+                    </div>
+                </div>
+
+                <!-- Antrean Withdraw -->
+                <div style="margin-top: 18px;">
+                    <h4 style="margin: 0 0 10px 0; color: #cfe0ff; font-size: 15px;">⏳ Antrean Withdraw Anda (Queue)</h4>
+                    <div id="withdrawQueueList" style="display: flex; flex-direction: column; gap: 8px;">
+                        <p style="color: #8da4cf; font-size: 13px; margin: 0;">Belum ada request withdraw.</p>
+                    </div>
                 </div>
             </div>
         </main>

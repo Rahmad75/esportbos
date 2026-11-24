@@ -30,7 +30,9 @@ import {
   applyServerWalletToDOM,
   executeServerConversion,
   fetchServerLedger,
-  requestServerWithdraw
+  fetchServerWithdrawStatus,
+  requestServerWithdraw,
+  submitServerKyc
 } from './economy-client.js';
 
 let currentUserId = null;
@@ -513,22 +515,117 @@ async function executeExchange() {
   await loadTransactions();
 }
 
+function showWithdrawFeedback(message, isError = false) {
+  const el = document.getElementById('withdrawFeedback');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = isError ? 'rgba(239, 68, 68, 0.16)' : 'rgba(34, 197, 94, 0.16)';
+  el.style.border = `1px solid ${isError ? '#ef4444' : '#22c55e'}`;
+  el.style.color = isError ? '#fca5a5' : '#86efac';
+  el.textContent = message;
+}
+
+function renderWithdrawGateUI(statusData) {
+  if (!statusData || !statusData.gate) return;
+  const { gate, queue } = statusData;
+  const checks = gate.checks || {};
+
+  const setGate = (id, ok, text) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = `${ok ? '✅' : '❌'} ${text}`;
+    el.style.color = ok ? '#86efac' : '#fca5a5';
+  };
+
+  setGate('gateAgeStatus', checks.accountAgeOk, `${gate.accountAgeDays} / ${gate.minAccountAgeDays} hari`);
+  setGate(
+    'gateKycStatus',
+    checks.kycOk,
+    gate.kycVerified ? 'Terverifikasi' : (gate.kycStatus === 'pending' ? 'Menunggu Admin' : 'Belum KYC')
+  );
+  setGate('gateBalanceStatus', checks.sufficientBalanceOk, `${Number(statusData.wallet?.diamond || 0)} / ${gate.minDiamond} Diamond`);
+  setGate('gateActiveStatus', checks.noActiveRequestOk, gate.activeCount === 0 ? 'Tidak ada (0/1)' : `Aktif (${gate.activeRequestId})`);
+  setGate('gateCooldownStatus', checks.cooldownOk, gate.cooldownRemainingDays === 0 ? 'Siap (0 hari)' : `Sisa ${gate.cooldownRemainingDays} hari`);
+
+  const kycBadge = document.getElementById('kycBadge');
+  const kycFormWrapper = document.getElementById('kycFormWrapper');
+  if (kycBadge) {
+    if (gate.kycVerified) {
+      kycBadge.textContent = '✅ TERVERIFIKASI';
+      kycBadge.style.background = '#166534';
+      kycBadge.style.color = '#dcfce7';
+      if (kycFormWrapper) kycFormWrapper.style.display = 'none';
+    } else if (gate.kycStatus === 'pending') {
+      kycBadge.textContent = '⏳ MENUNGGU VERIFIKASI ADMIN';
+      kycBadge.style.background = '#854d0e';
+      kycBadge.style.color = '#fef9c3';
+    } else {
+      kycBadge.textContent = '❌ BELUM VERIFIKASI';
+      kycBadge.style.background = '#7f1d1d';
+      kycBadge.style.color = '#fecaca';
+    }
+  }
+
+  const queueList = document.getElementById('withdrawQueueList');
+  if (queueList) {
+    if (!Array.isArray(queue) || queue.length === 0) {
+      queueList.innerHTML = '<p style="color: #8da4cf; font-size: 13px; margin: 0;">Belum ada request withdraw.</p>';
+    } else {
+      queueList.innerHTML = queue.map(q => {
+        const isQueued = q.status === 'queued';
+        const statusColor = isQueued ? '#facc15' : '#4ade80';
+        const date = new Date(q.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#0b1733; border:1px solid #1d3566; border-radius:8px; font-size:13px;">
+            <div>
+              <strong style="color:#00d4ff;">${q.id}</strong> • ${q.grossDiamond} Diamond → <strong style="color:#4ade80;">${q.netUsdt} USDT</strong> (fee ${q.feePercent}%)
+              <div style="font-size:11px; color:#9db2d9;">${date} • Antrean #${q.queuePosition || 1}</div>
+            </div>
+            <span style="background:${statusColor}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:800;">${String(q.status || 'queued').toUpperCase()}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+async function loadWithdrawStatus() {
+  if (!currentUserId) return;
+  try {
+    const statusData = await fetchServerWithdrawStatus();
+    renderWithdrawGateUI(statusData);
+  } catch (err) {
+    console.error('Gagal memuat status withdraw gate:', err);
+  }
+}
+
+async function handleKycSubmit() {
+  const fullName = document.getElementById('kycFullName')?.value?.trim() || '';
+  const idNumber = document.getElementById('kycIdNumber')?.value?.trim() || '';
+  const walletAddress = document.getElementById('kycWalletAddress')?.value?.trim() || '';
+
+  try {
+    const res = await submitServerKyc({ fullName, idNumber, walletAddress });
+    showWithdrawFeedback(`✅ ${res.message}`, false);
+    await loadWithdrawStatus();
+  } catch (err) {
+    showWithdrawFeedback(`❌ ${err.message || 'Gagal mengirim pengajuan KYC.'}`, true);
+  }
+}
+
 async function requestWithdraw() {
   if (!economyConfig) return;
   const wd = getWithdrawSummary(economyConfig, economyConfig.withdraw.minDiamond);
 
-  if (userBalances.diamond < wd.minDiamond) {
-    showExchangeFeedback(`❌ Saldo Diamond tidak cukup! Minimum withdraw: ${wd.minDiamond} Diamond (terima bersih ${wd.netUsdt} USDT setelah fee ${wd.feePercent}%).`, true);
-    return;
-  }
-
-  if (!window.confirm(`Yakin ingin request withdraw ${wd.minDiamond} Diamond?\n\nFee ${wd.feePercent}% (-${wd.feeDiamond} Diamond)\nNet yang diterima: ${wd.netUsdt} USDT\nStatus: Antrean (Queue)`)) return;
+  if (!window.confirm(`Ajukan request withdraw ${wd.minDiamond} Diamond ke antrean server?\n\nFee ${wd.feePercent}% (-${wd.feeDiamond} Diamond)\nNet diterima: ${wd.netUsdt} USDT\nMode: Antrean (Queue)`)) return;
 
   let serverRes;
   try {
     serverRes = await requestServerWithdraw(wd.minDiamond);
   } catch (err) {
+    showWithdrawFeedback(`❌ ${err.message || 'Withdraw ditolak server.'}`, true);
     showExchangeFeedback(`❌ ${err.message || 'Withdraw ditolak server.'}`, true);
+    await loadWithdrawStatus();
     return;
   }
 
@@ -549,11 +646,12 @@ async function requestWithdraw() {
       created_at: new Date().toISOString()
     }), 3, 1000);
   } catch (_) {
-    // Server ledger sudah mencatat request withdraw permanen
+    // Server ledger & queue sudah mencatat request withdraw permanen
   }
 
+  showWithdrawFeedback(`✅ Request ${serverRes.withdraw.id} masuk antrean (#${serverRes.withdraw.queuePosition}): ${serverRes.withdraw.grossDiamond} Diamond → Net ${serverRes.withdraw.netUsdt} USDT.`, false);
   showExchangeFeedback('✅ Permintaan Withdraw berhasil masuk antrean server (queue)!', false);
-  await loadTransactions();
+  await Promise.all([loadTransactions(), loadWithdrawStatus()]);
 }
 
 async function loadTransactions() {
@@ -658,7 +756,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     }
 
-    await loadTransactions();
+    await Promise.all([loadTransactions(), loadWithdrawStatus()]);
   } catch (err) {
     console.error('Financial market error:', err);
   }
@@ -670,4 +768,5 @@ window.applyQuickMatchSample = applyQuickMatchSample;
 window.calculateExchange = calculateExchange;
 window.executeExchange = executeExchange;
 window.requestWithdraw = requestWithdraw;
+window.handleKycSubmit = handleKycSubmit;
 window.handleNextTurn = handleNextTurn;
