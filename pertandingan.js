@@ -23,7 +23,12 @@ import {
 } from './firebase-config.js';
 import { advanceMarketTurn, formatTurnNotification } from './market-engine.js';
 import { getMatchReward, loadEconomyConfig } from './economy-config.js';
-import { applyServerWalletToDOM, claimServerMatchReward } from './economy-client.js';
+import {
+  applyServerWalletToDOM,
+  claimServerMatchReward,
+  requireServerTime,
+  startServerMatch
+} from './economy-client.js';
 
 let currentUserId = null;
 let currentTeamId = null;
@@ -49,33 +54,30 @@ async function simulateMatch() {
   }
 
   const btn = document.getElementById('simulateButton');
+  btn.disabled = true;
+  btn.textContent = '⚽ Memverifikasi Waktu Server...';
+  btn.style.background = '#555';
+
+  try {
+    await requireServerTime();
+  } catch (syncErr) {
+    alert(`❌ ${syncErr.message || 'Gagal sinkronisasi waktu server. Pertandingan ditolak.'}`);
+    btn.disabled = false;
+    btn.textContent = '⚽ MULAI PERTANDINGAN!';
+    btn.style.background = '#28a745';
+    return;
+  }
 
   let team = null;
   try {
     const teamSnap = await withFirestoreRetry(() => getDoc(doc(db, 'teams', currentTeamId)), 3, 800);
     team = teamSnap.exists() ? teamSnap.data() : null;
   } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '⚽ MULAI PERTANDINGAN!';
+    btn.style.background = '#28a745';
     handleFirestoreError(err, OperationType.GET, `teams/${currentTeamId}`);
     return;
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-
-  let matchesToday = 0;
-  if (team && team.last_daily_reset !== today) {
-    matchesToday = 0;
-    try {
-      await withFirestoreRetry(() => updateDoc(doc(db, 'teams', currentTeamId), {
-        matches_played_today: 0,
-        last_daily_reset: today,
-        updated_at: new Date().toISOString()
-      }), 3, 800);
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `teams/${currentTeamId}`);
-      return;
-    }
-  } else if (team) {
-    matchesToday = team.matches_played_today || 0;
   }
 
   if (!economyConfig) {
@@ -83,48 +85,33 @@ async function simulateMatch() {
   }
   const maxMatchesPerDay = Number(economyConfig.matchReward.maxMatchesPerDay);
 
-  if (matchesToday >= maxMatchesPerDay) {
-    alert(`⚠️ Batas harian tercapai!\nAnda sudah memainkan ${maxMatchesPerDay} pertandingan hari ini.\nKembali besok untuk match selanjutnya.\n\nJadwal reset: 00:00 WIB`);
+  btn.textContent = '⚽ Memulai Pertandingan di Server...';
+
+  let startRes;
+  try {
+    startRes = await startServerMatch({ teamId: currentTeamId });
+  } catch (err) {
+    alert(`⚠️ ${err.message || 'Server menolak memulai pertandingan.'}`);
+    btn.disabled = false;
+    btn.textContent = '⚽ MULAI PERTANDINGAN!';
+    btn.style.background = '#28a745';
     return;
   }
 
-  if (team && team.last_match_at) {
-    const lastMatch = new Date(team.last_match_at).getTime();
-    const now = Date.now();
-    const diffHours = (now - lastMatch) / (1000 * 60 * 60);
-
-    if (diffHours < 4) {
-      const sisaJam = Math.ceil(4 - diffHours);
-      const nextMatchTime = new Date(lastMatch + (4 * 60 * 60 * 1000));
-      const jamNext = nextMatchTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-      alert(` Mohon tunggu ${sisaJam} jam lagi.\n\nJadwal match berikutnya: ${jamNext} WIB\n(Cooldown 4 jam antar match)`);
-      return;
-    }
-  }
-
-  btn.disabled = true;
-  btn.textContent = '⚽ Memproses Pertandingan...';
-  btn.style.background = '#555';
-
-  const homeScore = Math.floor(Math.random() * 6);
-  const awayScore = Math.floor(Math.random() * 6);
-
-  const opponents = ['Garuda Esports', 'Naga Merah', 'Banteng FC', 'Elang Jawa', 'Harimau Sumatra', 'Satria Muda', 'Bima Sakti', 'Persija Jakarta', 'Persib Bandung'];
-  const randomOpponent = opponents[Math.floor(Math.random() * opponents.length)];
+  const serverMatch = startRes.match;
+  const homeScore = Number(serverMatch.homeScore);
+  const awayScore = Number(serverMatch.awayScore);
+  const randomOpponent = serverMatch.opponent;
+  const result = serverMatch.result;
 
   document.getElementById('awayTeamName').textContent = randomOpponent;
 
-  let result = 'lose';
   let resultText = 'KALAH';
   let resultColor = '#ff6b6b';
-
-  if (homeScore > awayScore) {
-    result = 'win';
+  if (result === 'win') {
     resultText = 'MENANG';
     resultColor = '#28a745';
-  } else if (homeScore === awayScore) {
-    result = 'draw';
+  } else if (result === 'draw') {
     resultText = 'SERI';
     resultColor = '#ffc107';
   }
@@ -140,21 +127,23 @@ async function simulateMatch() {
         ${homeScore} - ${awayScore}
       </div>
       <p style="color:#999;">${currentTeamName} vs ${randomOpponent}</p>
-      <p style="color:#999;font-size:14px;">Durasi: 30 menit</p>
+      <p style="color:#999;font-size:14px;">Durasi: 30 menit • ID: ${serverMatch.matchId}</p>
     </div>
   `;
+
+  btn.textContent = '⚽ Klaim Hadiah Server...';
 
   let rewardResp;
   try {
     rewardResp = await claimServerMatchReward({
       result,
       opponent: randomOpponent,
-      matchId: `MCH-${Date.now()}`
+      matchId: serverMatch.matchId
     });
   } catch (err) {
     alert(`⚠️ ${err.message || 'Validasi reward pertandingan gagal di server.'}`);
     btn.disabled = false;
-    btn.textContent = ' MAIN LAGI!';
+    btn.textContent = '⚽ MULAI PERTANDINGAN!';
     btn.style.background = '#28a745';
     return;
   }
@@ -162,20 +151,24 @@ async function simulateMatch() {
   const matchRewardAmount = Number(rewardResp.reward || getMatchReward(economyConfig, result));
   applyServerWalletToDOM(rewardResp.wallet);
 
+  const serverIso = rewardResp.serverDateTime || startRes.serverDateTime;
+  const serverToday = rewardResp.todayStr || startRes.todayStr;
+  const serverNowMs = Number(rewardResp.serverNowMs || startRes.serverNowMs);
+
   try {
-    const newMatchCount = Number(rewardResp.matchesToday || (matchesToday + 1));
+    const newMatchCount = Number(rewardResp.matchesToday || 1);
     const wins = (team?.wins || 0) + (result === 'win' ? 1 : 0);
     const draws = (team?.draws || 0) + (result === 'draw' ? 1 : 0);
     const losses = (team?.losses || 0) + (result === 'lose' ? 1 : 0);
 
     await withFirestoreRetry(() => updateDoc(doc(db, 'teams', currentTeamId), {
-      last_match_at: new Date().toISOString(),
+      last_match_at: serverIso,
       matches_played_today: newMatchCount,
-      last_daily_reset: today,
+      last_daily_reset: serverToday,
       wins,
       draws,
       losses,
-      updated_at: new Date().toISOString()
+      updated_at: serverIso
     }), 3, 800);
 
     await withFirestoreRetry(() => addDoc(collection(db, 'matches'), {
@@ -185,7 +178,7 @@ async function simulateMatch() {
       home_score: homeScore,
       away_score: awayScore,
       status: 'finished',
-      match_date: new Date().toISOString(),
+      match_date: serverIso,
       user_id: currentUserId,
       result: result,
       reward_currency: matchRewardAmount,
@@ -195,13 +188,18 @@ async function simulateMatch() {
     const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1, economyConfig });
     const marketNote = formatTurnNotification(marketUpdate.latestEntry);
 
-    alert(`✅ Pertandingan Selesai!\n\nReward (Validasi Server): +${matchRewardAmount.toLocaleString('id-ID')} Currency\nSaldo Currency: ${Number(rewardResp.wallet?.currency || 0).toLocaleString('id-ID')}\nMatch ke-${newMatchCount}/${maxMatchesPerDay} hari ini\nSisa match: ${Math.max(0, maxMatchesPerDay - newMatchCount)}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${(new Date(Date.now() + 4 * 60 * 60 * 1000)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`);
+    const nextTimeStr = new Date(serverNowMs + 4 * 60 * 60 * 1000).toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    alert(`✅ Pertandingan Selesai!\n\nReward (Validasi Server): +${matchRewardAmount.toLocaleString('id-ID')} Currency\nSaldo Currency: ${Number(rewardResp.wallet?.currency || 0).toLocaleString('id-ID')}\nMatch ke-${newMatchCount}/${maxMatchesPerDay} hari ini\nSisa match: ${Math.max(0, maxMatchesPerDay - newMatchCount)}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${nextTimeStr} WIB`);
   } catch (err) {
     console.error('Error saving match:', err);
     handleFirestoreError(err, OperationType.WRITE, `teams/${currentTeamId}/matches`);
   } finally {
     btn.disabled = false;
-    btn.textContent = ' MAIN LAGI!';
+    btn.textContent = '⚽ MULAI PERTANDINGAN!';
     btn.style.background = '#28a745';
   }
 

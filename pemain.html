@@ -43,30 +43,40 @@
 </div>
 
 <script>
-// JANGAN pakai id="jamServer" lagi, ganti jadi jamServerFinal biar gak tabrakan
-let offset = 0;
+let serverEpochMs = null;
+let syncPerfMs = null;
 
 function tampilJam() {
-  const waktu = new Date(Date.now() + offset);
-  const j = String(waktu.getHours()).padStart(2,'0');
-  const m = String(waktu.getMinutes()).padStart(2,'0');
-  const d = String(waktu.getSeconds()).padStart(2,'0');
   const el = document.getElementById('jamServerFinal');
-  if(el) el.innerText = j+":"+m+":"+d+" WIB";
+  if (!el) return;
+  if (serverEpochMs === null || syncPerfMs === null) {
+    el.innerText = window.__SERVER_TIME_SYNCED__ === false ? 'SYNC ERROR' : '--:--:-- WIB';
+    return;
+  }
+  const waktu = new Date(serverEpochMs + (performance.now() - syncPerfMs));
+  el.innerText = waktu.toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour12: false }) + ' WIB';
 }
 
-// 1. Langsung jalanin pakai jam laptop dulu (biar gak 00:00:00)
 setInterval(tampilJam, 1000);
 
-// 2. Coba sync ke server diam-diam
 async function sync() {
   try {
     const r = await fetch('/api/server-time', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
     const server = Number(data.nowMs) || new Date(data.dateTime).getTime();
-    offset = server - Date.now();
-  } catch(e) {
-    console.log("Gagal sync server, pakai jam laptop dulu Bray");
+    if (!data?.success || !Number.isFinite(server) || server <= 0) throw new Error('Invalid server time');
+    serverEpochMs = server;
+    syncPerfMs = performance.now();
+    window.__SERVER_TIME_SYNCED__ = true;
+    tampilJam();
+  } catch (e) {
+    serverEpochMs = null;
+    syncPerfMs = null;
+    window.__SERVER_TIME_SYNCED__ = false;
+    const el = document.getElementById('jamServerFinal');
+    if (el) el.innerText = 'SYNC ERROR';
+    console.error('Gagal sync waktu server. Transaksi ditolak:', e.message);
   }
 }
 sync();

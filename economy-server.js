@@ -416,6 +416,98 @@ function createEconomyService(options = {}) {
     return mine.slice(-limit).reverse();
   }
 
+  async function startMatch(authUser, body = {}, reqMeta = {}) {
+    return withUserLock(authUser.uid, () => {
+      const cfg = loadConfig();
+      const wallets = readAllWallets();
+      const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      const meta = normalizeRequestMeta(reqMeta);
+      const sec = ensureWalletSecurity(wallet);
+      const anti = cfg.antiAbuse || {};
+
+      const nowMs = nowFn();
+      const serverDateTime = new Date(nowMs).toISOString();
+      const todayStr = serverDateTime.split('T')[0];
+
+      if (wallet.lastDailyReset !== todayStr) {
+        wallet.matchesToday = 0;
+        wallet.lastDailyReset = todayStr;
+      }
+
+      const maxMatchesPerDay = Number(cfg.matchReward.maxMatchesPerDay);
+      if (wallet.matchesToday >= maxMatchesPerDay) {
+        throw createHttpError(
+          429,
+          `Batas harian tercapai! Anda sudah memainkan ${maxMatchesPerDay} pertandingan hari ini.`,
+          'DAILY_MATCH_LIMIT',
+          { matchesToday: wallet.matchesToday, maxMatchesPerDay, serverNowMs: nowMs, serverDateTime }
+        );
+      }
+
+      const minIntervalSec = Number(anti.minMatchIntervalSeconds || 120);
+      if (wallet.lastMatchAt) {
+        const lastMs = new Date(wallet.lastMatchAt).getTime();
+        const elapsedMs = nowMs - lastMs;
+        if (Number.isFinite(lastMs) && elapsedMs < minIntervalSec * 1000) {
+          const elapsedSec = Math.max(0, Math.round(elapsedMs / 1000));
+          throw createHttpError(
+            429,
+            `Permintaan ditolak sistem Anti-Bot: Tunggu minimal ${minIntervalSec} detik antar pertandingan (baru ${elapsedSec} detik).`,
+            'BOT_MATCH_TOO_FAST',
+            { elapsedSec, minIntervalSec, serverNowMs: nowMs, serverDateTime }
+          );
+        }
+        if (matchCooldownMs > 0 && Number.isFinite(lastMs) && elapsedMs < matchCooldownMs) {
+          const remainMinutes = Math.ceil((matchCooldownMs - elapsedMs) / 60000);
+          throw createHttpError(
+            429,
+            `Cooldown match aktif. Tunggu ${remainMinutes} menit lagi.`,
+            'MATCH_COOLDOWN',
+            { remainMinutes, serverNowMs: nowMs, serverDateTime }
+          );
+        }
+      }
+
+      const opponents = [
+        'Garuda Esports', 'Naga Merah', 'Banteng FC', 'Elang Jawa',
+        'Harimau Sumatra', 'Satria Muda', 'Bima Sakti', 'Persija Jakarta', 'Persib Bandung'
+      ];
+      const opponent = opponents[crypto.randomInt(0, opponents.length)];
+      const homeScore = crypto.randomInt(0, 6);
+      const awayScore = crypto.randomInt(0, 6);
+      const result = homeScore > awayScore ? 'win' : (homeScore === awayScore ? 'draw' : 'lose');
+      const matchId = `MCH-${nowMs}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+
+      sec.pendingMatch = {
+        matchId,
+        opponent,
+        homeScore,
+        awayScore,
+        result,
+        createdAtMs: nowMs,
+        startedAt: serverDateTime
+      };
+      recordWalletContext(wallet, meta);
+      writeAllWallets(wallets);
+
+      return {
+        match: {
+          matchId,
+          opponent,
+          homeScore,
+          awayScore,
+          result,
+          startedAt: serverDateTime
+        },
+        matchesToday: wallet.matchesToday,
+        maxMatchesPerDay,
+        serverNowMs: nowMs,
+        serverDateTime,
+        todayStr
+      };
+    });
+  }
+
   async function claimMatchReward(authUser, body = {}, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
@@ -561,9 +653,16 @@ function createEconomyService(options = {}) {
       }
 
       const allowedResults = ['win', 'draw', 'lose'];
-      const result = allowedResults.includes(body?.result) ? body.result : 'lose';
-      const opponent = typeof body?.opponent === 'string' ? body.opponent.trim().slice(0, 80) : 'Lawan';
-      const matchId = incomingMatchId || `MCH-${nowMs}`;
+      const hasPending = Boolean(sec.pendingMatch && (!incomingMatchId || sec.pendingMatch.matchId === incomingMatchId));
+      const result = hasPending
+        ? sec.pendingMatch.result
+        : (allowedResults.includes(body?.result) ? body.result : 'lose');
+      const opponent = hasPending
+        ? sec.pendingMatch.opponent
+        : (typeof body?.opponent === 'string' ? body.opponent.trim().slice(0, 80) : 'Lawan');
+      const matchId = hasPending
+        ? sec.pendingMatch.matchId
+        : (incomingMatchId || `MCH-${nowMs}`);
 
       const mr = cfg.matchReward;
       const base = Number(mr.perMatchCurrency);
@@ -575,12 +674,14 @@ function createEconomyService(options = {}) {
 
       const beforeCurrency = round4(wallet.currency);
       const afterCurrency = round4(beforeCurrency + reward);
+      const serverDateTime = new Date(nowMs).toISOString();
 
       wallet.currency = afterCurrency;
       wallet.matchesToday += 1;
       wallet.totalMatches = Number(wallet.totalMatches || 0) + 1;
-      wallet.lastMatchAt = new Date(nowMs).toISOString();
-      wallet.updated_at = new Date(nowMs).toISOString();
+      wallet.lastMatchAt = serverDateTime;
+      wallet.updated_at = serverDateTime;
+      sec.pendingMatch = null;
       sec.rewardedMatchIds.push(matchId);
       if (sec.rewardedMatchIds.length > 50) sec.rewardedMatchIds = sec.rewardedMatchIds.slice(-50);
       recordWalletContext(wallet, meta);
@@ -606,6 +707,9 @@ function createEconomyService(options = {}) {
         reward,
         matchesToday: wallet.matchesToday,
         maxMatchesPerDay,
+        serverNowMs: nowMs,
+        serverDateTime,
+        todayStr,
         ledgerEntry,
         serverValidation: {
           sourceOfTruth: 'economy.config.json',
@@ -685,11 +789,13 @@ function createEconomyService(options = {}) {
       const afterFrom = round4(beforeFrom - amount);
       const beforeTo = round4(wallet[toKey]);
       const afterTo = round4(beforeTo + netOut);
-      const convRef = `CNV-${nowFn()}`;
+      const nowMs = nowFn();
+      const serverDateTime = new Date(nowMs).toISOString();
+      const convRef = `CNV-${nowMs}`;
 
       wallet[fromKey] = afterFrom;
       wallet[toKey] = afterTo;
-      wallet.updated_at = new Date(nowFn()).toISOString();
+      wallet.updated_at = serverDateTime;
 
       const outEntry = appendImmutableLedgerEntry({
         user_id: authUser.uid,
@@ -723,6 +829,8 @@ function createEconomyService(options = {}) {
 
       return {
         wallet: { ...wallet },
+        serverNowMs: nowMs,
+        serverDateTime,
         conversion: {
           direction,
           amountFrom: round4(amount),
@@ -914,7 +1022,9 @@ function createEconomyService(options = {}) {
       return {
         wallet: { ...wallet },
         gate,
-        queue: userQueue
+        queue: userQueue,
+        serverNowMs: nowMs,
+        serverDateTime: new Date(nowMs).toISOString()
       };
     });
   }
@@ -2447,6 +2557,7 @@ function createEconomyService(options = {}) {
     adminRejectWithdraw,
     adminClearSecurityFlag,
     getAdminEconomyDashboard,
+    startMatch,
     claimMatchReward,
     executeConversion,
     settleWeeklySink,
@@ -2523,14 +2634,18 @@ function mountEconomyRoutes(app, service) {
     }
   });
 
-  app.get('/api/economy/withdraw-status', requireAuth, async (req, res) => {
+  const handleGetWithdrawStatus = async (req, res) => {
     try {
       const data = await service.getWithdrawStatus(req.authUser);
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
+  app.get('/api/economy/withdraw-status', requireAuth, handleGetWithdrawStatus);
+  app.get('/api/economy/withdraw/status', requireAuth, handleGetWithdrawStatus);
+  app.get('/api/withdraw/status', requireAuth, handleGetWithdrawStatus);
+  app.get('/api/withdraw-status', requireAuth, handleGetWithdrawStatus);
 
   app.post('/api/economy/kyc/submit', requireAuth, async (req, res) => {
     try {
@@ -2605,23 +2720,38 @@ function mountEconomyRoutes(app, service) {
     });
   });
 
-  app.post('/api/economy/match-reward', requireAuth, async (req, res) => {
+  const handlePostMatchStart = async (req, res) => {
+    try {
+      const result = await service.startMatch(req.authUser, req.body || {}, extractRequestMeta(req));
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  };
+  app.post('/api/match/start', requireAuth, handlePostMatchStart);
+  app.post('/api/economy/match/start', requireAuth, handlePostMatchStart);
+
+  const handlePostMatchReward = async (req, res) => {
     try {
       const result = await service.claimMatchReward(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...result });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
+  app.post('/api/economy/match-reward', requireAuth, handlePostMatchReward);
+  app.post('/api/match/reward', requireAuth, handlePostMatchReward);
 
-  app.post('/api/economy/convert', requireAuth, async (req, res) => {
+  const handlePostConvert = async (req, res) => {
     try {
       const result = await service.executeConversion(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...result });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
+  app.post('/api/economy/convert', requireAuth, handlePostConvert);
+  app.post('/api/convert', requireAuth, handlePostConvert);
 
   app.post('/api/economy/weekly-sink', requireAuth, async (req, res) => {
     try {

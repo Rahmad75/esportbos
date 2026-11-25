@@ -32,6 +32,7 @@ import {
   fetchServerLedger,
   fetchServerWithdrawStatus,
   requestServerWithdraw,
+  requireServerTime,
   submitServerKyc
 } from './economy-client.js';
 
@@ -491,6 +492,7 @@ async function executeExchange() {
   updateBalanceDisplays();
 
   const conv = serverRes.conversion;
+  const serverIso = serverRes.serverDateTime || (await requireServerTime()).dateTime;
   try {
     await withFirestoreRetry(() => addDoc(collection(db, 'transactions'), {
       user_id: currentUserId,
@@ -501,7 +503,7 @@ async function executeExchange() {
       amount_to: conv.amountTo,
       fee: conv.feeAmount,
       status: 'completed',
-      created_at: new Date().toISOString()
+      created_at: serverIso
     }), 3, 1000);
   } catch (_) {
     // Server ledger sudah mencatat transaksi permanen
@@ -604,6 +606,10 @@ async function loadWithdrawStatus() {
     renderWithdrawGateUI(statusData);
   } catch (err) {
     console.error('Gagal memuat status withdraw gate:', err);
+    const queueList = document.getElementById('withdrawQueueList');
+    if (queueList) {
+      queueList.innerHTML = `<p style="color:#fca5a5; font-size:13px; margin:0;">⚠️ ${err?.message || 'Gagal memuat status withdraw dari server.'}</p>`;
+    }
   }
 }
 
@@ -642,6 +648,7 @@ async function requestWithdraw() {
   applyServerWalletToDOM(wallet);
   updateBalanceDisplays();
 
+  const withdrawServerIso = serverRes.serverDateTime || (await requireServerTime()).dateTime;
   try {
     await withFirestoreRetry(() => addDoc(collection(db, 'transactions'), {
       user_id: currentUserId,
@@ -651,7 +658,7 @@ async function requestWithdraw() {
       amount_to: serverRes.withdraw.netUsdt,
       fee: serverRes.withdraw.feeDiamond,
       status: 'pending',
-      created_at: new Date().toISOString()
+      created_at: withdrawServerIso
     }), 3, 1000);
   } catch (_) {
     // Server ledger & queue sudah mencatat request withdraw permanen

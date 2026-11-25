@@ -22,14 +22,72 @@ function getClientDeviceId() {
   }
 }
 
+let lastServerNowMs = null;
+let lastSyncPerfMs = null;
+
+export async function syncServerTime() {
+  const res = await fetch('/api/server-time', {
+    method: 'GET',
+    cache: 'no-store'
+  });
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (_) {
+    data = null;
+  }
+  const serverNowMs = Number(data?.nowMs || (data?.dateTime ? new Date(data.dateTime).getTime() : NaN));
+  if (!res.ok || !data?.success || !Number.isFinite(serverNowMs) || serverNowMs <= 0) {
+    lastServerNowMs = null;
+    lastSyncPerfMs = null;
+    if (typeof window !== 'undefined') {
+      window.__SERVER_TIME_SYNCED__ = false;
+    }
+    throw new Error('Gagal sinkronisasi waktu server (/api/server-time). Transaksi ditolak demi keamanan.');
+  }
+
+  lastServerNowMs = serverNowMs;
+  lastSyncPerfMs = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : 0;
+  if (typeof window !== 'undefined') {
+    window.__SERVER_TIME_SYNCED__ = true;
+    window.__SERVER_NOW_MS__ = serverNowMs;
+  }
+  return {
+    serverNowMs,
+    dateTime: data.dateTime || new Date(serverNowMs).toISOString(),
+    timeZone: data.timeZone || 'Asia/Jakarta'
+  };
+}
+
+export async function requireServerTime(maxAgeMs = 60000) {
+  const perfNow = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : 0;
+  if (lastServerNowMs !== null && lastSyncPerfMs !== null && (perfNow - lastSyncPerfMs) >= 0 && (perfNow - lastSyncPerfMs) <= maxAgeMs) {
+    const estimatedMs = Math.round(lastServerNowMs + (perfNow - lastSyncPerfMs));
+    return {
+      serverNowMs: estimatedMs,
+      dateTime: new Date(estimatedMs).toISOString(),
+      timeZone: 'Asia/Jakarta'
+    };
+  }
+  return syncServerTime();
+}
+
 async function economyRequest(path, method = 'GET', body = null) {
   const token = await getIdTokenOrThrow();
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'X-Device-Id': getClientDeviceId()
+  };
+
+  if (method !== 'GET') {
+    const srvTime = await requireServerTime();
+    headers['X-Server-Sync-Ms'] = String(srvTime.serverNowMs);
+  }
+
   const options = {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-Device-Id': getClientDeviceId()
-    }
+    cache: 'no-store',
+    headers
   };
   if (body !== null && method !== 'GET') {
     options.headers['Content-Type'] = 'application/json';
@@ -59,6 +117,10 @@ export async function fetchServerWallet() {
 
 export async function fetchServerLedger(limit = 100) {
   return economyRequest(`/api/economy/ledger?limit=${encodeURIComponent(limit)}`, 'GET');
+}
+
+export async function startServerMatch(payload = {}) {
+  return economyRequest('/api/match/start', 'POST', payload);
 }
 
 export async function claimServerMatchReward({ result, opponent, matchId }) {
