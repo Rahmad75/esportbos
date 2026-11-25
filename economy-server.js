@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const QRCode = require('qrcode');
 
 const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
@@ -36,6 +37,7 @@ function createEconomyService(options = {}) {
   const walletsFile = path.join(dataDir, 'economy-wallets.json');
   const ledgerFile = path.join(dataDir, 'economy-ledger.jsonl');
   const withdrawQueueFile = path.join(dataDir, 'economy-withdraw-queue.json');
+  const topupRequestsFile = path.join(dataDir, 'topup_requests.json');
   const securityEventsFile = path.join(dataDir, 'economy-security-events.jsonl');
   const nowFn = typeof options.nowFn === 'function' ? options.nowFn : () => Date.now();
   const matchCooldownMs = Number.isFinite(options.matchCooldownMs) ? options.matchCooldownMs : DEFAULT_MATCH_COOLDOWN_MS;
@@ -50,6 +52,9 @@ function createEconomyService(options = {}) {
   }
   if (!fs.existsSync(withdrawQueueFile)) {
     fs.writeFileSync(withdrawQueueFile, JSON.stringify([], null, 2), 'utf8');
+  }
+  if (!fs.existsSync(topupRequestsFile)) {
+    fs.writeFileSync(topupRequestsFile, JSON.stringify([], null, 2), 'utf8');
   }
   if (!fs.existsSync(securityEventsFile)) {
     fs.writeFileSync(securityEventsFile, '', 'utf8');
@@ -149,6 +154,22 @@ function createEconomyService(options = {}) {
     const tmpFile = `${withdrawQueueFile}.tmp.${process.pid}.${crypto.randomBytes(4).toString('hex')}`;
     fs.writeFileSync(tmpFile, JSON.stringify(queue, null, 2), 'utf8');
     fs.renameSync(tmpFile, withdrawQueueFile);
+  }
+
+  function readTopupRequests() {
+    try {
+      const raw = fs.readFileSync(topupRequestsFile, 'utf8');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeTopupRequests(requests) {
+    const tmpFile = `${topupRequestsFile}.tmp.${process.pid}.${crypto.randomBytes(4).toString('hex')}`;
+    fs.writeFileSync(tmpFile, JSON.stringify(requests, null, 2), 'utf8');
+    fs.renameSync(tmpFile, topupRequestsFile);
   }
 
   function readAllLedgerEntries() {
@@ -1483,6 +1504,9 @@ function createEconomyService(options = {}) {
       })
       .sort((a, b) => b.riskScore - a.riskScore);
 
+    const topupRequests = readTopupRequests();
+    const topupPendingCount = topupRequests.filter((r) => r.status === 'PENDING_VERIFICATION').length;
+
     return {
       rates: cfg.rates,
       metrics,
@@ -1493,6 +1517,7 @@ function createEconomyService(options = {}) {
         circulatingCurrency,
         queuedCount: queuedItems.length,
         holdCount: holdItems.length,
+        topupPendingCount,
         queuedWithdrawDiamonds,
         queuedWithdrawNetUsdt,
         totalDiamondLiability,
@@ -2049,6 +2074,354 @@ function createEconomyService(options = {}) {
     });
   }
 
+  function validateReceiptImage(dataUrl) {
+    if (dataUrl === undefined || dataUrl === null || dataUrl === '') return null;
+    if (typeof dataUrl !== 'string') {
+      throw createHttpError(400, 'Format foto struk tidak valid.', 'INVALID_RECEIPT_IMAGE');
+    }
+    const trimmed = dataUrl.trim();
+    if (trimmed.length > 2 * 1024 * 1024) {
+      throw createHttpError(400, 'Ukuran foto struk maksimal 2 MB.', 'RECEIPT_IMAGE_TOO_LARGE');
+    }
+    const match = trimmed.match(/^data:image\/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=]+)$/i);
+    if (!match) {
+      throw createHttpError(400, 'Foto struk harus berupa gambar PNG, JPG, atau WEBP.', 'INVALID_RECEIPT_IMAGE');
+    }
+    return trimmed;
+  }
+
+  function getTopupConfig() {
+    const cfg = loadConfig();
+    return { topUp: cfg.topUp || null };
+  }
+
+  async function getSolanaQrSvg() {
+    const cfg = loadConfig();
+    const addr = String(cfg?.topUp?.solana?.walletAddress || '').trim();
+    if (!addr) {
+      throw createHttpError(500, 'Alamat wallet Solana belum dikonfigurasi.', 'SOLANA_CONFIG_MISSING');
+    }
+    return QRCode.toString(addr, {
+      type: 'svg',
+      width: 220,
+      margin: 2,
+      color: {
+        dark: '#0f172a',
+        light: '#ffffff'
+      }
+    });
+  }
+
+  async function submitTopupRequest(authUser, body = {}, reqMeta = {}) {
+    return withUserLock(authUser.uid, () => {
+      const cfg = loadConfig();
+      const topUpCfg = cfg.topUp || {};
+      const packages = topUpCfg.packages || {};
+      const wallets = readAllWallets();
+      const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      const meta = normalizeRequestMeta(reqMeta);
+      const requests = readTopupRequests();
+
+      const tampered = detectTamperedFields(body, [
+        'status', 'diamonds', 'bonusGold', 'bonus_gold', 'gold', 'priceIdr', 'price_idr',
+        'priceUsdt', 'price_usdt', 'user_id', 'approved_by', 'approved_at'
+      ]);
+
+      const packageId = String(body?.packageId || '').trim().toLowerCase();
+      const pkg = packages[packageId];
+      if (!pkg) {
+        throw createHttpError(400, 'Paket top-up tidak valid atau tidak ditemukan.', 'INVALID_TOPUP_PACKAGE');
+      }
+
+      const paymentMethod = String(body?.paymentMethod || '').trim().toLowerCase();
+      if (paymentMethod !== 'dana_qris' && paymentMethod !== 'usdt_solana') {
+        throw createHttpError(400, 'Metode pembayaran harus QRIS DANA Bisnis atau Crypto (USDT Solana).', 'INVALID_PAYMENT_METHOD');
+      }
+
+      let referenceNumber = null;
+      let receiptImage = null;
+      let txid = null;
+      let proofNorm = null;
+
+      if (paymentMethod === 'dana_qris') {
+        referenceNumber = typeof body?.referenceNumber === 'string'
+          ? body.referenceNumber.trim().slice(0, 80)
+          : '';
+        receiptImage = validateReceiptImage(body?.receiptImage);
+
+        if (!referenceNumber && !receiptImage) {
+          throw createHttpError(
+            400,
+            'Untuk QRIS DANA Bisnis, wajib mengisi Nomor Referensi atau mengunggah Foto Struk transfer.',
+            'MISSING_DANA_PROOF'
+          );
+        }
+        if (referenceNumber && referenceNumber.length < 4) {
+          throw createHttpError(
+            400,
+            'Nomor Referensi DANA minimal 4 karakter.',
+            'INVALID_DANA_REFERENCE'
+          );
+        }
+        if (referenceNumber) {
+          proofNorm = `DANA:${referenceNumber.replace(/\s+/g, '').toUpperCase()}`;
+          const dup = requests.find(
+            (r) => r.status !== 'REJECTED' && r.proof_norm && r.proof_norm === proofNorm
+          );
+          if (dup) {
+            throw createHttpError(
+              409,
+              `Nomor Referensi (${referenceNumber}) sudah pernah digunakan pada transaksi ${dup.id}.`,
+              'DUPLICATE_TOPUP_PROOF'
+            );
+          }
+        } else {
+          referenceNumber = null;
+        }
+      } else {
+        txid = typeof body?.txid === 'string' ? body.txid.trim() : '';
+        if (!/^[A-Za-z0-9]{16,128}$/.test(txid)) {
+          throw createHttpError(
+            400,
+            'TXID (Transaction Hash) Solana tidak valid. Masukkan 16-128 karakter alfanumerik.',
+            'INVALID_SOLANA_TXID'
+          );
+        }
+        proofNorm = `SOL:${txid}`;
+        const dup = requests.find(
+          (r) => r.status !== 'REJECTED' && r.proof_norm && r.proof_norm === proofNorm
+        );
+        if (dup) {
+          throw createHttpError(
+            409,
+            `TXID (${txid}) sudah pernah digunakan pada transaksi ${dup.id}.`,
+            'DUPLICATE_TOPUP_PROOF'
+          );
+        }
+      }
+
+      const nowMs = nowFn();
+      const nowIso = new Date(nowMs).toISOString();
+      const topupId = `TOP-${nowMs}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+      const methodLabel = paymentMethod === 'dana_qris'
+        ? (topUpCfg.dana?.label || 'QRIS DANA Bisnis')
+        : (topUpCfg.solana?.label || 'Crypto (USDT Solana)');
+
+      const record = {
+        id: topupId,
+        user_id: authUser.uid,
+        akun: wallet.akun || authUser.email || authUser.uid,
+        package_id: pkg.id,
+        package_name: pkg.name,
+        payment_method: paymentMethod,
+        payment_method_label: methodLabel,
+        price_idr: Number(pkg.priceIdr),
+        price_usdt: Number(pkg.priceUsdt),
+        diamonds: Number(pkg.diamonds),
+        bonus_gold: Number(pkg.bonusGold || 0),
+        reference_number: referenceNumber || null,
+        receipt_image: receiptImage || null,
+        txid: txid || null,
+        proof_norm: proofNorm,
+        status: 'PENDING_VERIFICATION',
+        request_ip: meta.ip,
+        request_device_id: meta.deviceId,
+        created_at: nowIso,
+        updated_at: nowIso
+      };
+
+      requests.push(record);
+      writeTopupRequests(requests);
+
+      recordWalletContext(wallet, meta);
+      writeAllWallets(wallets);
+
+      return {
+        topup: { ...record },
+        wallet: { ...wallet },
+        message: `Permintaan Top-Up ${pkg.name} (${topupId}) berhasil dikirim dengan status PENDING_VERIFICATION. Saldo akan ditambahkan setelah diverifikasi Admin.`,
+        serverValidation: {
+          sourceOfTruth: 'economy.config.json',
+          immediateBalanceAdded: false,
+          ignoredClientFields: tampered
+        }
+      };
+    });
+  }
+
+  async function getMyTopupRequests(authUser) {
+    const requests = readTopupRequests();
+    const mine = requests
+      .filter((r) => r.user_id === authUser.uid)
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    return { requests: mine };
+  }
+
+  async function getAdminTopupQueue(authUser) {
+    assertAdmin(authUser, 'Hanya Admin/Owner yang dapat melihat antrean Top-Up.');
+    const requests = readTopupRequests();
+    const sorted = [...requests].sort((a, b) => {
+      const rank = (s) => (s === 'PENDING_VERIFICATION' ? 0 : 1);
+      const ra = rank(a.status);
+      const rb = rank(b.status);
+      if (ra !== rb) return ra - rb;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+    const pendingCount = sorted.filter((r) => r.status === 'PENDING_VERIFICATION').length;
+    return {
+      requests: sorted,
+      pendingCount,
+      totalCount: sorted.length
+    };
+  }
+
+  async function adminApproveTopup(authUser, body = {}) {
+    const adminEmail = assertAdmin(authUser, 'Hanya Admin/Owner yang dapat menyetujui (Approve) Top-Up.');
+    const topupId = String(body?.topupId || '').trim();
+    if (!topupId) {
+      throw createHttpError(400, 'ID transaksi Top-Up wajib diisi.', 'INVALID_TOPUP_ID');
+    }
+
+    const initialRequests = readTopupRequests();
+    const initialTarget = initialRequests.find((r) => r.id === topupId);
+    if (!initialTarget) {
+      throw createHttpError(404, 'Permintaan Top-Up tidak ditemukan.', 'TOPUP_NOT_FOUND');
+    }
+
+    return withUserLock(initialTarget.user_id, () => {
+      const cfg = loadConfig();
+      const requests = readTopupRequests();
+      const target = requests.find((r) => r.id === topupId);
+      if (!target) {
+        throw createHttpError(404, 'Permintaan Top-Up tidak ditemukan.', 'TOPUP_NOT_FOUND');
+      }
+      if (target.status !== 'PENDING_VERIFICATION') {
+        throw createHttpError(
+          409,
+          `Transaksi Top-Up ${target.id} sudah diproses sebelumnya (${target.status}).`,
+          'TOPUP_ALREADY_PROCESSED'
+        );
+      }
+
+      const wallets = readAllWallets();
+      const targetWallet = getOrCreateWalletUnlocked(
+        wallets,
+        { uid: target.user_id, email: target.akun },
+        cfg
+      );
+      const nowIso = new Date(nowFn()).toISOString();
+      const creditDiamonds = round4(target.diamonds || 0);
+      const creditGold = round4(target.bonus_gold || 0);
+
+      const beforeDiamond = round4(targetWallet.diamond);
+      const afterDiamond = round4(beforeDiamond + creditDiamonds);
+      targetWallet.diamond = afterDiamond;
+
+      const beforeGold = round4(targetWallet.gold);
+      const afterGold = round4(beforeGold + creditGold);
+      targetWallet.gold = afterGold;
+      targetWallet.updated_at = nowIso;
+
+      const proofLabel = target.txid
+        ? `TXID: ${target.txid}`
+        : (target.reference_number ? `Ref: ${target.reference_number}` : 'Foto Struk');
+
+      const ledgerEntries = [];
+      if (creditDiamonds > 0) {
+        ledgerEntries.push(appendImmutableLedgerEntry({
+          user_id: target.user_id,
+          akun: targetWallet.akun || target.akun,
+          jenis_transaksi: 'masuk',
+          kategori: 'topup_diamond',
+          mata_uang: 'diamond',
+          jumlah: creditDiamonds,
+          fee: 0,
+          saldo_sebelum: beforeDiamond,
+          saldo_sesudah: afterDiamond,
+          ref_id: target.id,
+          keterangan: `Top-Up Paket ${target.package_name} (${target.payment_method_label}) disetujui Admin [${proofLabel}]`
+        }));
+      }
+
+      if (creditGold > 0) {
+        ledgerEntries.push(appendImmutableLedgerEntry({
+          user_id: target.user_id,
+          akun: targetWallet.akun || target.akun,
+          jenis_transaksi: 'masuk',
+          kategori: 'topup_bonus_gold',
+          mata_uang: 'gold',
+          jumlah: creditGold,
+          fee: 0,
+          saldo_sebelum: beforeGold,
+          saldo_sesudah: afterGold,
+          ref_id: target.id,
+          keterangan: `Bonus Gold Top-Up Paket ${target.package_name} (${target.payment_method_label}) disetujui Admin`
+        }));
+      }
+
+      target.status = 'APPROVED';
+      target.approved_by = adminEmail;
+      target.approved_at = nowIso;
+      target.updated_at = nowIso;
+      target.ledger_entry_ids = ledgerEntries.map((e) => e.id);
+
+      writeTopupRequests(requests);
+      writeAllWallets(wallets);
+
+      return {
+        topup: { ...target },
+        wallet: { ...targetWallet },
+        ledgerEntries,
+        message: `Top-Up ${target.id} disetujui! +${creditDiamonds} Diamond & +${creditGold} Gold ditambahkan ke ${targetWallet.akun} lewat Ledger.`
+      };
+    });
+  }
+
+  async function adminRejectTopup(authUser, body = {}) {
+    const adminEmail = assertAdmin(authUser, 'Hanya Admin/Owner yang dapat menolak (Reject) Top-Up.');
+    const topupId = String(body?.topupId || '').trim();
+    if (!topupId) {
+      throw createHttpError(400, 'ID transaksi Top-Up wajib diisi.', 'INVALID_TOPUP_ID');
+    }
+    const reason = String(body?.reason || 'Bukti transfer tidak valid / tidak ditemukan').trim().slice(0, 200)
+      || 'Bukti transfer tidak valid / tidak ditemukan';
+
+    const initialRequests = readTopupRequests();
+    const initialTarget = initialRequests.find((r) => r.id === topupId);
+    if (!initialTarget) {
+      throw createHttpError(404, 'Permintaan Top-Up tidak ditemukan.', 'TOPUP_NOT_FOUND');
+    }
+
+    return withUserLock(initialTarget.user_id, () => {
+      const requests = readTopupRequests();
+      const target = requests.find((r) => r.id === topupId);
+      if (!target) {
+        throw createHttpError(404, 'Permintaan Top-Up tidak ditemukan.', 'TOPUP_NOT_FOUND');
+      }
+      if (target.status !== 'PENDING_VERIFICATION') {
+        throw createHttpError(
+          409,
+          `Transaksi Top-Up ${target.id} sudah diproses sebelumnya (${target.status}).`,
+          'TOPUP_ALREADY_PROCESSED'
+        );
+      }
+
+      const nowIso = new Date(nowFn()).toISOString();
+      target.status = 'REJECTED';
+      target.reject_reason = reason;
+      target.rejected_by = adminEmail;
+      target.rejected_at = nowIso;
+      target.updated_at = nowIso;
+
+      writeTopupRequests(requests);
+
+      return {
+        topup: { ...target },
+        message: `Top-Up ${target.id} ditolak (${reason}). Saldo player tetap tidak bertambah.`
+      };
+    });
+  }
+
   return {
     verifyFirebaseIdToken,
     getWallet,
@@ -2067,8 +2440,16 @@ function createEconomyService(options = {}) {
     requestWithdraw,
     spendOrTrade,
     adminResetWallet,
+    getTopupConfig,
+    getSolanaQrSvg,
+    submitTopupRequest,
+    getMyTopupRequests,
+    getAdminTopupQueue,
+    adminApproveTopup,
+    adminRejectTopup,
     readAllLedgerEntries,
     readWithdrawQueue,
+    readTopupRequests,
     readSecurityEvents
   };
 }
@@ -2260,6 +2641,71 @@ function mountEconomyRoutes(app, service) {
     try {
       const result = await service.adminResetWallet(req.authUser);
       return res.json({ success: true, ...result });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/topup/config', (req, res) => {
+    try {
+      const data = service.getTopupConfig();
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/topup/solana-qr.svg', async (req, res) => {
+    try {
+      const svg = await service.getSolanaQrSvg();
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.send(svg);
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/topup/my-requests', requireAuth, async (req, res) => {
+    try {
+      const data = await service.getMyTopupRequests(req.authUser);
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/topup/request', requireAuth, async (req, res) => {
+    try {
+      const data = await service.submitTopupRequest(req.authUser, req.body || {}, extractRequestMeta(req));
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/admin/topup/queue', requireAuth, async (req, res) => {
+    try {
+      const data = await service.getAdminTopupQueue(req.authUser);
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/topup/approve', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminApproveTopup(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/topup/reject', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminRejectTopup(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }

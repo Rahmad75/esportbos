@@ -28,6 +28,7 @@
             <nav class="sidebar-menu">
                 <a href="#overview" class="menu-item active" onclick="switchAdminTab('overview', this)">📊 Overview Global</a>
                 <a href="#ekonomi" class="menu-item" onclick="switchAdminTab('ekonomi', this)">💎 Ekonomi &amp; Withdraw</a>
+                <a href="#topup" class="menu-item" onclick="switchAdminTab('topup', this)">💳 Top-Up Queue</a>
                 <a href="#users" class="menu-item" onclick="switchAdminTab('users', this)">👥 Manajemen User</a>
                 <a href="#market" class="menu-item" onclick="switchAdminTab('market', this)">🛒 Kontrol Market</a>
                 <a href="#system" class="menu-item" onclick="switchAdminTab('system', this)">⚙️ Sistem &amp; Data</a>
@@ -248,6 +249,46 @@
                             </thead>
                             <tbody id="securityFlagTableBody">
                                 <tr><td colspan="5" style="text-align:center;color:#94a3b8;">Tidak ada akun mencurigakan yang ditandai.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: TOP-UP QUEUE -->
+            <div id="tab-topup" class="tab-content" style="display:none;">
+                <div class="info-bar">
+                    <span>💳 Antrean Verifikasi Top-Up Manual (Top-Up Queue)</span>
+                    <div class="econ-period-bar">
+                        <span id="topupQueueBadge" class="econ-badge econ-badge-queued">0 PENDING_VERIFICATION</span>
+                        <button type="button" class="econ-period-btn" onclick="refreshTopupQueue()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div class="admin-panel">
+                    <div class="econ-header-row">
+                        <div>
+                            <h3>📥 Daftar Request Top-Up (QRIS DANA Bisnis &amp; Crypto USDT Solana)</h3>
+                            <p class="econ-subtext">Cek Nomor Referensi, Foto Struk, atau TXID Solana. Klik <strong>Approve</strong> untuk menambahkan Diamond + Bonus Gold lewat Ledger, atau <strong>Reject</strong> jika bukti palsu/tidak valid.</p>
+                        </div>
+                    </div>
+
+                    <div id="adminTopupFeedback" class="econ-feedback"></div>
+
+                    <div class="econ-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID &amp; Tanggal</th>
+                                    <th>User ID &amp; Akun</th>
+                                    <th>Paket &amp; Nominal</th>
+                                    <th>Metode &amp; Nomor Referensi / TXID</th>
+                                    <th>Status</th>
+                                    <th>Aksi Owner</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topupQueueTableBody">
+                                <tr><td colspan="6" style="text-align:center;color:#94a3b8;">Memuat antrean top-up...</td></tr>
                             </tbody>
                         </table>
                     </div>

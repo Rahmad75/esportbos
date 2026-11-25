@@ -109,70 +109,173 @@
 
             <!-- Paket Top-Up -->
             <div class="panel raised">
-                <h3>📦 Paket Pendanaan</h3>
-                <p style="color: #aaa; margin-bottom: 20px;">Pilih paket yang sesuai dengan kebutuhan klub Anda</p>
+                <h3>📦 1. Pilih Paket Pendanaan</h3>
+                <p style="color: #aaa; margin-bottom: 20px;">Pilih paket Diamond &amp; Bonus Gold untuk klub Anda (verifikasi manual oleh Admin, saldo masuk setelah disetujui)</p>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div id="packageGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
                     <!-- Paket Starter -->
-                    <div style="border: 2px solid #333; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white; transition: all 0.3s;">
-                        <h4 style="color: #667eea;">🥉 Starter</h4>
-                        <div style="font-size: 48px; margin: 15px 0;">💎 100</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 50.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
-                            <li>✅ 100 Diamond</li>
-                            <li>✅ Bonus 50 Gold</li>
-                            <li>✅ Instant Delivery</li>
+                    <div id="pkg-card-starter" class="topup-pkg-card active" onclick="selectTopupPackage('starter')" style="border: 2px solid #667eea; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white; cursor: pointer; transition: all 0.25s;">
+                        <h4 style="color: #667eea;">🥉 <span id="pkg-name-starter">Starter</span></h4>
+                        <div style="font-size: 42px; margin: 12px 0;">💎 <span id="pkg-diamonds-starter">100</span></div>
+                        <div style="font-size: 22px; font-weight: bold; color: #fff;" id="pkg-idr-starter">Rp 50.000</div>
+                        <div style="font-size: 13px; color: #38bdf8; margin-top: 4px;" id="pkg-usdt-starter">atau 3.25 USDT (Solana)</div>
+                        <ul style="list-style: none; padding: 0; margin: 18px 0; color: #cbd5e1;">
+                            <li>✅ <span id="pkg-list-d-starter">100</span> Diamond</li>
+                            <li>✅ Bonus <span id="pkg-list-g-starter">50</span> Gold</li>
+                            <li>⏳ Verifikasi Manual Admin</li>
                         </ul>
-                        <button onclick="topUp('starter', 50000, 100, 50)" class="btn-topup" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                        <button type="button" id="pkg-btn-starter" onclick="event.stopPropagation(); selectTopupPackage('starter')" class="btn-topup" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">✓ Paket Dipilih</button>
                     </div>
 
                     <!-- Paket Pro -->
-                    <div style="border: 3px solid #ff9800; border-radius: 12px; padding: 25px; text-align: center; position: relative; background: #16213e; color: white;">
+                    <div id="pkg-card-pro" class="topup-pkg-card" onclick="selectTopupPackage('pro')" style="border: 2px solid #334155; border-radius: 12px; padding: 25px; text-align: center; position: relative; background: #16213e; color: white; cursor: pointer; transition: all 0.25s;">
                         <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #ff9800; color: white; padding: 4px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">POPULER</div>
-                        <h4 style="color: #ff9800;">🥈 Pro</h4>
-                        <div style="font-size: 48px; margin: 15px 0;">💎 500</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 200.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
-                            <li>✅ 500 Diamond</li>
-                            <li>✅ Bonus 300 Gold</li>
-                            <li>✅ Instant Delivery</li>
+                        <h4 style="color: #ff9800;">🥈 <span id="pkg-name-pro">Pro</span></h4>
+                        <div style="font-size: 42px; margin: 12px 0;">💎 <span id="pkg-diamonds-pro">500</span></div>
+                        <div style="font-size: 22px; font-weight: bold; color: #fff;" id="pkg-idr-pro">Rp 200.000</div>
+                        <div style="font-size: 13px; color: #38bdf8; margin-top: 4px;" id="pkg-usdt-pro">atau 13 USDT (Solana)</div>
+                        <ul style="list-style: none; padding: 0; margin: 18px 0; color: #cbd5e1;">
+                            <li>✅ <span id="pkg-list-d-pro">500</span> Diamond</li>
+                            <li>✅ Bonus <span id="pkg-list-g-pro">300</span> Gold</li>
+                            <li>⏳ Verifikasi Manual Admin</li>
                         </ul>
-                        <button onclick="topUp('pro', 200000, 500, 300)" class="btn-topup" style="width: 100%; padding: 12px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                        <button type="button" id="pkg-btn-pro" onclick="event.stopPropagation(); selectTopupPackage('pro')" class="btn-topup" style="width: 100%; padding: 12px; background: #334155; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
                     </div>
 
                     <!-- Paket Elite -->
-                    <div style="border: 2px solid #333; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white;">
-                        <h4 style="color: #f5576c;">🥇 Elite</h4>
-                        <div style="font-size: 48px; margin: 15px 0;">💎 1500</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #fff;">Rp 500.000</div>
-                        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #aaa;">
-                            <li>✅ 1500 Diamond</li>
-                            <li>✅ Bonus 1000 Gold</li>
-                            <li>✅ Instant Delivery</li>
+                    <div id="pkg-card-elite" class="topup-pkg-card" onclick="selectTopupPackage('elite')" style="border: 2px solid #334155; border-radius: 12px; padding: 25px; text-align: center; background: #16213e; color: white; cursor: pointer; transition: all 0.25s;">
+                        <h4 style="color: #f5576c;">🥇 <span id="pkg-name-elite">Elite</span></h4>
+                        <div style="font-size: 42px; margin: 12px 0;">💎 <span id="pkg-diamonds-elite">1500</span></div>
+                        <div style="font-size: 22px; font-weight: bold; color: #fff;" id="pkg-idr-elite">Rp 500.000</div>
+                        <div style="font-size: 13px; color: #38bdf8; margin-top: 4px;" id="pkg-usdt-elite">atau 32.5 USDT (Solana)</div>
+                        <ul style="list-style: none; padding: 0; margin: 18px 0; color: #cbd5e1;">
+                            <li>✅ <span id="pkg-list-d-elite">1500</span> Diamond</li>
+                            <li>✅ Bonus <span id="pkg-list-g-elite">1000</span> Gold</li>
+                            <li>⏳ Verifikasi Manual Admin</li>
                             <li>✅ VIP Badge</li>
                         </ul>
-                        <button onclick="topUp('elite', 500000, 1500, 1000)" class="btn-topup" style="width: 100%; padding: 12px; background: #f5576c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
+                        <button type="button" id="pkg-btn-elite" onclick="event.stopPropagation(); selectTopupPackage('elite')" class="btn-topup" style="width: 100%; padding: 12px; background: #334155; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Pilih Paket</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Metode Pembayaran -->
-            <div class="panel raised">
-                <h3>💳 Metode Pembayaran</h3>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; padding: 20px;">
-                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">🏦 Transfer Bank</div>
-                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">📱 E-Wallet (OVO, DANA, GoPay)</div>
-                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">🏪 Minimarket (Alfamart, Indomaret)</div>
-                    <div style="padding: 15px 30px; background: #16213e; border-radius: 8px; border: 2px solid #333; color: white;">💳 Kartu Kredit/Debit</div>
-                </div>
-                <p style="text-align: center; color: #999; margin-top: 15px;">
-                    Pembayaran diproses melalui <strong>Duitku Payment Gateway</strong>
+            <!-- Metode Pembayaran Manual -->
+            <div class="panel raised" id="paymentMethodSection">
+                <h3>💳 2. Metode Pembayaran Manual</h3>
+                <p style="color: #94a3b8; margin-bottom: 16px;">
+                    Paket terpilih: <strong id="selectedPackageSummary" style="color: #fbbf24;">Starter (100 Diamond + 50 Bonus Gold — Rp 50.000 / 3.25 USDT)</strong>
                 </p>
+
+                <!-- 2 Pilihan Metode Pembayaran -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <button type="button" id="methodBtn-dana_qris" onclick="selectPaymentMethod('dana_qris')" style="padding: 18px 20px; background: #0f172a; border-radius: 10px; border: 2px solid #38bdf8; color: white; cursor: pointer; text-align: left; transition: all 0.2s;">
+                        <div style="font-size: 18px; font-weight: bold;">📱 QRIS DANA Bisnis</div>
+                        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Scan QRIS DANA Bisnis &amp; upload struk / nomor referensi</div>
+                    </button>
+                    <button type="button" id="methodBtn-usdt_solana" onclick="selectPaymentMethod('usdt_solana')" style="padding: 18px 20px; background: #16213e; border-radius: 10px; border: 2px solid #334155; color: white; cursor: pointer; text-align: left; transition: all 0.2s;">
+                        <div style="font-size: 18px; font-weight: bold;">◎ Crypto (USDT Solana)</div>
+                        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Transfer USDT jaringan Solana (SPL) &amp; masukkan TXID</div>
+                    </button>
+                </div>
+
+                <!-- Panel Detail DANA QRIS -->
+                <div id="panel-dana_qris" style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 22px; color: #e2e8f0;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; align-items: start;">
+                        <div style="text-align: center; background: #16213e; padding: 18px; border-radius: 10px; border: 1px solid #334155;">
+                            <div style="font-weight: bold; color: #38bdf8; margin-bottom: 10px;" id="danaMerchantTitle">QRIS DANA Bisnis — Solok Studio, Konter</div>
+                            <img id="danaQrisImg" src="public/assets/aistudio/qris-dana_7a0d9682.jpeg" alt="QRIS DANA Bisnis" style="max-width: 240px; width: 100%; border-radius: 10px; background: #fff; padding: 8px; display: block; margin: 0 auto;" onerror="this.style.display='none'; document.getElementById('danaQrisFallback').style.display='block';">
+                            <div id="danaQrisFallback" style="display: none; padding: 20px; border: 2px dashed #475569; border-radius: 10px; background: #0f172a; color: #cbd5e1; font-size: 13px;">
+                                <div style="font-size: 28px; margin-bottom: 8px;">🧾</div>
+                                <strong>Gambar QRIS DANA Bisnis belum dapat dimuat.</strong>
+                            </div>
+                            <div style="margin-top: 12px; font-size: 16px; font-weight: bold; color: #fbbf24;">
+                                Nominal Transfer: <span id="danaNominalText">Rp 50.000</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #38bdf8;">Instruksi Transfer QRIS DANA Bisnis</h4>
+                            <ol id="danaInstructionsList" style="padding-left: 20px; margin: 0 0 18px 0; color: #cbd5e1; line-height: 1.6; font-size: 14px;">
+                                <li>Buka aplikasi DANA, e-wallet, atau mobile banking yang mendukung QRIS.</li>
+                                <li>Scan QRIS DANA Bisnis di samping dan transfer sesuai nominal paket.</li>
+                                <li>Isi <strong>Nomor Referensi</strong> transaksi atau <strong>Upload Foto Struk</strong> di bawah ini.</li>
+                            </ol>
+
+                            <div style="margin-bottom: 14px;">
+                                <label for="danaReferenceInput" style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #e2e8f0;">
+                                    Nomor Referensi Transaksi DANA / QRIS
+                                </label>
+                                <input type="text" id="danaReferenceInput" placeholder="Contoh: DANA-REF-20261125001" maxlength="80" style="width: 100%; padding: 11px 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 14px;">
+                            </div>
+
+                            <div>
+                                <label for="danaReceiptInput" style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #e2e8f0;">
+                                    Atau Upload Foto Struk Bukti Transfer (PNG/JPG/WEBP, maks 2 MB)
+                                </label>
+                                <input type="file" id="danaReceiptInput" accept="image/png,image/jpeg,image/webp" onchange="handleReceiptFileChange(event)" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: #cbd5e1; font-size: 13px;">
+                                <div id="danaReceiptPreviewWrap" style="display: none; margin-top: 10px; align-items: center; gap: 12px;">
+                                    <img id="danaReceiptPreviewImg" src="" alt="Preview Struk" style="max-height: 110px; border-radius: 8px; border: 1px solid #475569;">
+                                    <button type="button" onclick="clearReceiptUpload()" style="padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">Hapus Foto</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Detail Crypto USDT Solana -->
+                <div id="panel-usdt_solana" style="display: none; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 22px; color: #e2e8f0;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; align-items: start;">
+                        <div style="text-align: center; background: #16213e; padding: 18px; border-radius: 10px; border: 1px solid #334155;">
+                            <div style="font-weight: bold; color: #4ade80; margin-bottom: 10px;" id="solanaNetworkLabel">Wallet Crypto (USDT - Solana SPL)</div>
+                            <img id="solanaQrImg" src="/api/economy/topup/solana-qr.svg" alt="QR Code Wallet Solana" style="width: 200px; height: 200px; border-radius: 10px; background: #fff; padding: 6px; display: block; margin: 0 auto;">
+                            <div style="margin-top: 12px; font-size: 16px; font-weight: bold; color: #fbbf24;">
+                                Nominal Transfer: <span id="solanaNominalText">3.25 USDT</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="margin: 0 0 10px 0; color: #4ade80;">Alamat Wallet Solana &amp; Instruksi Transfer</h4>
+                            <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">Alamat Wallet Solana (SPL - USDT):</div>
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <code id="solanaWalletAddressText" style="flex: 1; word-break: break-all; color: #38bdf8; font-size: 13px; font-weight: bold;">32eN7g29KMLYMEkm3UJWxwGe6b4Gn5BQBwA7z1h1QFc9</code>
+                                    <button type="button" id="btnCopySolana" onclick="copySolanaWallet()" style="padding: 8px 14px; background: #0284c7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">📋 Copy Alamat</button>
+                                </div>
+                                <div id="copySolanaNotice" style="font-size: 12px; color: #4ade80; margin-top: 6px; display: none;">✅ Alamat wallet Solana disalin ke clipboard!</div>
+                            </div>
+
+                            <ol id="solanaInstructionsList" style="padding-left: 20px; margin: 0 0 18px 0; color: #cbd5e1; line-height: 1.6; font-size: 14px;">
+                                <li>Pastikan Anda mengirim <strong>USDT jaringan Solana (SPL)</strong>.</li>
+                                <li>Copy alamat Wallet Solana atau scan QR Code di samping.</li>
+                                <li>Setelah transaksi sukses, tempelkan <strong>TXID (Transaction Hash)</strong> di bawah ini.</li>
+                            </ol>
+
+                            <div>
+                                <label for="solanaTxidInput" style="display: block; font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #e2e8f0;">
+                                    TXID (Transaction Hash) Solana *
+                                </label>
+                                <input type="text" id="solanaTxidInput" placeholder="Masukkan TXID transaksi Solana (16-128 karakter alfanumerik)" maxlength="128" style="width: 100%; padding: 11px 12px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 14px; font-family: monospace;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback & Submit Beli Paket -->
+                <div id="topupSubmitFeedback" style="display: none; margin-top: 16px; padding: 13px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;"></div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div style="font-size: 13px; color: #94a3b8;">
+                        ⚠️ Saldo <strong>tidak langsung bertambah</strong> saat tombol diklik. Transaksi akan berstatus <strong>PENDING_VERIFICATION</strong> sampai Admin memverifikasi bukti transfer.
+                    </div>
+                    <button type="button" id="btnSubmitTopup" onclick="submitTopupOrder()" style="padding: 14px 32px; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px;">
+                        🛒 Beli Paket
+                    </button>
+                </div>
             </div>
 
             <!-- Riwayat Transaksi -->
             <div class="panel raised">
-                <h3>📜 Riwayat Pendanaan</h3>
+                <h3>📜 Riwayat Pendanaan (Server Top-Up Queue)</h3>
                 <div id="riwayatPendanaan" style="padding: 20px; text-align: center; color: #999;">
                     Memuat riwayat...
                 </div>

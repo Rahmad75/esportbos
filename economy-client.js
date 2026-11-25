@@ -109,6 +109,35 @@ export async function clearAdminSecurityFlag(targetUid) {
   return economyRequest('/api/economy/admin/security/unflag', 'POST', { targetUid });
 }
 
+export async function fetchTopupConfig() {
+  const res = await fetch('/api/economy/topup/config');
+  const data = await res.json();
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error || 'Gagal memuat konfigurasi Top-Up.');
+  }
+  return data;
+}
+
+export async function fetchMyTopupRequests() {
+  return economyRequest('/api/economy/topup/my-requests', 'GET');
+}
+
+export async function submitManualTopupRequest(payload) {
+  return economyRequest('/api/economy/topup/request', 'POST', payload);
+}
+
+export async function fetchAdminTopupQueue() {
+  return economyRequest('/api/economy/admin/topup/queue', 'GET');
+}
+
+export async function approveAdminTopup(topupId) {
+  return economyRequest('/api/economy/admin/topup/approve', 'POST', { topupId });
+}
+
+export async function rejectAdminTopup(topupId, reason = '') {
+  return economyRequest('/api/economy/admin/topup/reject', 'POST', { topupId, reason });
+}
+
 export function applyServerWalletToDOM(wallet) {
   if (!wallet) return;
   const d = Number(wallet.diamond || 0);

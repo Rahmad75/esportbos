@@ -7,7 +7,7 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const economyService = createEconomyService({ rootDir: __dirname });
 
-app.use(express.json());
+app.use(express.json({ limit: '3mb' }));
 
 // Lindungi file internal server, ledger, dan aturan security dari akses static HTTP langsung
 app.use((req, res, next) => {
@@ -66,17 +66,13 @@ app.post('/api/verify-captcha', async (req, res) => {
   }
 });
 
-// Endpoint pengganti Supabase Edge Function: created-payment
+// Top-Up sekarang memakai verifikasi manual Admin (/api/economy/topup/request)
 app.post('/api/create-payment', (req, res) => {
-  try {
-    const { packageId, amount, diamonds, gold } = req.body || {};
-    const orderId = 'ESB-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
-    const paymentUrl = `/payment-callback.html?mock=success&orderId=${encodeURIComponent(orderId)}&packageId=${encodeURIComponent(packageId || 'starter')}&amount=${encodeURIComponent(amount || 0)}&diamonds=${encodeURIComponent(diamonds || 0)}&gold=${encodeURIComponent(gold || 0)}`;
-    return res.json({ orderId, paymentUrl });
-  } catch (err) {
-    console.error('Create payment error:', err);
-    return res.status(500).json({ error: 'Failed to create payment' });
-  }
+  return res.status(410).json({
+    success: false,
+    code: 'MANUAL_TOPUP_REQUIRED',
+    error: 'Pembayaran otomatis dinonaktifkan. Gunakan halaman Pendanaan Klub untuk Top-Up QRIS DANA Bisnis / USDT Solana dengan verifikasi Admin.'
+  });
 });
 
 app.get('/', (req, res) => {

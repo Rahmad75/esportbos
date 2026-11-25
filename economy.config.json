@@ -86,5 +86,53 @@
     "maxExpectedDiamondSpike": 25,
     "holdOnSuspiciousActivity": true,
     "holdOnNewIpOrDevice": true
+  },
+  "topUp": {
+    "dana": {
+      "label": "QRIS DANA Bisnis",
+      "merchantName": "DANA Bisnis — Solok Studio, Konter (NMID: ID1026614130510)",
+      "qrisImagePath": "public/assets/aistudio/qris-dana_7a0d9682.jpeg",
+      "instructions": [
+        "Buka aplikasi DANA, e-wallet, atau mobile banking yang mendukung pembayaran QRIS.",
+        "Scan QRIS DANA Bisnis (Solok Studio, Konter) di bawah dan lakukan transfer sesuai nominal Rupiah paket yang Anda pilih.",
+        "Setelah transfer berhasil, masukkan Nomor Referensi transaksi atau upload foto struk bukti transfer, lalu klik Beli Paket."
+      ]
+    },
+    "solana": {
+      "label": "Crypto (USDT Solana)",
+      "network": "Solana (SPL - USDT)",
+      "walletAddress": "32eN7g29KMLYMEkm3UJWxwGe6b4Gn5BQBwA7z1h1QFc9",
+      "instructions": [
+        "Pastikan Anda mengirim USDT melalui jaringan Solana (SPL), bukan jaringan lain.",
+        "Copy alamat Wallet Solana atau scan QR Code di bawah menggunakan Phantom, Solflare, atau exchange Anda.",
+        "Setelah transaksi terkonfirmasi, masukkan TXID (Transaction Hash) ke kolom yang tersedia lalu klik Beli Paket."
+      ]
+    },
+    "packages": {
+      "starter": {
+        "id": "starter",
+        "name": "Starter",
+        "priceIdr": 50000,
+        "priceUsdt": 3.25,
+        "diamonds": 100,
+        "bonusGold": 50
+      },
+      "pro": {
+        "id": "pro",
+        "name": "Pro",
+        "priceIdr": 200000,
+        "priceUsdt": 13,
+        "diamonds": 500,
+        "bonusGold": 300
+      },
+      "elite": {
+        "id": "elite",
+        "name": "Elite",
+        "priceIdr": 500000,
+        "priceUsdt": 32.5,
+        "diamonds": 1500,
+        "bonusGold": 1000
+      }
+    }
   }
 }

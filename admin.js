@@ -21,9 +21,12 @@ import {
 } from './economy-config.js';
 import {
   adminResetServerWallet,
+  approveAdminTopup,
   approveAdminWithdraw,
   clearAdminSecurityFlag,
   fetchAdminEconomyDashboard,
+  fetchAdminTopupQueue,
+  rejectAdminTopup,
   rejectAdminWithdraw
 } from './economy-client.js';
 
@@ -35,8 +38,10 @@ const ADMIN_EMAILS = [
 
 let currentUser = null;
 let economyDashboardData = null;
+let topupQueueData = [];
 let selectedEconomyPeriod = 'allTime';
 let pendingInlineAction = null; // { id, type: 'approve' | 'reject' }
+let pendingTopupInlineAction = null; // { id, type: 'approve' | 'reject' }
 
 function escapeHtml(val) {
   return String(val ?? '')
@@ -449,12 +454,190 @@ function setEconomyPeriod(period, btnEl) {
   }
 }
 
+function showTopupFeedback(msg, isError = false) {
+  const box = document.getElementById('adminTopupFeedback');
+  if (!box) return;
+  box.textContent = msg;
+  box.className = `econ-feedback ${isError ? 'error' : 'success'}`;
+}
+
+function renderTopupQueueTable(requests = []) {
+  const tbody = document.getElementById('topupQueueTableBody');
+  const badge = document.getElementById('topupQueueBadge');
+  if (!tbody) return;
+
+  const pendingCount = requests.filter(r => r.status === 'PENDING_VERIFICATION').length;
+  if (badge) {
+    badge.textContent = `${pendingCount} PENDING_VERIFICATION`;
+    badge.className = `econ-badge ${pendingCount > 0 ? 'econ-badge-queued' : 'econ-badge-approved'}`;
+  }
+
+  if (!requests.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;">Belum ada permintaan top-up manual di tabel topup_requests.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = requests.map(r => {
+    const status = String(r.status || 'PENDING_VERIFICATION').toUpperCase();
+    const isPending = status === 'PENDING_VERIFICATION';
+    const safeId = escapeHtml(r.id);
+    const createdStr = r.created_at
+      ? new Date(r.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : '-';
+    const nominalStr = r.payment_method === 'usdt_solana'
+      ? `${r.price_usdt} USDT`
+      : `Rp ${fmtNum(r.price_idr, 0)}`;
+
+    let proofHtml = '';
+    if (r.txid) {
+      proofHtml += `<div style="font-family:monospace; font-size:12px; color:#38bdf8; word-break:break-all;">TXID: ${escapeHtml(r.txid)}</div>`;
+    }
+    if (r.reference_number) {
+      proofHtml += `<div style="font-size:12px; color:#fbbf24; word-break:break-all;">Ref: ${escapeHtml(r.reference_number)}</div>`;
+    }
+    if (r.receipt_image && /^data:image\/(png|jpeg|jpg|webp);base64,/i.test(r.receipt_image)) {
+      proofHtml += `
+        <div style="margin-top:6px;">
+          <button type="button" class="btn-neutral" onclick="toggleReceiptPreview('${safeId}')">🖼️ Lihat Foto Struk</button>
+          <div id="receiptPreview-${safeId}" style="display:none; margin-top:8px;">
+            <img src="${r.receipt_image}" alt="Struk ${safeId}" style="max-width:220px; max-height:180px; border-radius:8px; border:1px solid #475569;">
+          </div>
+        </div>
+      `;
+    }
+    if (!proofHtml) {
+      proofHtml = '<span class="econ-subtext">-</span>';
+    }
+
+    const badgeClass = status === 'APPROVED'
+      ? 'econ-badge-approved'
+      : (status === 'REJECTED' ? 'econ-badge-rejected' : 'econ-badge-queued');
+
+    let actionHtml = '';
+    if (isPending) {
+      const isConfirmApprove = pendingTopupInlineAction?.id === r.id && pendingTopupInlineAction?.type === 'approve';
+      const isConfirmReject = pendingTopupInlineAction?.id === r.id && pendingTopupInlineAction?.type === 'reject';
+      actionHtml = `
+        <div class="econ-action-group">
+          <button type="button" class="btn-approve" onclick="openTopupConfirm('${safeId}', 'approve')">✅ Approve</button>
+          <button type="button" class="btn-reject" onclick="openTopupConfirm('${safeId}', 'reject')">❌ Reject</button>
+        </div>
+      `;
+      if (isConfirmApprove) {
+        actionHtml += `
+          <div class="econ-inline-box">
+            <span style="font-size:12px; color:#bbf7d0;">Kreditkan <strong>+${fmtNum(r.diamonds, 0)} Diamond</strong> &amp; <strong>+${fmtNum(r.bonus_gold, 0)} Gold</strong> via Ledger?</span>
+            <div class="econ-action-group">
+              <button type="button" class="btn-approve" onclick="confirmApproveTopup('${safeId}')">Ya, Approve &amp; Tambah Saldo</button>
+              <button type="button" class="btn-neutral" onclick="cancelTopupConfirm()">Batal</button>
+            </div>
+          </div>
+        `;
+      } else if (isConfirmReject) {
+        actionHtml += `
+          <div class="econ-inline-box">
+            <span style="font-size:12px; color:#fecaca;">Tolak transaksi ini (saldo tidak akan bertambah)?</span>
+            <input type="text" id="rejectTopupReason-${safeId}" class="econ-inline-input" placeholder="Alasan penolakan (mis: Bukti transfer tidak valid)">
+            <div class="econ-action-group">
+              <button type="button" class="btn-reject" onclick="confirmRejectTopup('${safeId}')">Ya, Reject</button>
+              <button type="button" class="btn-neutral" onclick="cancelTopupConfirm()">Batal</button>
+            </div>
+          </div>
+        `;
+      }
+    } else if (status === 'APPROVED') {
+      actionHtml = `<span class="econ-subtext" style="color:#4ade80;">Disetujui oleh ${escapeHtml(r.approved_by || 'Admin')}</span>`;
+    } else {
+      actionHtml = `<span class="econ-subtext" style="color:#fca5a5;">Ditolak • ${escapeHtml(r.reject_reason || '-')}</span>`;
+    }
+
+    return `
+      <tr>
+        <td>
+          <strong style="color:#38bdf8;">${safeId}</strong>
+          <div class="econ-subtext">${escapeHtml(createdStr)}</div>
+        </td>
+        <td>
+          <strong>${escapeHtml(r.akun || r.user_id)}</strong>
+          <div class="econ-subtext">UID: ${escapeHtml(r.user_id)}</div>
+        </td>
+        <td>
+          <strong>${escapeHtml(r.package_name || r.package_id)}</strong> (${escapeHtml(nominalStr)})
+          <div class="econ-subtext" style="color:#4ade80;">💎 +${fmtNum(r.diamonds, 0)} D &amp; 🟡 +${fmtNum(r.bonus_gold, 0)} G</div>
+        </td>
+        <td>
+          <div><strong>${escapeHtml(r.payment_method_label || r.payment_method)}</strong></div>
+          ${proofHtml}
+        </td>
+        <td><span class="econ-badge ${badgeClass}">${escapeHtml(status)}</span></td>
+        <td>${actionHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function loadAdminTopupQueue() {
+  try {
+    const res = await fetchAdminTopupQueue();
+    topupQueueData = res.requests || [];
+    renderTopupQueueTable(topupQueueData);
+    return res;
+  } catch (err) {
+    console.error('Gagal memuat antrean top-up:', err);
+    showTopupFeedback(`⚠️ Gagal memuat antrean Top-Up: ${err.message}`, true);
+    return null;
+  }
+}
+
+function toggleReceiptPreview(topupId) {
+  const el = document.getElementById(`receiptPreview-${topupId}`);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function openTopupConfirm(topupId, type) {
+  pendingTopupInlineAction = { id: topupId, type };
+  renderTopupQueueTable(topupQueueData);
+}
+
+function cancelTopupConfirm() {
+  pendingTopupInlineAction = null;
+  renderTopupQueueTable(topupQueueData);
+}
+
+async function confirmApproveTopup(topupId) {
+  try {
+    const res = await approveAdminTopup(topupId);
+    pendingTopupInlineAction = null;
+    showTopupFeedback(`✅ ${res.message || `Top-Up ${topupId} disetujui.`}`, false);
+    await Promise.all([loadAdminTopupQueue(), loadEconomyDashboard()]);
+  } catch (err) {
+    showTopupFeedback(`❌ Gagal Approve Top-Up: ${err.message}`, true);
+  }
+}
+
+async function confirmRejectTopup(topupId) {
+  const input = document.getElementById(`rejectTopupReason-${topupId}`);
+  const reason = input && input.value.trim()
+    ? input.value.trim()
+    : 'Bukti transfer tidak valid / tidak ditemukan';
+  try {
+    const res = await rejectAdminTopup(topupId, reason);
+    pendingTopupInlineAction = null;
+    showTopupFeedback(`✅ ${res.message || `Top-Up ${topupId} ditolak.`}`, false);
+    await loadAdminTopupQueue();
+  } catch (err) {
+    showTopupFeedback(`❌ Gagal Reject Top-Up: ${err.message}`, true);
+  }
+}
+
 async function loadAdminData() {
   let profiles = [];
   let teams = [];
   let matches = [];
 
   const econPromise = loadEconomyDashboard();
+  const topupPromise = loadAdminTopupQueue();
 
   try {
     const profileSnap = await getDocs(query(collection(db, 'profiles'), where('prediction_score', '>=', 0)));
@@ -478,6 +661,7 @@ async function loadAdminData() {
   }
 
   const econData = await econPromise;
+  await topupPromise;
   const serverGold = econData?.liability?.circulatingGold;
   const firestoreGold = profiles.reduce((sum, p) => sum + Number(p.gold || 0), 0);
   const totalGold = Number.isFinite(serverGold) ? serverGold : firestoreGold;
@@ -505,6 +689,8 @@ function switchAdminTab(tabName, triggerEl = null) {
 
   if (tabName === 'ekonomi') {
     loadEconomyDashboard();
+  } else if (tabName === 'topup') {
+    loadAdminTopupQueue();
   }
 }
 
@@ -610,6 +796,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (window.location.hash === '#ekonomi') {
       switchAdminTab('ekonomi');
+    } else if (window.location.hash === '#topup') {
+      switchAdminTab('topup');
     }
   } catch (err) {
     console.error('Admin error:', err);
@@ -620,6 +808,12 @@ window.EsportBosAuth = { logout: handleLogout };
 window.switchAdminTab = switchAdminTab;
 window.setEconomyPeriod = setEconomyPeriod;
 window.refreshEconomyDashboard = loadEconomyDashboard;
+window.refreshTopupQueue = loadAdminTopupQueue;
+window.toggleReceiptPreview = toggleReceiptPreview;
+window.openTopupConfirm = openTopupConfirm;
+window.cancelTopupConfirm = cancelTopupConfirm;
+window.confirmApproveTopup = confirmApproveTopup;
+window.confirmRejectTopup = confirmRejectTopup;
 window.openWithdrawConfirm = openWithdrawConfirm;
 window.cancelWithdrawConfirm = cancelWithdrawConfirm;
 window.confirmApproveWithdraw = confirmApproveWithdraw;
