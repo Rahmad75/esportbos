@@ -29,6 +29,22 @@ app.use((req, res, next) => {
   return next();
 });
 
+app.use((req, res, next) => {
+  const reqPath = (req.path || '').toLowerCase();
+  if (
+    reqPath.startsWith('/api/') ||
+    reqPath.endsWith('.html') ||
+    reqPath.endsWith('.js') ||
+    reqPath.endsWith('.json') ||
+    reqPath === '/'
+  ) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  return next();
+});
+
 app.use(express.static(__dirname, {
   extensions: ['html']
 }));

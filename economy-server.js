@@ -1504,7 +1504,13 @@ function createEconomyService(options = {}) {
       })
       .sort((a, b) => b.riskScore - a.riskScore);
 
-    const topupRequests = readTopupRequests();
+    const topupRequests = [...readTopupRequests()].sort((a, b) => {
+      const rank = (s) => (s === 'PENDING_VERIFICATION' ? 0 : 1);
+      const ra = rank(a.status);
+      const rb = rank(b.status);
+      if (ra !== rb) return ra - rb;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
     const topupPendingCount = topupRequests.filter((r) => r.status === 'PENDING_VERIFICATION').length;
 
     return {
@@ -1524,6 +1530,7 @@ function createEconomyService(options = {}) {
         totalUsdtLiability
       },
       withdrawQueue: sortedQueue,
+      topupQueue: topupRequests,
       top1Percent: {
         topCount: top1Count,
         totalUsers: rankedWallets.length,
@@ -2257,7 +2264,7 @@ function createEconomyService(options = {}) {
     return { requests: mine };
   }
 
-  async function getAdminTopupQueue(authUser) {
+  async function getAdminTopupQueue(authUser, opts = {}) {
     assertAdmin(authUser, 'Hanya Admin/Owner yang dapat melihat antrean Top-Up.');
     const requests = readTopupRequests();
     const sorted = [...requests].sort((a, b) => {
@@ -2267,9 +2274,15 @@ function createEconomyService(options = {}) {
       if (ra !== rb) return ra - rb;
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
+    const statusFilter = typeof opts?.status === 'string' && opts.status.trim()
+      ? opts.status.trim().toUpperCase()
+      : null;
+    const filtered = statusFilter
+      ? sorted.filter((r) => String(r.status || '').toUpperCase() === statusFilter)
+      : sorted;
     const pendingCount = sorted.filter((r) => r.status === 'PENDING_VERIFICATION').length;
     return {
-      requests: sorted,
+      requests: filtered,
       pendingCount,
       totalCount: sorted.length
     };
@@ -2684,32 +2697,43 @@ function mountEconomyRoutes(app, service) {
     }
   });
 
-  app.get('/api/economy/admin/topup/queue', requireAuth, async (req, res) => {
+  const handleGetAdminTopupQueue = async (req, res) => {
     try {
-      const data = await service.getAdminTopupQueue(req.authUser);
+      const data = await service.getAdminTopupQueue(req.authUser, { status: req.query?.status });
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
 
-  app.post('/api/economy/admin/topup/approve', requireAuth, async (req, res) => {
+  const handlePostAdminTopupApprove = async (req, res) => {
     try {
       const data = await service.adminApproveTopup(req.authUser, req.body || {});
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
 
-  app.post('/api/economy/admin/topup/reject', requireAuth, async (req, res) => {
+  const handlePostAdminTopupReject = async (req, res) => {
     try {
       const data = await service.adminRejectTopup(req.authUser, req.body || {});
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
     }
-  });
+  };
+
+  app.get('/api/economy/admin/topup/queue', requireAuth, handleGetAdminTopupQueue);
+  app.get('/api/economy/admin/topup-queue', requireAuth, handleGetAdminTopupQueue);
+  app.get('/api/admin/topup/queue', requireAuth, handleGetAdminTopupQueue);
+  app.get('/api/admin/topup-queue', requireAuth, handleGetAdminTopupQueue);
+
+  app.post('/api/economy/admin/topup/approve', requireAuth, handlePostAdminTopupApprove);
+  app.post('/api/admin/topup/approve', requireAuth, handlePostAdminTopupApprove);
+
+  app.post('/api/economy/admin/topup/reject', requireAuth, handlePostAdminTopupReject);
+  app.post('/api/admin/topup/reject', requireAuth, handlePostAdminTopupReject);
 }
 
 module.exports = {

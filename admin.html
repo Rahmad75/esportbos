@@ -261,6 +261,8 @@
                     <span>💳 Antrean Verifikasi Top-Up Manual (Top-Up Queue)</span>
                     <div class="econ-period-bar">
                         <span id="topupQueueBadge" class="econ-badge econ-badge-queued">0 PENDING_VERIFICATION</span>
+                        <button type="button" class="econ-period-btn active" data-topup-filter="ALL" onclick="setTopupQueueFilter('ALL', this)">Semua</button>
+                        <button type="button" class="econ-period-btn" data-topup-filter="PENDING_VERIFICATION" onclick="setTopupQueueFilter('PENDING_VERIFICATION', this)">Pending Saja</button>
                         <button type="button" class="econ-period-btn" onclick="refreshTopupQueue()">🔄 Refresh</button>
                     </div>
                 </div>
@@ -374,6 +376,6 @@
         </main>
     </div>
 
-    <script type="module" src="admin.js"></script>
+    <script type="module" src="admin.js?v=20261125c"></script>
 </body>
 </html>

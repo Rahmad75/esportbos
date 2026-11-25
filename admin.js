@@ -28,7 +28,7 @@ import {
   fetchAdminTopupQueue,
   rejectAdminTopup,
   rejectAdminWithdraw
-} from './economy-client.js';
+} from './economy-client.js?v=20261125c';
 
 const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
@@ -40,6 +40,7 @@ let currentUser = null;
 let economyDashboardData = null;
 let topupQueueData = [];
 let selectedEconomyPeriod = 'allTime';
+let selectedTopupFilter = 'ALL';
 let pendingInlineAction = null; // { id, type: 'approve' | 'reject' }
 let pendingTopupInlineAction = null; // { id, type: 'approve' | 'reject' }
 
@@ -461,6 +462,13 @@ function showTopupFeedback(msg, isError = false) {
   box.className = `econ-feedback ${isError ? 'error' : 'success'}`;
 }
 
+function clearTopupFeedback() {
+  const box = document.getElementById('adminTopupFeedback');
+  if (!box) return;
+  box.textContent = '';
+  box.className = 'econ-feedback';
+}
+
 function renderTopupQueueTable(requests = []) {
   const tbody = document.getElementById('topupQueueTableBody');
   const badge = document.getElementById('topupQueueBadge');
@@ -472,12 +480,19 @@ function renderTopupQueueTable(requests = []) {
     badge.className = `econ-badge ${pendingCount > 0 ? 'econ-badge-queued' : 'econ-badge-approved'}`;
   }
 
-  if (!requests.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94a3b8;">Belum ada permintaan top-up manual di tabel topup_requests.</td></tr>';
+  const visibleRows = selectedTopupFilter === 'PENDING_VERIFICATION'
+    ? requests.filter(r => r.status === 'PENDING_VERIFICATION')
+    : requests;
+
+  if (!visibleRows.length) {
+    const emptyMsg = selectedTopupFilter === 'PENDING_VERIFICATION'
+      ? 'Tidak ada permintaan top-up berstatus PENDING_VERIFICATION saat ini.'
+      : 'Belum ada permintaan top-up manual di tabel topup_requests.';
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94a3b8;">${emptyMsg}</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = requests.map(r => {
+  tbody.innerHTML = visibleRows.map(r => {
     const status = String(r.status || 'PENDING_VERIFICATION').toUpperCase();
     const isPending = status === 'PENDING_VERIFICATION';
     const safeId = escapeHtml(r.id);
@@ -576,15 +591,42 @@ function renderTopupQueueTable(requests = []) {
   }).join('');
 }
 
+function setTopupQueueFilter(filter, btnEl = null) {
+  selectedTopupFilter = filter === 'PENDING_VERIFICATION' ? 'PENDING_VERIFICATION' : 'ALL';
+  document.querySelectorAll('.econ-period-btn[data-topup-filter]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.topupFilter === selectedTopupFilter);
+  });
+  if (btnEl) btnEl.classList.add('active');
+  renderTopupQueueTable(topupQueueData);
+}
+
 async function loadAdminTopupQueue() {
+  const tbody = document.getElementById('topupQueueTableBody');
   try {
     const res = await fetchAdminTopupQueue();
     topupQueueData = res.requests || [];
+    clearTopupFeedback();
     renderTopupQueueTable(topupQueueData);
     return res;
   } catch (err) {
+    if (Array.isArray(economyDashboardData?.topupQueue)) {
+      topupQueueData = economyDashboardData.topupQueue;
+      clearTopupFeedback();
+      renderTopupQueueTable(topupQueueData);
+      return { requests: topupQueueData };
+    }
     console.error('Gagal memuat antrean top-up:', err);
     showTopupFeedback(`⚠️ Gagal memuat antrean Top-Up: ${err.message}`, true);
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center;color:#fca5a5;padding:18px;">
+            Gagal memuat antrean Top-Up (${escapeHtml(err.message)}).
+            <button type="button" class="btn-neutral" style="margin-left:10px;" onclick="refreshTopupQueue()">🔄 Coba Lagi</button>
+          </td>
+        </tr>
+      `;
+    }
     return null;
   }
 }
@@ -809,6 +851,7 @@ window.switchAdminTab = switchAdminTab;
 window.setEconomyPeriod = setEconomyPeriod;
 window.refreshEconomyDashboard = loadEconomyDashboard;
 window.refreshTopupQueue = loadAdminTopupQueue;
+window.setTopupQueueFilter = setTopupQueueFilter;
 window.toggleReceiptPreview = toggleReceiptPreview;
 window.openTopupConfirm = openTopupConfirm;
 window.cancelTopupConfirm = cancelTopupConfirm;
