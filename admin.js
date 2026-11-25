@@ -22,6 +22,7 @@ import {
 import {
   adminResetServerWallet,
   approveAdminWithdraw,
+  clearAdminSecurityFlag,
   fetchAdminEconomyDashboard,
   rejectAdminWithdraw
 } from './economy-client.js';
@@ -190,10 +191,13 @@ function renderWithdrawQueueTable(queue = []) {
   const badge = document.getElementById('withdrawQueueBadge');
   if (!tbody) return;
 
-  const queuedCount = queue.filter(q => q.status === 'queued').length;
+  const activeCount = queue.filter(q => q.status === 'queued' || q.status === 'hold').length;
+  const holdCount = queue.filter(q => q.status === 'hold').length;
   if (badge) {
-    badge.textContent = `${queuedCount} ANTREAN AKTIF`;
-    badge.className = `econ-badge ${queuedCount > 0 ? 'econ-badge-queued' : 'econ-badge-approved'}`;
+    badge.textContent = holdCount > 0
+      ? `${activeCount} ANTREAN (${holdCount} HOLD)`
+      : `${activeCount} ANTREAN AKTIF`;
+    badge.className = `econ-badge ${holdCount > 0 ? 'econ-badge-hold' : (activeCount > 0 ? 'econ-badge-queued' : 'econ-badge-approved')}`;
   }
 
   if (!queue.length) {
@@ -204,6 +208,8 @@ function renderWithdrawQueueTable(queue = []) {
   tbody.innerHTML = queue.map(q => {
     const status = String(q.status || 'queued').toLowerCase();
     const isQueued = status === 'queued';
+    const isHold = status === 'hold';
+    const isActionable = isQueued || isHold;
     const createdStr = q.created_at
       ? new Date(q.created_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
       : '-';
@@ -212,7 +218,7 @@ function renderWithdrawQueueTable(queue = []) {
     const isConfirmingReject = pendingInlineAction?.id === q.id && pendingInlineAction?.type === 'reject';
 
     let actionHtml = '';
-    if (isQueued) {
+    if (isActionable) {
       actionHtml = `
         <div class="econ-action-group">
           <button type="button" class="btn-approve" onclick="openWithdrawConfirm('${safeId}', 'approve')">✅ Approve</button>
@@ -249,22 +255,31 @@ function renderWithdrawQueueTable(queue = []) {
       actionHtml = `<span class="econ-subtext" style="color:#4ade80;">Selesai • ${refText}</span>`;
     }
 
+    const holdNotice = isHold && Array.isArray(q.holdReasons) && q.holdReasons.length > 0
+      ? `<div style="font-size:11px; color:#fb923c; margin-top:4px;">⚠️ HOLD: ${escapeHtml(q.holdReasons.join(' | '))}</div>`
+      : '';
+    const contextInfo = (q.requestIp || q.requestDeviceId)
+      ? `<div class="econ-subtext">IP: ${escapeHtml(q.requestIp || '-')} • Dev: ${escapeHtml(String(q.requestDeviceId || '-').slice(0, 14))}</div>`
+      : '';
+
     return `
       <tr>
         <td>
           <strong style="color:#38bdf8;">${safeId}</strong>
-          <div class="econ-subtext">${createdStr}${isQueued ? ` • Antrean #${Number(q.queuePosition || 1)}` : ''}</div>
+          <div class="econ-subtext">${createdStr}${isQueued ? ` • Antrean #${Number(q.queuePosition || 1)}` : (isHold ? ' • Ditangguhkan (HOLD)' : '')}</div>
         </td>
         <td>
           <strong>${escapeHtml(q.akun || q.user_id)}</strong>
           <div class="econ-subtext">Wallet: ${escapeHtml(q.destinationWallet || '-')}</div>
+          ${contextInfo}
+          ${holdNotice}
         </td>
         <td>
           <strong>${fmtNum(q.grossDiamond, 4)} Diamond</strong> → <strong style="color:#4ade80;">${fmtNum(q.netUsdt, 2)} USDT</strong>
           <div class="econ-subtext">Fee ${Number(q.feePercent || 0)}% (${fmtNum(q.feeDiamond, 4)} D)</div>
         </td>
         <td>
-          <span class="econ-badge econ-badge-${escapeHtml(status)}">${escapeHtml(status.toUpperCase())}</span>
+          <span class="econ-badge econ-badge-${escapeHtml(status)}">${escapeHtml(isHold ? 'HOLD (REVIEW)' : status.toUpperCase())}</span>
         </td>
         <td>${actionHtml}</td>
       </tr>
@@ -311,11 +326,56 @@ function renderTop1PercentTable(top1) {
   `).join('');
 }
 
+function renderSecurityMonitorTable(securitySummary = {}) {
+  const tbody = document.getElementById('securityFlagTableBody');
+  const badge = document.getElementById('securityFlagBadge');
+  if (!tbody) return;
+
+  const flaggedAccounts = securitySummary?.flaggedAccounts || [];
+  const activeFlaggedCount = Number(securitySummary?.flaggedAccountsCount || 0);
+  if (badge) {
+    badge.textContent = `${activeFlaggedCount} AKUN DITANDAI`;
+    badge.className = `econ-badge ${activeFlaggedCount > 0 ? 'econ-badge-rejected' : 'econ-badge-approved'}`;
+  }
+
+  if (!flaggedAccounts.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">Belum ada akun mencurigakan yang ditandai.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = flaggedAccounts.map(acc => {
+    const safeUid = escapeHtml(acc.user_id);
+    const latestReasons = (acc.flagReasons || []).slice(-2).map(r => escapeHtml(r)).join('<br>');
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(acc.akun || acc.user_id)}</strong>
+          <div class="econ-subtext">Risk Score: <strong style="color:${acc.riskScore >= 50 ? '#f87171' : '#fbbf24'};">${Number(acc.riskScore || 0)}/100</strong></div>
+        </td>
+        <td>
+          ${(acc.flags || []).map(f => `<span class="econ-badge econ-badge-hold" style="margin:2px;">${escapeHtml(f)}</span>`).join('') || '<span class="econ-subtext">-</span>'}
+        </td>
+        <td>
+          <div class="econ-subtext">IP: ${escapeHtml(acc.lastIp || '-')}</div>
+          <div class="econ-subtext">Dev: ${escapeHtml(acc.lastDeviceId || '-')}</div>
+        </td>
+        <td style="font-size:12px; max-width:280px;">${latestReasons || '-'}</td>
+        <td>
+          ${acc.flagged
+            ? `<button type="button" class="btn-neutral" onclick="resetSecurityFlag('${safeUid}')">🧹 Reset Flag</button>`
+            : '<span class="econ-subtext" style="color:#4ade80;">Bersih</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function renderEconomyDashboard(data) {
   economyDashboardData = data;
   renderEconomyMetricsAndLiability(data);
   renderWithdrawQueueTable(data?.withdrawQueue || []);
   renderTop1PercentTable(data?.top1Percent || {});
+  renderSecurityMonitorTable(data?.securitySummary || {});
 }
 
 async function loadEconomyDashboard() {
@@ -365,6 +425,16 @@ async function confirmRejectWithdraw(withdrawId) {
     await loadEconomyDashboard();
   } catch (err) {
     showWithdrawFeedback(`❌ Gagal Reject withdraw: ${err.message}`, true);
+  }
+}
+
+async function resetSecurityFlag(targetUid) {
+  try {
+    await clearAdminSecurityFlag(targetUid);
+    showWithdrawFeedback(`✅ Flag keamanan akun ${targetUid} berhasil dibersihkan.`, false);
+    await loadEconomyDashboard();
+  } catch (err) {
+    showWithdrawFeedback(`❌ Gagal membersihkan flag: ${err.message}`, true);
   }
 }
 
@@ -554,6 +624,7 @@ window.openWithdrawConfirm = openWithdrawConfirm;
 window.cancelWithdrawConfirm = cancelWithdrawConfirm;
 window.confirmApproveWithdraw = confirmApproveWithdraw;
 window.confirmRejectWithdraw = confirmRejectWithdraw;
+window.resetSecurityFlag = resetSecurityFlag;
 window.addPlayerToMarket = addPlayerToMarket;
 window.resetMarket = resetMarket;
 window.clearData = clearData;

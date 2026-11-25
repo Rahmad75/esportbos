@@ -8,12 +8,27 @@ async function getIdTokenOrThrow() {
   return user.getIdToken();
 }
 
+function getClientDeviceId() {
+  try {
+    const key = 'esportbos_device_id';
+    let id = localStorage.getItem(key);
+    if (!id) {
+      id = `DEV-${Math.random().toString(36).slice(2, 10).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      localStorage.setItem(key, id);
+    }
+    return id;
+  } catch (_) {
+    return 'DEV-BROWSER-ANON';
+  }
+}
+
 async function economyRequest(path, method = 'GET', body = null) {
   const token = await getIdTokenOrThrow();
   const options = {
     method,
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      'X-Device-Id': getClientDeviceId()
     }
   };
   if (body !== null && method !== 'GET') {
@@ -88,6 +103,10 @@ export async function approveAdminWithdraw(withdrawId, txHash = '') {
 
 export async function rejectAdminWithdraw(withdrawId, reason = '') {
   return economyRequest('/api/economy/admin/withdraw/reject', 'POST', { withdrawId, reason });
+}
+
+export async function clearAdminSecurityFlag(targetUid) {
+  return economyRequest('/api/economy/admin/security/unflag', 'POST', { targetUid });
 }
 
 export function applyServerWalletToDOM(wallet) {

@@ -77,5 +77,14 @@
     "oneKycIdentityPerWithdrawAccount": true,
     "ledgerImmutable": true,
     "serverSideValidationRequired": true
+  },
+  "antiAbuse": {
+    "minMatchIntervalSeconds": 120,
+    "maxMatchRequestsPerHour": 10,
+    "botFlagThresholdAttempts": 3,
+    "maxExpectedDailyCurrencyGain": 30000,
+    "maxExpectedDiamondSpike": 25,
+    "holdOnSuspiciousActivity": true,
+    "holdOnNewIpOrDevice": true
   }
 }

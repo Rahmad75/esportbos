@@ -5254,6 +5254,12 @@ body {
   border: 1px solid rgba(250, 204, 21, 0.4);
 }
 
+.econ-badge-hold {
+  background: rgba(249, 115, 22, 0.25);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.55);
+}
+
 .econ-badge-approved,
 .econ-badge-completed {
   background: rgba(74, 222, 128, 0.2);

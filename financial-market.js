@@ -574,19 +574,22 @@ function renderWithdrawGateUI(statusData) {
       queueList.innerHTML = queue.map(q => {
         const st = String(q.status || 'queued').toLowerCase();
         const isQueued = st === 'queued';
+        const isHold = st === 'hold';
         const isRejected = st === 'rejected';
-        const statusColor = isQueued ? '#facc15' : (isRejected ? '#f87171' : '#4ade80');
+        const statusColor = isHold ? '#fb923c' : (isQueued ? '#facc15' : (isRejected ? '#f87171' : '#4ade80'));
         const date = new Date(q.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
         const detailMeta = isRejected
           ? `${date} • Refund ${q.refundedDiamond ?? q.grossDiamond} Diamond (${q.reject_reason || 'Ditolak Admin'})`
-          : (isQueued ? `${date} • Antrean #${q.queuePosition || 1}` : `${date} • Diproses Admin`);
+          : (isHold
+              ? `${date} • Ditangguhkan untuk review manual Admin`
+              : (isQueued ? `${date} • Antrean #${q.queuePosition || 1}` : `${date} • Diproses Admin`));
         return `
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#0b1733; border:1px solid #1d3566; border-radius:8px; font-size:13px;">
             <div>
               <strong style="color:#00d4ff;">${q.id}</strong> • ${q.grossDiamond} Diamond → <strong style="color:#4ade80;">${q.netUsdt} USDT</strong> (fee ${q.feePercent}%)
               <div style="font-size:11px; color:#9db2d9;">${detailMeta}</div>
             </div>
-            <span style="background:${statusColor}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:800;">${st.toUpperCase()}</span>
+            <span style="background:${statusColor}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:800;">${isHold ? 'HOLD (REVIEW)' : st.toUpperCase()}</span>
           </div>
         `;
       }).join('');
@@ -654,8 +657,13 @@ async function requestWithdraw() {
     // Server ledger & queue sudah mencatat request withdraw permanen
   }
 
-  showWithdrawFeedback(`✅ Request ${serverRes.withdraw.id} masuk antrean (#${serverRes.withdraw.queuePosition}): ${serverRes.withdraw.grossDiamond} Diamond → Net ${serverRes.withdraw.netUsdt} USDT.`, false);
-  showExchangeFeedback('✅ Permintaan Withdraw berhasil masuk antrean server (queue)!', false);
+  if (serverRes.heldForReview || serverRes.withdraw?.status === 'hold') {
+    showWithdrawFeedback(`⏳ ${serverRes.message || `Withdraw ${serverRes.withdraw.id} masuk status HOLD untuk review manual Admin.`}`, false);
+    showExchangeFeedback('⏳ Withdraw masuk status HOLD untuk review manual Admin.', false);
+  } else {
+    showWithdrawFeedback(`✅ Request ${serverRes.withdraw.id} masuk antrean (#${serverRes.withdraw.queuePosition}): ${serverRes.withdraw.grossDiamond} Diamond → Net ${serverRes.withdraw.netUsdt} USDT.`, false);
+    showExchangeFeedback('✅ Permintaan Withdraw berhasil masuk antrean server (queue)!', false);
+  }
   await Promise.all([loadTransactions(), loadWithdrawStatus()]);
 }
 

@@ -36,6 +36,7 @@ function createEconomyService(options = {}) {
   const walletsFile = path.join(dataDir, 'economy-wallets.json');
   const ledgerFile = path.join(dataDir, 'economy-ledger.jsonl');
   const withdrawQueueFile = path.join(dataDir, 'economy-withdraw-queue.json');
+  const securityEventsFile = path.join(dataDir, 'economy-security-events.jsonl');
   const nowFn = typeof options.nowFn === 'function' ? options.nowFn : () => Date.now();
   const matchCooldownMs = Number.isFinite(options.matchCooldownMs) ? options.matchCooldownMs : DEFAULT_MATCH_COOLDOWN_MS;
   const weeklyCooldownMs = Number.isFinite(options.weeklyCooldownMs) ? options.weeklyCooldownMs : WEEKLY_COOLDOWN_MS;
@@ -49,6 +50,9 @@ function createEconomyService(options = {}) {
   }
   if (!fs.existsSync(withdrawQueueFile)) {
     fs.writeFileSync(withdrawQueueFile, JSON.stringify([], null, 2), 'utf8');
+  }
+  if (!fs.existsSync(securityEventsFile)) {
+    fs.writeFileSync(securityEventsFile, '', 'utf8');
   }
 
   let nextSeq = computeInitialSeq(ledgerFile);
@@ -160,6 +164,116 @@ function createEconomyService(options = {}) {
     }
   }
 
+  function appendSecurityEvent(event) {
+    const record = {
+      id: `SEC-${nowFn()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+      waktu: new Date(nowFn()).toISOString(),
+      user_id: String(event.user_id || ''),
+      akun: String(event.akun || event.user_id || ''),
+      eventType: String(event.eventType || 'SECURITY_ALERT'),
+      severity: String(event.severity || 'medium'),
+      ip: event.ip || null,
+      deviceId: event.deviceId || null,
+      detail: String(event.detail || ''),
+      meta: event.meta || null
+    };
+    fs.appendFileSync(securityEventsFile, JSON.stringify(record) + '\n', 'utf8');
+    return record;
+  }
+
+  function readSecurityEvents(limit = 100) {
+    try {
+      const content = fs.readFileSync(securityEventsFile, 'utf8');
+      if (!content.trim()) return [];
+      const rows = content.split('\n').filter(Boolean).map((line) => JSON.parse(line));
+      return rows.slice(-limit).reverse();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function normalizeRequestMeta(reqMeta = {}) {
+    const rawForwarded = String(reqMeta?.forwardedFor || reqMeta?.xForwardedFor || '').trim();
+    const forwardedList = rawForwarded ? rawForwarded.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const ip = String(reqMeta?.ip || forwardedList[0] || '').trim().slice(0, 80) || null;
+    const deviceId = String(reqMeta?.deviceId || '').trim().slice(0, 120) || null;
+    const userAgent = String(reqMeta?.userAgent || '').trim().slice(0, 200) || null;
+    return {
+      ip,
+      deviceId,
+      userAgent,
+      proxyHopCount: forwardedList.length,
+      suspiciousFlag: Boolean(reqMeta?.suspiciousFlag)
+    };
+  }
+
+  function ensureWalletSecurity(wallet) {
+    if (!wallet.security || typeof wallet.security !== 'object') {
+      wallet.security = {};
+    }
+    const sec = wallet.security;
+    if (typeof sec.flagged !== 'boolean') sec.flagged = false;
+    if (!Number.isFinite(sec.riskScore)) sec.riskScore = 0;
+    if (!Array.isArray(sec.flags)) sec.flags = [];
+    if (!Array.isArray(sec.flagReasons)) sec.flagReasons = [];
+    if (!Number.isFinite(sec.botSpamAttempts)) sec.botSpamAttempts = 0;
+    if (!Number.isFinite(sec.fastMatchAttempts)) sec.fastMatchAttempts = 0;
+    if (!Number.isFinite(sec.duplicateKycAttempts)) sec.duplicateKycAttempts = 0;
+    if (!Number.isFinite(sec.holdCount)) sec.holdCount = 0;
+    if (!Array.isArray(sec.matchAttemptTimestamps)) sec.matchAttemptTimestamps = [];
+    if (!Array.isArray(sec.rewardedMatchIds)) sec.rewardedMatchIds = [];
+    if (!Array.isArray(sec.knownIps)) sec.knownIps = [];
+    if (!Array.isArray(sec.knownDevices)) sec.knownDevices = [];
+    if (sec.lastIp === undefined) sec.lastIp = null;
+    if (sec.lastDeviceId === undefined) sec.lastDeviceId = null;
+    if (sec.lastFlaggedAt === undefined) sec.lastFlaggedAt = null;
+    return sec;
+  }
+
+  function recordWalletContext(wallet, meta) {
+    const sec = ensureWalletSecurity(wallet);
+    if (meta.ip) {
+      sec.lastIp = meta.ip;
+      if (!sec.knownIps.includes(meta.ip)) {
+        sec.knownIps.push(meta.ip);
+        if (sec.knownIps.length > 10) sec.knownIps = sec.knownIps.slice(-10);
+      }
+    }
+    if (meta.deviceId) {
+      sec.lastDeviceId = meta.deviceId;
+      if (!sec.knownDevices.includes(meta.deviceId)) {
+        sec.knownDevices.push(meta.deviceId);
+        if (sec.knownDevices.length > 10) sec.knownDevices = sec.knownDevices.slice(-10);
+      }
+    }
+  }
+
+  function flagWalletSecurity(wallet, { flagCode, reason, scoreDelta = 25, meta = {}, markFlagged = true, eventType = flagCode, severity = 'high', extraMeta = null }) {
+    const sec = ensureWalletSecurity(wallet);
+    if (markFlagged) {
+      sec.flagged = true;
+      sec.lastFlaggedAt = new Date(nowFn()).toISOString();
+    }
+    sec.riskScore = Math.min(100, Number(sec.riskScore || 0) + Number(scoreDelta || 0));
+    if (flagCode && !sec.flags.includes(flagCode)) {
+      sec.flags.push(flagCode);
+    }
+    if (reason) {
+      sec.flagReasons.push(`${new Date(nowFn()).toISOString().slice(0, 19)}Z: ${reason}`);
+      if (sec.flagReasons.length > 15) sec.flagReasons = sec.flagReasons.slice(-15);
+    }
+    appendSecurityEvent({
+      user_id: wallet.user_id,
+      akun: wallet.akun,
+      eventType,
+      severity,
+      ip: meta.ip || null,
+      deviceId: meta.deviceId || null,
+      detail: reason,
+      meta: extraMeta
+    });
+  }
+
   // APPEND-ONLY: Tidak ada fungsi edit atau delete pada ledger!
   function appendImmutableLedgerEntry(entry) {
     const seq = nextSeq++;
@@ -215,6 +329,7 @@ function createEconomyService(options = {}) {
       if (!existing.kycStatus) {
         existing.kycStatus = existing.kycVerified ? 'verified' : 'unverified';
       }
+      ensureWalletSecurity(existing);
       return existing;
     }
 
@@ -242,6 +357,7 @@ function createEconomyService(options = {}) {
       created_at: isoNow,
       updated_at: isoNow
     };
+    ensureWalletSecurity(wallet);
     wallets[uid] = wallet;
     return wallet;
   }
@@ -251,13 +367,18 @@ function createEconomyService(options = {}) {
     return forbiddenKeys.filter((k) => Object.prototype.hasOwnProperty.call(body, k));
   }
 
-  async function getWallet(authUser) {
+  async function getWallet(authUser, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const existed = Boolean(wallets[authUser.uid]);
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
-      if (!existed) {
+      const meta = normalizeRequestMeta(reqMeta);
+      const sec = ensureWalletSecurity(wallet);
+      const hadIp = Boolean(meta.ip && sec.knownIps.includes(meta.ip));
+      const hadDev = Boolean(meta.deviceId && sec.knownDevices.includes(meta.deviceId));
+      recordWalletContext(wallet, meta);
+      if (!existed || (meta.ip && !hadIp) || (meta.deviceId && !hadDev)) {
         writeAllWallets(wallets);
       }
       return {
@@ -274,11 +395,14 @@ function createEconomyService(options = {}) {
     return mine.slice(-limit).reverse();
   }
 
-  async function claimMatchReward(authUser, body = {}) {
+  async function claimMatchReward(authUser, body = {}, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      const meta = normalizeRequestMeta(reqMeta);
+      const sec = ensureWalletSecurity(wallet);
+      const anti = cfg.antiAbuse || {};
 
       const tampered = detectTamperedFields(body, [
         'reward', 'amount', 'currency', 'diamonds', 'gold', 'balance', 'newBalance', 'user_id', 'uid'
@@ -292,23 +416,125 @@ function createEconomyService(options = {}) {
         wallet.lastDailyReset = todayStr;
       }
 
-      const maxMatchesPerDay = Number(cfg.matchReward.maxMatchesPerDay);
-      if (wallet.matchesToday >= maxMatchesPerDay) {
+      // Catat semua percobaan request match dalam 1 jam terakhir untuk deteksi spam/bot
+      const oneHourAgo = nowMs - (60 * 60 * 1000);
+      sec.matchAttemptTimestamps = sec.matchAttemptTimestamps.filter((ts) => Number(ts) >= oneHourAgo);
+      sec.matchAttemptTimestamps.push(nowMs);
+
+      const maxPerHour = Number(anti.maxMatchRequestsPerHour || 10);
+      const minIntervalSec = Number(anti.minMatchIntervalSeconds || 120);
+      const flagThreshold = Number(anti.botFlagThresholdAttempts || 3);
+      const attemptsIn1Min = sec.matchAttemptTimestamps.filter((ts) => (nowMs - Number(ts)) <= 60 * 1000).length;
+
+      // Anti-Bot 1: Puluhan request dalam 1 jam (hourly flood)
+      if (sec.matchAttemptTimestamps.length > maxPerHour) {
+        sec.botSpamAttempts += 1;
+        flagWalletSecurity(wallet, {
+          flagCode: 'BOT_HOURLY_RATE_LIMIT',
+          reason: `Bot rate limit terlampaui (${sec.matchAttemptTimestamps.length} request match dalam 1 jam, batas ${maxPerHour}/jam).`,
+          scoreDelta: 40,
+          meta,
+          markFlagged: true
+        });
+        writeAllWallets(wallets);
         throw createHttpError(
           429,
-          `Batas harian tercapai! Maksimal ${maxMatchesPerDay} match per hari.`,
-          'DAILY_MATCH_LIMIT'
+          `Akses ditolak sistem Anti-Bot: Terlalu banyak request match dalam 1 jam (${sec.matchAttemptTimestamps.length}/${maxPerHour}). Akun Anda telah ditandai untuk review.`,
+          'BOT_RATE_LIMIT',
+          { flagged: true, security: { ...sec } }
         );
       }
 
+      // Anti-Bot 2: Replay matchId yang sudah pernah diklaim
+      const incomingMatchId = typeof body?.matchId === 'string' && body.matchId.trim()
+        ? body.matchId.trim().slice(0, 128)
+        : null;
+      if (incomingMatchId && sec.rewardedMatchIds.includes(incomingMatchId)) {
+        sec.botSpamAttempts += 1;
+        flagWalletSecurity(wallet, {
+          flagCode: 'BOT_REPLAY_MATCH',
+          reason: `Percobaan klaim ulang Match ID duplikat (${incomingMatchId}).`,
+          scoreDelta: 30,
+          meta,
+          markFlagged: sec.botSpamAttempts >= flagThreshold
+        });
+        writeAllWallets(wallets);
+        throw createHttpError(
+          409,
+          `Permintaan ditolak server: Match ID (${incomingMatchId}) sudah pernah diklaim sebelumnya.`,
+          'DUPLICATE_MATCH_ID'
+        );
+      }
+
+      // Anti-Bot 3: Jeda antar match terlalu cepat (misal 3 match dalam 1 menit / < minMatchIntervalSeconds)
+      if (wallet.lastMatchAt) {
+        const lastMs = new Date(wallet.lastMatchAt).getTime();
+        const elapsedMs = nowMs - lastMs;
+        if (Number.isFinite(lastMs) && elapsedMs < minIntervalSec * 1000) {
+          sec.fastMatchAttempts += 1;
+          sec.botSpamAttempts += 1;
+          const elapsedSec = Math.max(0, Math.round(elapsedMs / 1000));
+          const shouldFlag = attemptsIn1Min >= flagThreshold || sec.fastMatchAttempts >= 2;
+          flagWalletSecurity(wallet, {
+            flagCode: 'BOT_RAPID_MATCH',
+            reason: `Interval match tidak wajar (${elapsedSec} detik setelah match sebelumnya, minimal ${minIntervalSec} detik). Percobaan 1 menit terakhir: ${attemptsIn1Min}.`,
+            scoreDelta: shouldFlag ? 35 : 15,
+            meta,
+            markFlagged: shouldFlag
+          });
+          writeAllWallets(wallets);
+          throw createHttpError(
+            429,
+            `Permintaan ditolak sistem Anti-Bot: Waktu penyelesaian match terlalu cepat (${elapsedSec} detik, minimal ${minIntervalSec} detik antar match).${shouldFlag ? ' Akun telah ditandai mencurigakan.' : ''}`,
+            'BOT_MATCH_TOO_FAST',
+            { flagged: sec.flagged, elapsedSec, minIntervalSec, attemptsIn1Min }
+          );
+        }
+      }
+
+      // Cek batas harian match (misal 3 match/hari)
+      const maxMatchesPerDay = Number(cfg.matchReward.maxMatchesPerDay);
+      if (wallet.matchesToday >= maxMatchesPerDay) {
+        sec.botSpamAttempts += 1;
+        if (attemptsIn1Min >= flagThreshold || sec.botSpamAttempts >= flagThreshold) {
+          flagWalletSecurity(wallet, {
+            flagCode: 'BOT_DAILY_SPAM',
+            reason: `Spam request setelah batas harian (${maxMatchesPerDay} match/hari) tercapai.`,
+            scoreDelta: 25,
+            meta,
+            markFlagged: true
+          });
+        }
+        writeAllWallets(wallets);
+        throw createHttpError(
+          429,
+          `Batas harian tercapai! Maksimal ${maxMatchesPerDay} match per hari.${sec.flagged ? ' Aktivitas spam Anda telah ditandai.' : ''}`,
+          'DAILY_MATCH_LIMIT',
+          { flagged: sec.flagged }
+        );
+      }
+
+      // Cek cooldown match normal (default 4 jam jika diaktifkan)
       if (wallet.lastMatchAt && matchCooldownMs > 0) {
         const lastMs = new Date(wallet.lastMatchAt).getTime();
         if (Number.isFinite(lastMs) && (nowMs - lastMs) < matchCooldownMs) {
+          sec.botSpamAttempts += 1;
+          if (attemptsIn1Min >= flagThreshold || sec.botSpamAttempts >= flagThreshold) {
+            flagWalletSecurity(wallet, {
+              flagCode: 'BOT_COOLDOWN_SPAM',
+              reason: `Spam request match selama masa cooldown.`,
+              scoreDelta: 25,
+              meta,
+              markFlagged: true
+            });
+          }
+          writeAllWallets(wallets);
           const remainMinutes = Math.ceil((matchCooldownMs - (nowMs - lastMs)) / 60000);
           throw createHttpError(
             429,
             `Cooldown match aktif. Tunggu ${remainMinutes} menit lagi.`,
-            'MATCH_COOLDOWN'
+            'MATCH_COOLDOWN',
+            { flagged: sec.flagged }
           );
         }
       }
@@ -316,9 +542,7 @@ function createEconomyService(options = {}) {
       const allowedResults = ['win', 'draw', 'lose'];
       const result = allowedResults.includes(body?.result) ? body.result : 'lose';
       const opponent = typeof body?.opponent === 'string' ? body.opponent.trim().slice(0, 80) : 'Lawan';
-      const matchId = typeof body?.matchId === 'string' && body.matchId.trim()
-        ? body.matchId.trim().slice(0, 128)
-        : `MCH-${nowMs}`;
+      const matchId = incomingMatchId || `MCH-${nowMs}`;
 
       const mr = cfg.matchReward;
       const base = Number(mr.perMatchCurrency);
@@ -336,6 +560,9 @@ function createEconomyService(options = {}) {
       wallet.totalMatches = Number(wallet.totalMatches || 0) + 1;
       wallet.lastMatchAt = new Date(nowMs).toISOString();
       wallet.updated_at = new Date(nowMs).toISOString();
+      sec.rewardedMatchIds.push(matchId);
+      if (sec.rewardedMatchIds.length > 50) sec.rewardedMatchIds = sec.rewardedMatchIds.slice(-50);
+      recordWalletContext(wallet, meta);
 
       const ledgerEntry = appendImmutableLedgerEntry({
         user_id: authUser.uid,
@@ -367,11 +594,12 @@ function createEconomyService(options = {}) {
     });
   }
 
-  async function executeConversion(authUser, body = {}) {
+  async function executeConversion(authUser, body = {}, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      recordWalletContext(wallet, normalizeRequestMeta(reqMeta));
 
       const direction = String(body?.direction || '').trim();
       const amount = Number(body?.amount);
@@ -604,7 +832,9 @@ function createEconomyService(options = {}) {
     const accountAgeDaysExact = Math.max(0, (nowMs - createdMs) / DAY_MS);
     const accountAgeDays = Math.floor(accountAgeDaysExact);
 
-    const activeQueueItems = queue.filter((q) => q.user_id === wallet.user_id && q.status === 'queued');
+    const activeQueueItems = queue.filter(
+      (q) => q.user_id === wallet.user_id && (q.status === 'queued' || q.status === 'hold')
+    );
     const activeCount = Math.max(activeQueueItems.length, wallet.activeWithdrawId ? 1 : 0);
 
     let cooldownRemainingDays = 0;
@@ -668,11 +898,13 @@ function createEconomyService(options = {}) {
     });
   }
 
-  async function submitKyc(authUser, body = {}) {
+  async function submitKyc(authUser, body = {}, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
+      const meta = normalizeRequestMeta(reqMeta);
+      const sec = ensureWalletSecurity(wallet);
 
       const fullName = String(body?.fullName || '').trim();
       const idNumber = String(body?.idNumber || '').trim();
@@ -689,16 +921,67 @@ function createEconomyService(options = {}) {
         throw createHttpError(400, 'Alamat dompet USDT tujuan wajib diisi dengan benar.', 'INVALID_WALLET_ADDRESS');
       }
 
-      const idHash = crypto.createHash('sha256').update(`${idType}:${idNumber}`).digest('hex');
+      const idTypeNorm = idType.toUpperCase();
+      const idNumberNorm = idNumber.replace(/[\s.-]+/g, '').toUpperCase();
+      const walletAddrNorm = walletAddress.toLowerCase();
+      const idHash = crypto.createHash('sha256').update(`${idTypeNorm}:${idNumberNorm}`).digest('hex');
+
+      // Anti Multi-Account: 1 identitas KYC & 1 wallet tujuan hanya boleh terhubung ke 1 akun game
+      if (cfg.guards?.oneKycIdentityPerWithdrawAccount !== false) {
+        const otherWallets = Object.values(wallets).filter((w) => w.user_id !== authUser.uid);
+        const duplicateIdentityOwner = otherWallets.find((w) => w.kycIdentityHash && w.kycIdentityHash === idHash);
+        if (duplicateIdentityOwner) {
+          sec.duplicateKycAttempts += 1;
+          flagWalletSecurity(wallet, {
+            flagCode: 'MULTI_ACCOUNT_KYC',
+            reason: `Percobaan multi-akun KYC ditolak: Identitas ${idTypeNorm} sudah terhubung ke akun ${duplicateIdentityOwner.akun || duplicateIdentityOwner.user_id}.`,
+            scoreDelta: 50,
+            meta,
+            markFlagged: true,
+            extraMeta: { conflictUserId: duplicateIdentityOwner.user_id }
+          });
+          writeAllWallets(wallets);
+          throw createHttpError(
+            409,
+            `Pengajuan KYC ditolak server: Identitas KYC (${idTypeNorm}) ini sudah terdaftar pada akun game lain. Kebijakan sistem melarang 1 identitas KYC dipakai di lebih dari 1 akun.`,
+            'DUPLICATE_KYC_IDENTITY',
+            { flagged: true }
+          );
+        }
+
+        const duplicateWalletOwner = otherWallets.find(
+          (w) => w.kycWalletAddress && String(w.kycWalletAddress).trim().toLowerCase() === walletAddrNorm
+        );
+        if (duplicateWalletOwner) {
+          sec.duplicateKycAttempts += 1;
+          flagWalletSecurity(wallet, {
+            flagCode: 'MULTI_ACCOUNT_WALLET',
+            reason: `Alamat dompet USDT (${walletAddress.slice(0, 12)}...) sudah dipakai oleh akun ${duplicateWalletOwner.akun || duplicateWalletOwner.user_id}.`,
+            scoreDelta: 40,
+            meta,
+            markFlagged: true,
+            extraMeta: { conflictUserId: duplicateWalletOwner.user_id }
+          });
+          writeAllWallets(wallets);
+          throw createHttpError(
+            409,
+            'Pengajuan KYC ditolak server: Alamat dompet USDT ini sudah terdaftar pada akun game lain.',
+            'DUPLICATE_WITHDRAW_WALLET',
+            { flagged: true }
+          );
+        }
+      }
+
       const nowIso = new Date(nowFn()).toISOString();
 
       wallet.kycStatus = wallet.kycVerified ? 'verified' : 'pending';
       wallet.kycSubmittedAt = nowIso;
       wallet.kycFullName = fullName;
-      wallet.kycIdType = idType;
+      wallet.kycIdType = idTypeNorm;
       wallet.kycIdentityHash = idHash;
       wallet.kycWalletAddress = walletAddress;
       wallet.updated_at = nowIso;
+      recordWalletContext(wallet, meta);
 
       writeAllWallets(wallets);
       return {
@@ -766,7 +1049,7 @@ function createEconomyService(options = {}) {
       if (!targetItem) {
         throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
       }
-      if (targetItem.status !== 'queued') {
+      if (targetItem.status !== 'queued' && targetItem.status !== 'hold') {
         throw createHttpError(
           409,
           `Request withdraw ${targetItem.id} sudah diproses sebelumnya (${targetItem.status}).`,
@@ -777,8 +1060,10 @@ function createEconomyService(options = {}) {
       const wallets = readAllWallets();
       const targetWallet = wallets[targetItem.user_id];
       const nowIso = new Date(nowFn()).toISOString();
+      const prevStatus = targetItem.status;
 
       targetItem.status = 'approved';
+      targetItem.reviewed_from_status = prevStatus;
       targetItem.approved_by = adminEmail;
       targetItem.approved_at = nowIso;
       targetItem.completed_at = nowIso;
@@ -825,7 +1110,7 @@ function createEconomyService(options = {}) {
       if (!targetItem) {
         throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
       }
-      if (targetItem.status !== 'queued') {
+      if (targetItem.status !== 'queued' && targetItem.status !== 'hold') {
         throw createHttpError(
           409,
           `Request withdraw ${targetItem.id} sudah diproses sebelumnya (${targetItem.status}).`,
@@ -890,6 +1175,37 @@ function createEconomyService(options = {}) {
         refundedDiamond: refundDiamond,
         message: `Withdraw ${targetItem.id} ditolak & saldo ${refundDiamond} Diamond dikembalikan ke ${targetWallet.akun}.`
       };
+    });
+  }
+
+  async function adminClearSecurityFlag(authUser, body = {}) {
+    const adminEmail = assertAdmin(authUser, 'Hanya Admin/Owner yang dapat mereset status bendera keamanan.');
+    const targetUid = String(body?.targetUid || '').trim();
+    if (!targetUid) {
+      throw createHttpError(400, 'targetUid wajib diisi.', 'INVALID_UID');
+    }
+    return withUserLock(targetUid, () => {
+      const wallets = readAllWallets();
+      const targetWallet = wallets[targetUid];
+      if (!targetWallet) {
+        throw createHttpError(404, 'Wallet user tidak ditemukan.', 'WALLET_NOT_FOUND');
+      }
+      const sec = ensureWalletSecurity(targetWallet);
+      sec.flagged = false;
+      sec.riskScore = 0;
+      sec.flags = [];
+      sec.clearedBy = adminEmail;
+      sec.clearedAt = new Date(nowFn()).toISOString();
+      targetWallet.updated_at = sec.clearedAt;
+      appendSecurityEvent({
+        user_id: targetUid,
+        akun: targetWallet.akun,
+        eventType: 'ADMIN_CLEAR_FLAG',
+        severity: 'low',
+        detail: `Flag keamanan dibersihkan oleh ${adminEmail}`
+      });
+      writeAllWallets(wallets);
+      return { wallet: { ...targetWallet } };
     });
   }
 
@@ -1095,7 +1411,8 @@ function createEconomyService(options = {}) {
     const circulatingGold = round4(allWallets.reduce((s, w) => s + Number(w.gold || 0), 0));
     const circulatingCurrency = round2(allWallets.reduce((s, w) => s + Number(w.currency || 0), 0));
 
-    const queuedItems = queue.filter((q) => q.status === 'queued');
+    const queuedItems = queue.filter((q) => q.status === 'queued' || q.status === 'hold');
+    const holdItems = queue.filter((q) => q.status === 'hold');
     const queuedWithdrawDiamonds = round4(queuedItems.reduce((s, q) => s + Number(q.grossDiamond || 0), 0));
     const queuedWithdrawNetUsdt = round2(queuedItems.reduce((s, q) => s + Number(q.netUsdt || 0), 0));
     const totalDiamondLiability = round4(circulatingDiamonds + queuedWithdrawDiamonds);
@@ -1137,11 +1454,34 @@ function createEconomyService(options = {}) {
     }));
 
     const sortedQueue = [...queue].sort((a, b) => {
-      const aQueued = a.status === 'queued' ? 0 : 1;
-      const bQueued = b.status === 'queued' ? 0 : 1;
-      if (aQueued !== bQueued) return aQueued - bQueued;
+      const rankStatus = (s) => (s === 'hold' ? 0 : (s === 'queued' ? 1 : 2));
+      const ra = rankStatus(a.status);
+      const rb = rankStatus(b.status);
+      if (ra !== rb) return ra - rb;
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
+
+    const flaggedAccounts = allWallets
+      .filter((w) => w.security?.flagged || (w.security?.riskScore || 0) > 0)
+      .map((w) => {
+        const sec = ensureWalletSecurity(w);
+        return {
+          user_id: w.user_id,
+          akun: w.akun || w.user_id,
+          flagged: Boolean(sec.flagged),
+          riskScore: Number(sec.riskScore || 0),
+          flags: [...sec.flags],
+          flagReasons: [...sec.flagReasons],
+          botSpamAttempts: sec.botSpamAttempts,
+          fastMatchAttempts: sec.fastMatchAttempts,
+          duplicateKycAttempts: sec.duplicateKycAttempts,
+          holdCount: sec.holdCount,
+          lastIp: sec.lastIp,
+          lastDeviceId: sec.lastDeviceId,
+          lastFlaggedAt: sec.lastFlaggedAt
+        };
+      })
+      .sort((a, b) => b.riskScore - a.riskScore);
 
     return {
       rates: cfg.rates,
@@ -1152,6 +1492,7 @@ function createEconomyService(options = {}) {
         circulatingGold,
         circulatingCurrency,
         queuedCount: queuedItems.length,
+        holdCount: holdItems.length,
         queuedWithdrawDiamonds,
         queuedWithdrawNetUsdt,
         totalDiamondLiability,
@@ -1164,21 +1505,116 @@ function createEconomyService(options = {}) {
         thresholdPercent: 1,
         totalSystemEquivDiamond,
         users: top1Users
+      },
+      securitySummary: {
+        flaggedAccountsCount: flaggedAccounts.filter((a) => a.flagged).length,
+        holdWithdrawCount: holdItems.length,
+        flaggedAccounts,
+        recentEvents: readSecurityEvents(30)
       }
     };
   }
 
-  async function requestWithdraw(authUser, body = {}) {
+  function evaluateWithdrawSuspicion(wallet, walletsObj, ledgerEntries, requestedDiamond, cfg, meta, nowMs) {
+    const reasons = [];
+    let riskDelta = 0;
+    const sec = ensureWalletSecurity(wallet);
+    const anti = cfg.antiAbuse || {};
+
+    // 1. Akun sudah ditandai oleh Anti-Bot atau Anti Multi-Akun
+    if (sec.flagged) {
+      reasons.push(`Akun sebelumnya ditandai sistem keamanan (${sec.flags.join(', ') || 'FLAGGED'})`);
+      riskDelta += 45;
+    }
+
+    // 2. Deteksi Lonjakan Saldo Tidak Wajar vs catatan Ledger
+    const myEntries = ledgerEntries.filter((e) => e.user_id === wallet.user_id);
+    let ledgerDiamondIn = 0;
+    let ledgerDiamondOut = 0;
+    let dailyCurrencyGain = 0;
+    const dayAgo = nowMs - DAY_MS;
+
+    for (const e of myEntries) {
+      const amt = Number(e.jumlah || 0);
+      if (e.mata_uang === 'diamond') {
+        if (e.jenis_transaksi === 'masuk') ledgerDiamondIn += amt;
+        if (e.jenis_transaksi === 'keluar') ledgerDiamondOut += amt;
+      }
+      if (e.mata_uang === 'currency' && e.jenis_transaksi === 'masuk' && (e.kategori === 'match_reward' || e.kategori === 'event_bonus_mingguan')) {
+        const ts = new Date(e.waktu).getTime();
+        if (Number.isFinite(ts) && ts >= dayAgo) {
+          dailyCurrencyGain += amt;
+        }
+      }
+    }
+    const verifiedNetDiamond = round4(ledgerDiamondIn - ledgerDiamondOut);
+    if (round4(wallet.diamond) > round4(verifiedNetDiamond + 0.01)) {
+      const unexplained = round4(wallet.diamond - verifiedNetDiamond);
+      reasons.push(`Lonjakan saldo Diamond tidak wajar (+${unexplained} D tidak memiliki jejak konversi/pendapatan di Ledger)`);
+      riskDelta += 50;
+    }
+
+    const maxDailyCurrency = Number(anti.maxExpectedDailyCurrencyGain || 30000);
+    if (dailyCurrencyGain > maxDailyCurrency) {
+      reasons.push(`Lonjakan pendapatan 24 jam (${dailyCurrencyGain.toLocaleString('id-ID')} C) melebihi batas wajar (${maxDailyCurrency.toLocaleString('id-ID')} C)`);
+      riskDelta += 35;
+    }
+
+    // 3. Deteksi IP / Device mencurigakan
+    if (anti.holdOnNewIpOrDevice !== false) {
+      if (meta.ip && sec.knownIps.length > 0 && !sec.knownIps.includes(meta.ip)) {
+        reasons.push(`IP withdraw berbeda dari riwayat normal akun (${meta.ip})`);
+        riskDelta += 30;
+      }
+      if (meta.deviceId && sec.knownDevices.length > 0 && !sec.knownDevices.includes(meta.deviceId)) {
+        reasons.push(`Device ID withdraw tidak dikenal (${meta.deviceId})`);
+        riskDelta += 35;
+      }
+    }
+
+    if (meta.proxyHopCount > 2 || meta.suspiciousFlag) {
+      reasons.push(`Sinyal jaringan / proxy mencurigakan (hop: ${meta.proxyHopCount})`);
+      riskDelta += 25;
+    }
+
+    // Cek apakah IP atau Device ini dipakai bersama akun KYC / withdraw lain
+    const otherWallets = Object.values(walletsObj).filter((w) => w.user_id !== wallet.user_id);
+    if (meta.deviceId) {
+      const sharedDev = otherWallets.find((w) => (w.security?.knownDevices || []).includes(meta.deviceId) && (w.kycSubmittedAt || w.activeWithdrawId));
+      if (sharedDev) {
+        reasons.push(`Device ID (${meta.deviceId}) terdeteksi dipakai bersama akun lain (${sharedDev.akun || sharedDev.user_id})`);
+        riskDelta += 40;
+      }
+    }
+    if (meta.ip) {
+      const sharedIp = otherWallets.find((w) => (w.security?.knownIps || []).includes(meta.ip) && (w.kycSubmittedAt || w.activeWithdrawId));
+      if (sharedIp) {
+        reasons.push(`IP (${meta.ip}) terdeteksi dipakai bersama akun withdraw/KYC lain (${sharedIp.akun || sharedIp.user_id})`);
+        riskDelta += 30;
+      }
+    }
+
+    return {
+      isSuspicious: reasons.length > 0 && anti.holdOnSuspiciousActivity !== false,
+      reasons,
+      riskDelta
+    };
+  }
+
+  async function requestWithdraw(authUser, body = {}, reqMeta = {}) {
     return withUserLock(authUser.uid, () => {
       const cfg = loadConfig();
       const wallets = readAllWallets();
       const wallet = getOrCreateWalletUnlocked(wallets, authUser, cfg);
       const queue = readWithdrawQueue();
+      const ledgerEntries = readAllLedgerEntries();
       const nowMs = nowFn();
+      const meta = normalizeRequestMeta(reqMeta);
+      const sec = ensureWalletSecurity(wallet);
 
       const tampered = detectTamperedFields(body, [
         'fee', 'feePercent', 'netUsdt', 'netDiamond', 'status', 'instant',
-        'balance', 'user_id', 'kycVerified', 'accountAgeDays', 'bypassCooldown', 'bypassGate'
+        'balance', 'user_id', 'kycVerified', 'accountAgeDays', 'bypassCooldown', 'bypassGate', 'bypassHold'
       ]);
 
       const wd = cfg.withdraw;
@@ -1189,7 +1625,7 @@ function createEconomyService(options = {}) {
       if (!gate.checks.noActiveRequestOk) {
         throw createHttpError(
           409,
-          `Request ditolak server: Maksimal ${gate.maxActiveRequests} request withdraw aktif per akun. Request Anda (${gate.activeRequestId}) masih berada dalam antrean (queue).`,
+          `Request ditolak server: Maksimal ${gate.maxActiveRequests} request withdraw aktif per akun. Request Anda (${gate.activeRequestId}) masih berada dalam antrean (queue/hold).`,
           'ACTIVE_WITHDRAW_EXISTS',
           { gate }
         );
@@ -1247,11 +1683,30 @@ function createEconomyService(options = {}) {
         );
       }
 
+      // 7. Cek kembali keunikan identitas KYC sebelum withdraw diproses
+      if (cfg.guards?.oneKycIdentityPerWithdrawAccount !== false && wallet.kycIdentityHash) {
+        const dupOwner = Object.values(wallets).find(
+          (w) => w.user_id !== authUser.uid && w.kycIdentityHash === wallet.kycIdentityHash
+        );
+        if (dupOwner) {
+          throw createHttpError(
+            409,
+            'Request ditolak server: Terdeteksi duplikasi identitas KYC antar akun.',
+            'DUPLICATE_KYC_IDENTITY',
+            { gate }
+          );
+        }
+      }
+
+      // 8. Suspicious Activity Hold Check
+      const suspicion = evaluateWithdrawSuspicion(wallet, wallets, ledgerEntries, requestedDiamond, cfg, meta, nowMs);
+      const targetStatus = suspicion.isSuspicious ? 'hold' : 'queued';
+
       const feePercent = Number(wd.feePercent);
       const feeDiamond = round4(requestedDiamond * (feePercent / 100));
       const netDiamond = round4(requestedDiamond - feeDiamond);
       const netUsdt = round2(netDiamond * Number(cfg.rates.diamondToUsdt));
-      const wdId = `WD-${nowMs}`;
+      const wdId = `WD-${nowMs}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       const nowIso = new Date(nowMs).toISOString();
 
       const afterDiamond = round4(beforeDiamond - requestedDiamond);
@@ -1259,7 +1714,26 @@ function createEconomyService(options = {}) {
       wallet.activeWithdrawId = wdId;
       wallet.updated_at = nowIso;
 
-      const queuePosition = queue.filter((q) => q.status === 'queued').length + 1;
+      if (suspicion.isSuspicious) {
+        sec.holdCount += 1;
+        flagWalletSecurity(wallet, {
+          flagCode: 'WITHDRAW_AUTO_HOLD',
+          reason: `Withdraw ${wdId} otomatis ditangguhkan (HOLD): ${suspicion.reasons.join(' | ')}`,
+          scoreDelta: suspicion.riskDelta,
+          meta,
+          markFlagged: true,
+          eventType: 'WITHDRAW_AUTO_HOLD',
+          severity: 'high',
+          extraMeta: { withdrawId: wdId, reasons: suspicion.reasons }
+        });
+      } else {
+        recordWalletContext(wallet, meta);
+      }
+
+      const queuePosition = targetStatus === 'queued'
+        ? queue.filter((q) => q.status === 'queued').length + 1
+        : null;
+
       const queueRecord = {
         id: wdId,
         user_id: authUser.uid,
@@ -1270,9 +1744,13 @@ function createEconomyService(options = {}) {
         netDiamond,
         netUsdt,
         destinationWallet: wallet.kycWalletAddress || null,
-        status: 'queued',
+        status: targetStatus,
+        holdReasons: suspicion.isSuspicious ? suspicion.reasons : [],
+        riskScoreAtRequest: sec.riskScore,
+        requestIp: meta.ip,
+        requestDeviceId: meta.deviceId,
         queuePosition,
-        processingMode: wd.processingMode,
+        processingMode: suspicion.isSuspicious ? 'manual_security_hold' : wd.processingMode,
         accountAgeDaysAtRequest: gate.accountAgeDays,
         previousLastWithdrawAt: wallet.lastWithdrawAt || null,
         created_at: nowIso
@@ -1292,7 +1770,9 @@ function createEconomyService(options = {}) {
         saldo_sebelum: beforeDiamond,
         saldo_sesudah: afterDiamond,
         ref_id: wdId,
-        keterangan: `Withdraw ${requestedDiamond} Diamond → Net ${netUsdt} USDT (fee ${feePercent}%, antrean #${queuePosition}, mode: ${wd.processingMode})`
+        keterangan: suspicion.isSuspicious
+          ? `Withdraw ${requestedDiamond} Diamond → Net ${netUsdt} USDT [HOLD - Review Admin: ${suspicion.reasons[0]}]`
+          : `Withdraw ${requestedDiamond} Diamond → Net ${netUsdt} USDT (fee ${feePercent}%, antrean #${queuePosition}, mode: ${wd.processingMode})`
       });
 
       writeAllWallets(wallets);
@@ -1300,8 +1780,13 @@ function createEconomyService(options = {}) {
       return {
         wallet: { ...wallet },
         withdraw: queueRecord,
+        heldForReview: suspicion.isSuspicious,
+        holdReasons: suspicion.isSuspicious ? suspicion.reasons : [],
         ledgerEntry,
         gate: evaluateWithdrawGate(wallet, queue, cfg, Number(wd.minDiamond), nowMs),
+        message: suspicion.isSuspicious
+          ? `Withdraw ${wdId} masuk status HOLD (ditangguhkan) untuk review manual Admin karena terdeteksi aktivitas mencurigakan.`
+          : `Withdraw ${wdId} berhasil masuk antrean #${queuePosition}.`,
         serverValidation: {
           sourceOfTruth: 'economy.config.json',
           ignoredClientFields: tampered
@@ -1574,6 +2059,7 @@ function createEconomyService(options = {}) {
     adminCompleteWithdraw,
     adminApproveWithdraw,
     adminRejectWithdraw,
+    adminClearSecurityFlag,
     getAdminEconomyDashboard,
     claimMatchReward,
     executeConversion,
@@ -1582,11 +2068,21 @@ function createEconomyService(options = {}) {
     spendOrTrade,
     adminResetWallet,
     readAllLedgerEntries,
-    readWithdrawQueue
+    readWithdrawQueue,
+    readSecurityEvents
   };
 }
 
 function mountEconomyRoutes(app, service) {
+  function extractRequestMeta(req) {
+    return {
+      ip: req.ip || req.socket?.remoteAddress || '',
+      forwardedFor: req.headers['x-forwarded-for'] || '',
+      deviceId: req.headers['x-device-id'] || req.body?.deviceId || '',
+      userAgent: req.headers['user-agent'] || ''
+    };
+  }
+
   async function requireAuth(req, res, next) {
     try {
       const authHeader = req.headers.authorization || '';
@@ -1617,7 +2113,7 @@ function mountEconomyRoutes(app, service) {
 
   app.get('/api/economy/wallet', requireAuth, async (req, res) => {
     try {
-      const data = await service.getWallet(req.authUser);
+      const data = await service.getWallet(req.authUser, extractRequestMeta(req));
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
@@ -1644,7 +2140,7 @@ function mountEconomyRoutes(app, service) {
 
   app.post('/api/economy/kyc/submit', requireAuth, async (req, res) => {
     try {
-      const data = await service.submitKyc(req.authUser, req.body || {});
+      const data = await service.submitKyc(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
@@ -1663,6 +2159,15 @@ function mountEconomyRoutes(app, service) {
   app.get('/api/economy/admin/dashboard', requireAuth, async (req, res) => {
     try {
       const data = await service.getAdminEconomyDashboard(req.authUser);
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/security/unflag', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminClearSecurityFlag(req.authUser, req.body || {});
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);
@@ -1708,7 +2213,7 @@ function mountEconomyRoutes(app, service) {
 
   app.post('/api/economy/match-reward', requireAuth, async (req, res) => {
     try {
-      const result = await service.claimMatchReward(req.authUser, req.body || {});
+      const result = await service.claimMatchReward(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...result });
     } catch (err) {
       return handleRouteError(res, err);
@@ -1717,7 +2222,7 @@ function mountEconomyRoutes(app, service) {
 
   app.post('/api/economy/convert', requireAuth, async (req, res) => {
     try {
-      const result = await service.executeConversion(req.authUser, req.body || {});
+      const result = await service.executeConversion(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...result });
     } catch (err) {
       return handleRouteError(res, err);
@@ -1735,7 +2240,7 @@ function mountEconomyRoutes(app, service) {
 
   app.post('/api/economy/withdraw-request', requireAuth, async (req, res) => {
     try {
-      const result = await service.requestWithdraw(req.authUser, req.body || {});
+      const result = await service.requestWithdraw(req.authUser, req.body || {}, extractRequestMeta(req));
       return res.json({ success: true, ...result });
     } catch (err) {
       return handleRouteError(res, err);
