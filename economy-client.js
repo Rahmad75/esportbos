@@ -1,4 +1,5 @@
 import { auth, getCurrentUserOnce } from './firebase-config.js';
+import { apiFetch } from './api-config.js';
 
 async function getIdTokenOrThrow() {
   const user = auth.currentUser || await getCurrentUserOnce();
@@ -26,7 +27,7 @@ let lastServerNowMs = null;
 let lastSyncPerfMs = null;
 
 export async function syncServerTime() {
-  const res = await fetch('/api/server-time', {
+  const res = await apiFetch('/api/server-time', {
     method: 'GET',
     cache: 'no-store'
   });
@@ -99,7 +100,7 @@ async function economyRequest(path, method = 'GET', body = null) {
     options.body = JSON.stringify(body);
   }
 
-  const res = await fetch(path, options);
+  const res = await apiFetch(path, options);
   let data = null;
   try {
     data = await res.json();
@@ -177,7 +178,7 @@ export async function clearAdminSecurityFlag(targetUid) {
 }
 
 export async function fetchTopupConfig() {
-  const res = await fetch('/api/economy/topup/config');
+  const res = await apiFetch('/api/economy/topup/config');
   const data = await res.json();
   if (!res.ok || !data?.success) {
     throw new Error(data?.error || 'Gagal memuat konfigurasi Top-Up.');

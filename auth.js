@@ -12,6 +12,7 @@ import {
   isFirestoreOfflineError,
   withFirestoreRetry
 } from './firebase-config.js';
+import { apiFetch } from './api-config.js';
 
 const TURNSTILE_ALLOWED_HOSTS = new Set(['esportbos.com', 'www.esportbos.com']);
 let turnstileScriptPromise = null;
@@ -157,7 +158,7 @@ async function handleRegister() {
         return;
       }
 
-      const captchaResponse = await fetch('/api/verify-captcha', {
+      const captchaResponse = await apiFetch('/api/verify-captcha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token })

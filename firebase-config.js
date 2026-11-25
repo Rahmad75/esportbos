@@ -17,6 +17,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js';
 import { loadEconomyConfig } from './economy-config.js';
+import { apiFetch } from './api-config.js';
 
 // Konfigurasi Firebase (selaras dengan firebase-applet-config.json)
 export const firebaseConfig = {
@@ -167,7 +168,7 @@ async function overlayServerWalletBalances(user, profileData) {
       return profileData;
     }
     const token = await user.getIdToken();
-    const res = await fetch('/api/economy/wallet', {
+    const res = await apiFetch('/api/economy/wallet', {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` }
     });

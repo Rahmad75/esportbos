@@ -72,6 +72,9 @@ app.use((req, res, next) => {
   if (
     reqPath === '/data' ||
     reqPath.startsWith('/data/') ||
+    reqPath === '/functions' ||
+    reqPath.startsWith('/functions/') ||
+    reqPath === '/firebase.json' ||
     reqPath === '/economy-server.js' ||
     reqPath === '/server.js' ||
     reqPath === '/package.json' ||
