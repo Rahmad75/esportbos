@@ -188,12 +188,18 @@ async function simulateMatch() {
     const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1, economyConfig });
     const marketNote = formatTurnNotification(marketUpdate.latestEntry);
 
-    const nextTimeStr = new Date(serverNowMs + 4 * 60 * 60 * 1000).toLocaleTimeString('id-ID', {
+    const nextTimeLondon = new Date(serverNowMs + 4 * 60 * 60 * 1000).toLocaleTimeString('en-GB', {
+      timeZone: 'Europe/London',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+    const nextTimeWib = new Date(serverNowMs + 4 * 60 * 60 * 1000).toLocaleTimeString('id-ID', {
       timeZone: 'Asia/Jakarta',
       hour: '2-digit',
       minute: '2-digit'
     });
-    alert(`✅ Pertandingan Selesai!\n\nReward (Validasi Server): +${matchRewardAmount.toLocaleString('id-ID')} Currency\nSaldo Currency: ${Number(rewardResp.wallet?.currency || 0).toLocaleString('id-ID')}\nMatch ke-${newMatchCount}/${maxMatchesPerDay} hari ini\nSisa match: ${Math.max(0, maxMatchesPerDay - newMatchCount)}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${nextTimeStr} WIB`);
+    alert(`✅ Pertandingan Selesai!\n\nReward (Validasi Server): +${matchRewardAmount.toLocaleString('id-ID')} Currency\nSaldo Currency: ${Number(rewardResp.wallet?.currency || 0).toLocaleString('id-ID')}\nMatch ke-${newMatchCount}/${maxMatchesPerDay} hari ini (Reset 00:00 London)\nSisa match: ${Math.max(0, maxMatchesPerDay - newMatchCount)}\n\n📈 ${marketNote}\n\nMatch berikutnya: ${nextTimeLondon} (${nextTimeWib} WIB)`);
   } catch (err) {
     console.error('Error saving match:', err);
     handleFirestoreError(err, OperationType.WRITE, `teams/${currentTeamId}/matches`);

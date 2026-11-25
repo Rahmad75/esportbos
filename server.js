@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { createEconomyService, mountEconomyRoutes } = require('./economy-server');
+const { createEconomyService, mountEconomyRoutes, getLondonTimeInfo } = require('./economy-server');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -102,17 +102,16 @@ app.use((req, res, next) => {
   return next();
 });
 
-// Endpoint waktu server internal menggunakan new Date() agar bebas blokir CORS pihak ketiga
-app.get('/api/server-time', (req, res) => {
-  const now = new Date();
+// Endpoint waktu server resmi (Europe/London dengan penyesuaian otomatis GMT/BST + UTC)
+const handleGetServerTime = (req, res) => {
+  const info = getLondonTimeInfo(Date.now());
   return res.json({
     success: true,
-    dateTime: now.toISOString(),
-    nowMs: now.getTime(),
-    timeZone: 'Asia/Jakarta',
-    wibString: now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
+    ...info
   });
-});
+};
+app.get('/api/server-time', handleGetServerTime);
+app.get('/api/economy/server-time', handleGetServerTime);
 
 // Mount semua API route SEBELUM static middleware agar request POST/OPTIONS tidak bentrok dengan static handler
 mountEconomyRoutes(app, economyService);

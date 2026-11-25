@@ -29,6 +29,54 @@ function createHttpError(status, message, code = 'ECONOMY_ERROR', details = null
   return err;
 }
 
+function getLondonTimeInfo(nowMs = Date.now()) {
+  const dt = new Date(nowMs);
+  const dateParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/London',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(dt);
+  const getPart = (parts, type) => parts.find((p) => p.type === type)?.value || '';
+  const londonDate = `${getPart(dateParts, 'year')}-${getPart(dateParts, 'month')}-${getPart(dateParts, 'day')}`;
+
+  const timeParts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZoneName: 'short'
+  }).formatToParts(dt);
+  const londonTime = `${getPart(timeParts, 'hour')}:${getPart(timeParts, 'minute')}:${getPart(timeParts, 'second')}`;
+  const londonZoneAbbr = getPart(timeParts, 'timeZoneName') || 'GMT';
+  const isDstBst = londonZoneAbbr === 'BST' || londonZoneAbbr.includes('+1');
+  const wibResetTime = isDstBst ? '06:00 WIB' : '07:00 WIB';
+
+  // ISO Week Key berdasarkan tanggal resmi Europe/London (reset mingguan mengikuti kalender London)
+  const [y, m, d] = londonDate.split('-').map(Number);
+  const londonUtcMidnight = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = londonUtcMidnight.getUTCDay() || 7;
+  const thursday = new Date(londonUtcMidnight);
+  thursday.setUTCDate(londonUtcMidnight.getUTCDate() + (4 - dayNum));
+  const yearStart = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((thursday - yearStart) / 86400000) + 1) / 7);
+  const londonWeekKey = `${thursday.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+
+  return {
+    nowMs,
+    utcIso: dt.toISOString(),
+    dateTime: dt.toISOString(),
+    timeZone: 'Europe/London',
+    londonDate,
+    londonTime,
+    londonZoneAbbr,
+    isDstBst,
+    wibResetTime,
+    londonWeekKey
+  };
+}
+
 function createEconomyService(options = {}) {
   const rootDir = options.rootDir || __dirname;
   const dataDir = options.dataDir || path.join(rootDir, 'data');
@@ -426,8 +474,9 @@ function createEconomyService(options = {}) {
       const anti = cfg.antiAbuse || {};
 
       const nowMs = nowFn();
-      const serverDateTime = new Date(nowMs).toISOString();
-      const todayStr = serverDateTime.split('T')[0];
+      const londonInfo = getLondonTimeInfo(nowMs);
+      const serverDateTime = londonInfo.utcIso;
+      const todayStr = londonInfo.londonDate;
 
       if (wallet.lastDailyReset !== todayStr) {
         wallet.matchesToday = 0;
@@ -503,7 +552,9 @@ function createEconomyService(options = {}) {
         maxMatchesPerDay,
         serverNowMs: nowMs,
         serverDateTime,
-        todayStr
+        todayStr,
+        serverTime: londonInfo,
+        nextMatchAvailableAt: new Date(nowMs + matchCooldownMs).toISOString()
       };
     });
   }
@@ -522,7 +573,8 @@ function createEconomyService(options = {}) {
       ]);
 
       const nowMs = nowFn();
-      const todayStr = new Date(nowMs).toISOString().split('T')[0];
+      const londonInfo = getLondonTimeInfo(nowMs);
+      const todayStr = londonInfo.londonDate;
 
       if (wallet.lastDailyReset !== todayStr) {
         wallet.matchesToday = 0;
@@ -858,13 +910,16 @@ function createEconomyService(options = {}) {
       ]);
 
       const nowMs = nowFn();
-      if (wallet.lastWeeklyClaimAt && weeklyCooldownMs > 0) {
-        const lastMs = new Date(wallet.lastWeeklyClaimAt).getTime();
-        if (Number.isFinite(lastMs) && (nowMs - lastMs) < weeklyCooldownMs) {
-          const sisaHari = Math.ceil((weeklyCooldownMs - (nowMs - lastMs)) / (24 * 60 * 60 * 1000));
+      const londonInfo = getLondonTimeInfo(nowMs);
+      if (weeklyCooldownMs > 0) {
+        const lastWeekKey = wallet.lastWeeklyWeekKey
+          || (wallet.lastWeeklyClaimAt && Number.isFinite(new Date(wallet.lastWeeklyClaimAt).getTime())
+            ? getLondonTimeInfo(new Date(wallet.lastWeeklyClaimAt).getTime()).londonWeekKey
+            : null);
+        if (lastWeekKey && lastWeekKey === londonInfo.londonWeekKey) {
           throw createHttpError(
             429,
-            `Settlement mingguan sudah dilakukan minggu ini. Tunggu ${sisaHari} hari lagi.`,
+            `Settlement gaji mingguan sudah dilakukan untuk minggu London ${londonInfo.londonWeekKey}. Reset setiap Senin 00:00 London (${londonInfo.wibResetTime}).`,
             'WEEKLY_COOLDOWN'
           );
         }
@@ -930,8 +985,10 @@ function createEconomyService(options = {}) {
       }
 
       wallet.currency = runningBalance;
-      wallet.lastWeeklyClaimAt = new Date(nowMs).toISOString();
-      wallet.updated_at = new Date(nowMs).toISOString();
+      wallet.lastWeeklyClaimAt = londonInfo.utcIso;
+      wallet.lastWeeklyWeekKey = londonInfo.londonWeekKey;
+      wallet.lastWeeklyLondonDate = londonInfo.londonDate;
+      wallet.updated_at = londonInfo.utcIso;
       writeAllWallets(wallets);
 
       return {
@@ -939,6 +996,8 @@ function createEconomyService(options = {}) {
         income: eventBonus,
         expense: totalSink,
         netChange: round4(eventBonus - totalSink),
+        londonWeekKey: londonInfo.londonWeekKey,
+        serverTime: londonInfo,
         sinkBreakdown: sinkItems,
         ledgerEntries,
         serverValidation: {
@@ -2868,5 +2927,6 @@ function mountEconomyRoutes(app, service) {
 
 module.exports = {
   createEconomyService,
-  mountEconomyRoutes
+  mountEconomyRoutes,
+  getLondonTimeInfo
 };

@@ -37,8 +37,10 @@
     <div class="dashboard-wrapper">
         <!-- ===== SIDEBAR KIRI ===== -->
         <aside class="sidebar">
-            <div class="jam-sidebar-box">
-                <div id="jamServerFinal" style="font-family:monospace; font-size:22px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+            <div class="jam-sidebar-box" style="text-align:center;">
+                <div style="font-size:11px; color:#9db2d9; font-weight:700; letter-spacing:0.4px; margin-bottom:2px;">🕒 Server Time (London)</div>
+                <div id="jamServerFinal" style="font-family:monospace; font-size:20px; color:#00d9ff; font-weight:bold;">--:--:--</div>
+                <div id="jamResetInfo" style="font-size:10px; color:#7f98c7; margin-top:2px;">Reset harian: 00:00 London</div>
             </div>
 
             <script>
@@ -48,11 +50,11 @@
                     const el = document.getElementById('jamServerFinal');
                     if (!el) return;
                     if (serverEpochMs === null || syncPerfMs === null) {
-                        el.innerText = window.__SERVER_TIME_SYNCED__ === false ? 'SYNC ERROR' : '--:--:-- WIB';
+                        el.innerText = window.__SERVER_TIME_SYNCED__ === false ? 'SYNC ERROR' : '--:--:--';
                         return;
                     }
                     const waktu = new Date(serverEpochMs + (performance.now() - syncPerfMs));
-                    el.innerText = waktu.toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour12: false }) + ' WIB';
+                    el.innerText = waktu.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour12: false, timeZoneName: 'short' });
                 }
                 setInterval(tampilJam, 1000);
                 async function sync() {
@@ -65,6 +67,9 @@
                         serverEpochMs = server;
                         syncPerfMs = performance.now();
                         window.__SERVER_TIME_SYNCED__ = true;
+                        const infoEl = document.getElementById('jamResetInfo');
+                        if (infoEl && data.wibResetTime) infoEl.innerText = 'Reset: 00:00 London (' + data.wibResetTime + ')';
+                        console.log('[Server Time]', data.timeZone, data.londonDate, data.londonTime, data.londonZoneAbbr, '| UTC:', data.utcIso);
                         tampilJam();
                     } catch (e) {
                         serverEpochMs = null;

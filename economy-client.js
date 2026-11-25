@@ -51,11 +51,16 @@ export async function syncServerTime() {
   if (typeof window !== 'undefined') {
     window.__SERVER_TIME_SYNCED__ = true;
     window.__SERVER_NOW_MS__ = serverNowMs;
+    window.__SERVER_TIME_ZONE__ = data.timeZone || 'Europe/London';
   }
   return {
     serverNowMs,
     dateTime: data.dateTime || new Date(serverNowMs).toISOString(),
-    timeZone: data.timeZone || 'Asia/Jakarta'
+    timeZone: data.timeZone || 'Europe/London',
+    londonDate: data.londonDate || null,
+    londonTime: data.londonTime || null,
+    londonZoneAbbr: data.londonZoneAbbr || 'GMT',
+    wibResetTime: data.wibResetTime || '07:00 WIB'
   };
 }
 
@@ -66,7 +71,7 @@ export async function requireServerTime(maxAgeMs = 60000) {
     return {
       serverNowMs: estimatedMs,
       dateTime: new Date(estimatedMs).toISOString(),
-      timeZone: 'Asia/Jakarta'
+      timeZone: 'Europe/London'
     };
   }
   return syncServerTime();
