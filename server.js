@@ -7,6 +7,61 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const economyService = createEconomyService({ rootDir: __dirname });
 
+function isTrustedCorsOrigin(origin, req) {
+  if (!origin || typeof origin !== 'string') return false;
+  let parsed;
+  try {
+    parsed = new URL(origin);
+  } catch (_) {
+    return false;
+  }
+
+  const hostHeader = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  if (hostHeader && parsed.host.toLowerCase() === hostHeader) {
+    return true;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  }
+
+  if (parsed.protocol === 'https:') {
+    if (
+      hostname.endsWith('.run.app') ||
+      hostname.endsWith('.aistudio.google.com') ||
+      hostname.endsWith('.googleusercontent.com') ||
+      hostname.endsWith('.web.app') ||
+      hostname.endsWith('.firebaseapp.com')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Middleware CORS aman (validasi origin eksplisit + tangani preflight OPTIONS sebelum semua route/static)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && isTrustedCorsOrigin(origin, req)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  return next();
+});
+
 app.use(express.json({ limit: '3mb' }));
 
 // Lindungi file internal server, ledger, dan aturan security dari akses static HTTP langsung
@@ -45,12 +100,19 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use(express.static(__dirname, {
-  extensions: ['html']
-}));
+// Endpoint waktu server internal menggunakan new Date() agar bebas blokir CORS pihak ketiga
+app.get('/api/server-time', (req, res) => {
+  const now = new Date();
+  return res.json({
+    success: true,
+    dateTime: now.toISOString(),
+    nowMs: now.getTime(),
+    timeZone: 'Asia/Jakarta',
+    wibString: now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
+  });
+});
 
-app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/firebase')));
-
+// Mount semua API route SEBELUM static middleware agar request POST/OPTIONS tidak bentrok dengan static handler
 mountEconomyRoutes(app, economyService);
 
 // Endpoint pengganti Supabase Edge Function: verify-captcha-
@@ -90,6 +152,20 @@ app.post('/api/create-payment', (req, res) => {
     error: 'Pembayaran otomatis dinonaktifkan. Gunakan halaman Pendanaan Klub untuk Top-Up QRIS DANA Bisnis / USDT Solana dengan verifikasi Admin.'
   });
 });
+
+app.use('/api', (req, res) => {
+  return res.status(404).json({
+    success: false,
+    code: 'API_ROUTE_NOT_FOUND',
+    error: `Endpoint API ${req.method} ${req.originalUrl} tidak ditemukan.`
+  });
+});
+
+app.use(express.static(__dirname, {
+  extensions: ['html']
+}));
+
+app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/firebase')));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));

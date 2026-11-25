@@ -51,9 +51,9 @@
                 setInterval(tampilJam, 1000);
                 async function sync() {
                     try {
-                        const r = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');
+                        const r = await fetch('/api/server-time', { cache: 'no-store' });
                         const data = await r.json();
-                        const server = new Date(data.dateTime).getTime();
+                        const server = Number(data.nowMs) || new Date(data.dateTime).getTime();
                         offset = server - Date.now();
                     } catch(e) { console.log("Gagal sync server, pakai jam laptop dulu Bray"); }
                 }

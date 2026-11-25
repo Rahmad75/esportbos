@@ -97,9 +97,13 @@ function applyProfileAndTeamUI(profile, team) {
 }
 
 async function fetchLiveStaffData() {
-  await ensureFirestoreReady(3, 1000);
-  const profile = await withFirestoreRetry(() => getOrCreateProfile(currentUser), 3, 1000);
-  const team = await withFirestoreRetry(() => getOrCreateTeam(currentUser, profile?.club_name), 3, 1000);
+  try {
+    await ensureFirestoreReady(2, 800);
+  } catch (connErr) {
+    console.warn('Firestore readiness warning:', connErr?.message || connErr);
+  }
+  const profile = await withFirestoreRetry(() => getOrCreateProfile(currentUser), 3, 800);
+  const team = await withFirestoreRetry(() => getOrCreateTeam(currentUser, profile?.club_name), 3, 800);
   applyProfileAndTeamUI(profile, team);
 }
 

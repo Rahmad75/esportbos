@@ -29,7 +29,7 @@
     <div class="dashboard-wrapper">
         <aside class="sidebar">
             <div class="jam-sidebar-box"><div id="jamServerFinal" style="font-family:monospace;font-size:22px;color:#00d9ff;font-weight:bold;">--:--:--</div></div>
-            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Jakarta');const data=await r.json();const server=new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
+            <script>let offset=0;function tampilJam(){const waktu=new Date(Date.now()+offset);const j=String(waktu.getHours()).padStart(2,'0');const m=String(waktu.getMinutes()).padStart(2,'0');const d=String(waktu.getSeconds()).padStart(2,'0');const el=document.getElementById('jamServerFinal');if(el)el.innerText=j+":"+m+":"+d+" WIB";}setInterval(tampilJam,1000);async function sync(){try{const r=await fetch('/api/server-time',{cache:'no-store'});const data=await r.json();const server=Number(data.nowMs)||new Date(data.dateTime).getTime();offset=server-Date.now();}catch(e){console.log("Gagal sync server");}}sync();</script>
             
             <div class="team-info-panel">
                 <div class="team-logo">🏆</div>

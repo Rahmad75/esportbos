@@ -18,7 +18,8 @@ import {
   getOrCreateTeam,
   getSafeUserAvatarUrl,
   handleFirestoreError,
-  OperationType
+  OperationType,
+  withFirestoreRetry
 } from './firebase-config.js';
 import { advanceMarketTurn, formatTurnNotification } from './market-engine.js';
 import { getMatchReward, loadEconomyConfig } from './economy-config.js';
@@ -51,7 +52,7 @@ async function simulateMatch() {
 
   let team = null;
   try {
-    const teamSnap = await getDoc(doc(db, 'teams', currentTeamId));
+    const teamSnap = await withFirestoreRetry(() => getDoc(doc(db, 'teams', currentTeamId)), 3, 800);
     team = teamSnap.exists() ? teamSnap.data() : null;
   } catch (err) {
     handleFirestoreError(err, OperationType.GET, `teams/${currentTeamId}`);
@@ -64,11 +65,11 @@ async function simulateMatch() {
   if (team && team.last_daily_reset !== today) {
     matchesToday = 0;
     try {
-      await updateDoc(doc(db, 'teams', currentTeamId), {
+      await withFirestoreRetry(() => updateDoc(doc(db, 'teams', currentTeamId), {
         matches_played_today: 0,
         last_daily_reset: today,
         updated_at: new Date().toISOString()
-      });
+      }), 3, 800);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `teams/${currentTeamId}`);
       return;
@@ -167,7 +168,7 @@ async function simulateMatch() {
     const draws = (team?.draws || 0) + (result === 'draw' ? 1 : 0);
     const losses = (team?.losses || 0) + (result === 'lose' ? 1 : 0);
 
-    await updateDoc(doc(db, 'teams', currentTeamId), {
+    await withFirestoreRetry(() => updateDoc(doc(db, 'teams', currentTeamId), {
       last_match_at: new Date().toISOString(),
       matches_played_today: newMatchCount,
       last_daily_reset: today,
@@ -175,9 +176,9 @@ async function simulateMatch() {
       draws,
       losses,
       updated_at: new Date().toISOString()
-    });
+    }), 3, 800);
 
-    await addDoc(collection(db, 'matches'), {
+    await withFirestoreRetry(() => addDoc(collection(db, 'matches'), {
       home_team_id: currentTeamId,
       home_team_name: currentTeamName,
       away_team_name: randomOpponent,
@@ -189,7 +190,7 @@ async function simulateMatch() {
       result: result,
       reward_currency: matchRewardAmount,
       duration_minutes: 30
-    });
+    }), 3, 800);
 
     const marketUpdate = advanceMarketTurn('Selesai Match', { matchDelta: 1, economyConfig });
     const marketNote = formatTurnNotification(marketUpdate.latestEntry);
@@ -212,7 +213,7 @@ async function loadMatchHistory() {
 
   try {
     const q = query(collection(db, 'matches'), where('user_id', '==', currentUserId));
-    const snap = await getDocs(q);
+    const snap = await withFirestoreRetry(() => getDocs(q), 3, 800);
     const matches = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => new Date(b.match_date) - new Date(a.match_date))

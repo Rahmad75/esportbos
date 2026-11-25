@@ -728,10 +728,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!user) { window.location.href = 'index.html'; return; }
     currentUserId = user.uid;
 
-    await ensureFirestoreReady(3, 1000);
+    try {
+      await ensureFirestoreReady(2, 800);
+    } catch (connErr) {
+      console.warn('Firestore readiness warning:', connErr?.message || connErr);
+    }
 
-    const profile = await withFirestoreRetry(() => getOrCreateProfile(user), 3, 1000);
-    const team = await withFirestoreRetry(() => getOrCreateTeam(user, profile?.club_name), 3, 1000);
+    const profile = await withFirestoreRetry(() => getOrCreateProfile(user), 3, 800);
+    const team = await withFirestoreRetry(() => getOrCreateTeam(user, profile?.club_name), 3, 800);
 
     if (profile) {
       const username = profile.username || user.email.split('@')[0];
@@ -772,6 +776,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await Promise.all([loadTransactions(), loadWithdrawStatus()]);
   } catch (err) {
     console.error('Financial market error:', err);
+    showExchangeFeedback(`⚠️ Sebagian data gagal dimuat (${err?.message || 'cek koneksi'}). Silakan refresh halaman.`, true);
   }
 });
 

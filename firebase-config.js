@@ -4,9 +4,7 @@ import {
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
-  initializeFirestore,
-  memoryLocalCache,
-  enableNetwork,
+  getFirestore,
   doc,
   getDoc,
   getDocs,
@@ -33,16 +31,9 @@ export const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// Paksa long-polling dan memoryLocalCache (tanpa IndexedDB persistence) agar stabil di preview iframe
-export const db = initializeFirestore(
-  app,
-  {
-    experimentalForceLongPolling: true,
-    useFetchStreams: false,
-    localCache: memoryLocalCache()
-  },
-  firebaseConfig.firestoreDatabaseId || undefined
-);
+export const db = firebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 export const storage = getStorage(app);
 
 export const OperationType = {
@@ -73,7 +64,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function withFirestoreRetry(operation, maxRetries = 3, delayMs = 1000) {
+export async function withFirestoreRetry(operation, maxRetries = 3, delayMs = 800) {
   let lastError;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -83,32 +74,46 @@ export async function withFirestoreRetry(operation, maxRetries = 3, delayMs = 10
       if (!isFirestoreOfflineError(error) || attempt === maxRetries) {
         throw error;
       }
-      try {
-        await enableNetwork(db);
-      } catch (_) {
-        // Abaikan error enableNetwork sementara dan lanjutkan jeda retry
-      }
       await sleep(delayMs);
     }
   }
   throw lastError;
 }
 
-// Pastikan Firestore backend sudah siap menerima request sebelum query login
-export async function ensureFirestoreReady(maxRetries = 3, delayMs = 1000) {
+let connectionCheckPromise = null;
+
+// Cek koneksi Firestore sekali saat startup (shared single promise agar tidak memicu race state b815/ca9)
+export async function testConnection() {
+  if (!connectionCheckPromise) {
+    connectionCheckPromise = (async () => {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+        return true;
+      } catch (error) {
+        const code = String(error?.code || '').toLowerCase();
+        if (code === 'permission-denied' || code === 'not-found') {
+          return true;
+        }
+        if (error instanceof Error && error.message.includes('the client is offline')) {
+          console.error('Please check your Firebase configuration.');
+        }
+        throw error;
+      }
+    })();
+  }
+  return connectionCheckPromise;
+}
+
+// Pastikan koneksi awal dicek tanpa memanggil enableNetwork() berulang yang merusak state stream Firestore
+export async function ensureFirestoreReady(maxRetries = 2, delayMs = 800) {
   let lastError = null;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await enableNetwork(db);
-      await getDocFromServer(doc(db, 'test', 'connection'));
+      await testConnection();
       return true;
     } catch (error) {
-      const code = String(error?.code || '').toLowerCase();
-      // permission-denied atau not-found berarti server Firestore merespons dan online
-      if (code === 'permission-denied' || code === 'not-found') {
-        return true;
-      }
       lastError = error;
+      connectionCheckPromise = null;
       if (!isFirestoreOfflineError(error)) {
         return true;
       }
@@ -144,17 +149,7 @@ export function handleFirestoreError(error, operationType, path) {
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Cek koneksi Firestore sekali saat startup
-export async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
-    }
-  }
-}
-testConnection();
+testConnection().catch(() => {});
 
 // Turn-based auth check: hanya jalan SEKALI saat halaman load lalu langsung unsubscribe
 export function getCurrentUserOnce() {
