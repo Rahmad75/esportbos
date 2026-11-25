@@ -96,6 +96,10 @@ function renderTopupConfigToUI() {
     if (netEl && topupConfig.solana.network) {
       netEl.textContent = `Wallet Crypto (${topupConfig.solana.network})`;
     }
+    const qrEl = document.getElementById('solanaQrImg');
+    if (qrEl && topupConfig.solana.qrImagePath) {
+      qrEl.src = topupConfig.solana.qrImagePath;
+    }
     const addrEl = document.getElementById('solanaWalletAddressText');
     if (addrEl && topupConfig.solana.walletAddress) {
       addrEl.textContent = topupConfig.solana.walletAddress;

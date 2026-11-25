@@ -102,6 +102,7 @@
       "label": "Crypto (USDT Solana)",
       "network": "Solana (SPL - USDT)",
       "walletAddress": "32eN7g29KMLYMEkm3UJWxwGe6b4Gn5BQBwA7z1h1QFc9",
+      "qrImagePath": "public/assets/aistudio/USDT-Solana_5b06482e.jpeg",
       "instructions": [
         "Pastikan Anda mengirim USDT melalui jaringan Solana (SPL), bukan jaringan lain.",
         "Copy alamat Wallet Solana atau scan QR Code di bawah menggunakan Phantom, Solflare, atau exchange Anda.",
