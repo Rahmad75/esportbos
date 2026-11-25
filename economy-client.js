@@ -78,6 +78,18 @@ export async function adminResetServerWallet() {
   return economyRequest('/api/economy/admin/reset', 'POST', {});
 }
 
+export async function fetchAdminEconomyDashboard() {
+  return economyRequest('/api/economy/admin/dashboard', 'GET');
+}
+
+export async function approveAdminWithdraw(withdrawId, txHash = '') {
+  return economyRequest('/api/economy/admin/withdraw/approve', 'POST', { withdrawId, txHash });
+}
+
+export async function rejectAdminWithdraw(withdrawId, reason = '') {
+  return economyRequest('/api/economy/admin/withdraw/reject', 'POST', { withdrawId, reason });
+}
+
 export function applyServerWalletToDOM(wallet) {
   if (!wallet) return;
   const d = Number(wallet.diamond || 0);

@@ -26,10 +26,11 @@
         <!-- SIDEBAR ADMIN -->
         <aside class="sidebar admin-sidebar">
             <nav class="sidebar-menu">
-                <a href="#overview" class="menu-item active" onclick="switchAdminTab('overview')">📊 Overview Global</a>
-                <a href="#users" class="menu-item" onclick="switchAdminTab('users')">👥 Manajemen User</a>
-                <a href="#market" class="menu-item" onclick="switchAdminTab('market')">🛒 Kontrol Market</a>
-                <a href="#system" class="menu-item" onclick="switchAdminTab('system')">⚙️ Sistem & Data</a>
+                <a href="#overview" class="menu-item active" onclick="switchAdminTab('overview', this)">📊 Overview Global</a>
+                <a href="#ekonomi" class="menu-item" onclick="switchAdminTab('ekonomi', this)">💎 Ekonomi &amp; Withdraw</a>
+                <a href="#users" class="menu-item" onclick="switchAdminTab('users', this)">👥 Manajemen User</a>
+                <a href="#market" class="menu-item" onclick="switchAdminTab('market', this)">🛒 Kontrol Market</a>
+                <a href="#system" class="menu-item" onclick="switchAdminTab('system', this)">⚙️ Sistem &amp; Data</a>
                 <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
                 <a href="dashboard.html" class="menu-item">🔙 Kembali ke Game</a>
             </nav>
@@ -84,6 +85,148 @@
                 </div>
             </div>
 
+            <!-- TAB: EKONOMI & WITHDRAW -->
+            <div id="tab-ekonomi" class="tab-content" style="display:none;">
+                <div class="info-bar">
+                    <span>💎 Pusat Kontrol Ekonomi &amp; Antrean Withdraw</span>
+                    <div class="econ-period-bar">
+                        <button type="button" class="econ-period-btn active" data-period="allTime" onclick="setEconomyPeriod('allTime', this)">Semua Waktu</button>
+                        <button type="button" class="econ-period-btn" data-period="daily" onclick="setEconomyPeriod('daily', this)">Harian (24j)</button>
+                        <button type="button" class="econ-period-btn" data-period="weekly" onclick="setEconomyPeriod('weekly', this)">Mingguan (7h)</button>
+                        <button type="button" class="econ-period-btn" data-period="monthly" onclick="setEconomyPeriod('monthly', this)">Bulanan (30h)</button>
+                        <button type="button" class="econ-period-btn" onclick="refreshEconomyDashboard()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- 1. METRIK EKONOMI -->
+                <div class="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));">
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">📥</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Faucet (Uang Masuk)</span>
+                            <span class="stat-value econ-stat-value-green" id="econTotalFaucet">0 C</span>
+                            <span class="econ-subtext econ-stat-sub" id="econTotalFaucetSub">Setara 0 Diamond</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Sink (Uang Keluar)</span>
+                            <span class="stat-value econ-stat-value-red" id="econTotalSink">0 C</span>
+                            <span class="econ-subtext econ-stat-sub" id="econTotalSinkSub">Setara 0 Diamond</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">⚖️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Net Emission (Masuk - Keluar)</span>
+                            <span class="stat-value econ-stat-value-cyan" id="econNetEmission">0 C</span>
+                            <span class="econ-subtext econ-stat-sub" id="econNetEmissionSub">Setara 0 Diamond</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">🛡️</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Sink Coverage</span>
+                            <span class="stat-value econ-stat-value-amber" id="econSinkCoverage">0%</span>
+                            <span class="econ-subtext econ-stat-sub" id="econSinkCoverageSub">Menunggu data ledger...</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="stat-icon">💎</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Diamond Liability</span>
+                            <span class="stat-value econ-stat-value-amber" id="econDiamondLiability">0 D</span>
+                            <span class="econ-subtext econ-stat-sub" id="econDiamondLiabilitySub">0 USDT (Dompet + Antrean)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RINCIAN ARUS LEDGER PER MATA UANG -->
+                <div class="admin-panel">
+                    <div class="econ-header-row">
+                        <div>
+                            <h3>📊 Rincian Faucet &amp; Sink per Mata Uang</h3>
+                            <p class="econ-subtext" id="econCurrencyBreakdownDesc">Berdasarkan buku besar server (Ledger append-only) dan rate Economy v2.</p>
+                        </div>
+                    </div>
+                    <div class="econ-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Mata Uang</th>
+                                    <th>Total Masuk (Ledger)</th>
+                                    <th>Total Keluar (Ledger)</th>
+                                    <th>Selisih Bersih</th>
+                                    <th>Saldo Beredar di Dompet</th>
+                                </tr>
+                            </thead>
+                            <tbody id="econCurrencyBreakdownBody">
+                                <tr><td colspan="5" style="text-align:center;color:#94a3b8;">Memuat metrik ekonomi...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. TABEL ANTREAN WITHDRAW (QUEUE) -->
+                <div class="admin-panel">
+                    <div class="econ-header-row">
+                        <div>
+                            <h3>💸 Tabel Antrean Withdraw (Queue)</h3>
+                            <p class="econ-subtext">Approve untuk menyelesaikan payout USDT, atau Reject untuk menolak &amp; mengembalikan Diamond ke saldo pemain.</p>
+                        </div>
+                        <span id="withdrawQueueBadge" class="econ-badge econ-badge-queued">0 ANTREAN AKTIF</span>
+                    </div>
+
+                    <div id="adminWithdrawFeedback" class="econ-feedback"></div>
+
+                    <div class="econ-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID &amp; Tanggal</th>
+                                    <th>Akun &amp; Dompet Tujuan</th>
+                                    <th>Nominal Withdraw</th>
+                                    <th>Status</th>
+                                    <th>Aksi Owner</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawQueueTableBody">
+                                <tr><td colspan="5" style="text-align:center;color:#94a3b8;">Memuat antrean withdraw...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. TOP 1% BALANCE -->
+                <div class="admin-panel">
+                    <div class="econ-header-row">
+                        <div>
+                            <h3>🏆 Top 1% Balance (Pemain Saldo Terbesar)</h3>
+                            <p class="econ-subtext" id="top1PercentMeta">Menghitung akun dengan total kekayaan setara Diamond terbesar...</p>
+                        </div>
+                    </div>
+                    <div class="econ-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Akun / ID</th>
+                                    <th>Diamond</th>
+                                    <th>Gold</th>
+                                    <th>Currency</th>
+                                    <th>Total Setara</th>
+                                    <th>Porsi Kekayaan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top1PercentTableBody">
+                                <tr><td colspan="7" style="text-align:center;color:#94a3b8;">Memuat daftar Top 1% Balance...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB: USERS -->
             <div id="tab-users" class="tab-content" style="display:none;">
                 <div class="info-bar">
@@ -134,7 +277,7 @@
             <!-- TAB: SYSTEM -->
             <div id="tab-system" class="tab-content" style="display:none;">
                 <div class="info-bar">
-                    <span>⚙️ Sistem & Data</span>
+                    <span>⚙️ Sistem &amp; Data</span>
                 </div>
                 <div class="panel raised">
                     <h3>⚠️ Zona Bahaya (Danger Zone)</h3>

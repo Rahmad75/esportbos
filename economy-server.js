@@ -710,11 +710,16 @@ function createEconomyService(options = {}) {
     });
   }
 
-  async function adminVerifyKyc(authUser, body = {}) {
-    const email = String(authUser.email || '').toLowerCase();
+  function assertAdmin(authUser, message = 'Hanya Admin/Owner yang dapat mengakses fitur ini.') {
+    const email = String(authUser?.email || '').toLowerCase();
     if (!ADMIN_EMAILS.includes(email)) {
-      throw createHttpError(403, 'Hanya Admin/Owner yang dapat memverifikasi KYC.', 'FORBIDDEN');
+      throw createHttpError(403, message, 'FORBIDDEN');
     }
+    return email;
+  }
+
+  async function adminVerifyKyc(authUser, body = {}) {
+    assertAdmin(authUser, 'Hanya Admin/Owner yang dapat memverifikasi KYC.');
 
     const targetUid = String(body?.targetUid || authUser.uid).trim();
     return withUserLock(targetUid, () => {
@@ -733,29 +738,54 @@ function createEconomyService(options = {}) {
     });
   }
 
-  async function adminCompleteWithdraw(authUser, body = {}) {
-    const email = String(authUser.email || '').toLowerCase();
-    if (!ADMIN_EMAILS.includes(email)) {
-      throw createHttpError(403, 'Hanya Admin/Owner yang dapat menyelesaikan antrean withdraw.', 'FORBIDDEN');
+  function renumberQueuedItems(queue) {
+    let pos = 1;
+    for (const item of queue) {
+      if (item.status === 'queued') {
+        item.queuePosition = pos++;
+      }
+    }
+  }
+
+  async function adminApproveWithdraw(authUser, body = {}) {
+    const adminEmail = assertAdmin(authUser, 'Hanya Admin/Owner yang dapat menyetujui (Approve) withdraw.');
+    const withdrawId = String(body?.withdrawId || '').trim();
+    if (!withdrawId) {
+      throw createHttpError(400, 'ID request withdraw wajib diisi.', 'INVALID_WITHDRAW_ID');
     }
 
-    const queue = readWithdrawQueue();
-    const withdrawId = String(body?.withdrawId || '').trim();
-    const targetItem = withdrawId
-      ? queue.find((q) => q.id === withdrawId)
-      : queue.find((q) => q.status === 'queued');
-
-    if (!targetItem) {
+    const initialQueue = readWithdrawQueue();
+    const initialTarget = initialQueue.find((q) => q.id === withdrawId);
+    if (!initialTarget) {
       throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
     }
 
-    return withUserLock(targetItem.user_id, () => {
+    return withUserLock(initialTarget.user_id, () => {
+      const queue = readWithdrawQueue();
+      const targetItem = queue.find((q) => q.id === withdrawId);
+      if (!targetItem) {
+        throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
+      }
+      if (targetItem.status !== 'queued') {
+        throw createHttpError(
+          409,
+          `Request withdraw ${targetItem.id} sudah diproses sebelumnya (${targetItem.status}).`,
+          'WITHDRAW_ALREADY_PROCESSED'
+        );
+      }
+
       const wallets = readAllWallets();
       const targetWallet = wallets[targetItem.user_id];
       const nowIso = new Date(nowFn()).toISOString();
 
-      targetItem.status = 'completed';
+      targetItem.status = 'approved';
+      targetItem.approved_by = adminEmail;
+      targetItem.approved_at = nowIso;
       targetItem.completed_at = nowIso;
+      if (body?.txHash) {
+        targetItem.txHash = String(body.txHash).trim().slice(0, 128);
+      }
+      renumberQueuedItems(queue);
       writeWithdrawQueue(queue);
 
       if (targetWallet) {
@@ -766,8 +796,376 @@ function createEconomyService(options = {}) {
         writeAllWallets(wallets);
       }
 
-      return { withdraw: { ...targetItem }, wallet: targetWallet ? { ...targetWallet } : null };
+      return {
+        withdraw: { ...targetItem },
+        wallet: targetWallet ? { ...targetWallet } : null,
+        message: `Withdraw ${targetItem.id} (${targetItem.netUsdt} USDT) berhasil di-Approve.`
+      };
     });
+  }
+
+  async function adminRejectWithdraw(authUser, body = {}) {
+    const adminEmail = assertAdmin(authUser, 'Hanya Admin/Owner yang dapat menolak (Reject) withdraw.');
+    const withdrawId = String(body?.withdrawId || '').trim();
+    if (!withdrawId) {
+      throw createHttpError(400, 'ID request withdraw wajib diisi.', 'INVALID_WITHDRAW_ID');
+    }
+
+    const reason = String(body?.reason || 'Ditolak oleh Admin').trim().slice(0, 200) || 'Ditolak oleh Admin';
+    const initialQueue = readWithdrawQueue();
+    const initialTarget = initialQueue.find((q) => q.id === withdrawId);
+    if (!initialTarget) {
+      throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
+    }
+
+    return withUserLock(initialTarget.user_id, () => {
+      const cfg = loadConfig();
+      const queue = readWithdrawQueue();
+      const targetItem = queue.find((q) => q.id === withdrawId);
+      if (!targetItem) {
+        throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
+      }
+      if (targetItem.status !== 'queued') {
+        throw createHttpError(
+          409,
+          `Request withdraw ${targetItem.id} sudah diproses sebelumnya (${targetItem.status}).`,
+          'WITHDRAW_ALREADY_PROCESSED'
+        );
+      }
+
+      const wallets = readAllWallets();
+      const targetWallet = getOrCreateWalletUnlocked(
+        wallets,
+        { uid: targetItem.user_id, email: targetItem.akun },
+        cfg
+      );
+      const nowIso = new Date(nowFn()).toISOString();
+      const refundDiamond = round4(targetItem.grossDiamond);
+      const beforeDiamond = round4(targetWallet.diamond);
+      const afterDiamond = round4(beforeDiamond + refundDiamond);
+
+      targetWallet.diamond = afterDiamond;
+      if (targetWallet.activeWithdrawId === targetItem.id) {
+        targetWallet.activeWithdrawId = null;
+      }
+
+      if (targetItem.previousLastWithdrawAt !== undefined) {
+        targetWallet.lastWithdrawAt = targetItem.previousLastWithdrawAt;
+      } else {
+        const previousValid = queue
+          .filter((q) => q.user_id === targetItem.user_id && q.id !== targetItem.id && q.status !== 'rejected')
+          .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0];
+        targetWallet.lastWithdrawAt = previousValid ? previousValid.created_at : null;
+      }
+      targetWallet.updated_at = nowIso;
+
+      targetItem.status = 'rejected';
+      targetItem.reject_reason = reason;
+      targetItem.rejected_by = adminEmail;
+      targetItem.rejected_at = nowIso;
+      targetItem.refundedDiamond = refundDiamond;
+      renumberQueuedItems(queue);
+      writeWithdrawQueue(queue);
+
+      const ledgerEntry = appendImmutableLedgerEntry({
+        user_id: targetItem.user_id,
+        akun: targetWallet.akun || targetItem.akun,
+        jenis_transaksi: 'masuk',
+        kategori: 'withdraw_refund',
+        mata_uang: 'diamond',
+        jumlah: refundDiamond,
+        fee: 0,
+        saldo_sebelum: beforeDiamond,
+        saldo_sesudah: afterDiamond,
+        ref_id: targetItem.id,
+        keterangan: `Withdraw ${targetItem.id} Ditolak Admin (Refund ${refundDiamond} Diamond): ${reason}`
+      });
+
+      writeAllWallets(wallets);
+
+      return {
+        withdraw: { ...targetItem },
+        wallet: { ...targetWallet },
+        ledgerEntry,
+        refundedDiamond: refundDiamond,
+        message: `Withdraw ${targetItem.id} ditolak & saldo ${refundDiamond} Diamond dikembalikan ke ${targetWallet.akun}.`
+      };
+    });
+  }
+
+  async function adminCompleteWithdraw(authUser, body = {}) {
+    assertAdmin(authUser, 'Hanya Admin/Owner yang dapat menyelesaikan antrean withdraw.');
+
+    const queue = readWithdrawQueue();
+    const withdrawId = String(body?.withdrawId || '').trim();
+    const targetItem = withdrawId
+      ? queue.find((q) => q.id === withdrawId)
+      : queue.find((q) => q.status === 'queued');
+
+    if (!targetItem) {
+      throw createHttpError(404, 'Request withdraw dalam antrean tidak ditemukan.', 'WITHDRAW_NOT_FOUND');
+    }
+    if (targetItem.status !== 'queued') {
+      throw createHttpError(409, `Request withdraw ${targetItem.id} sudah diproses (${targetItem.status}).`, 'WITHDRAW_ALREADY_PROCESSED');
+    }
+
+    return withUserLock(targetItem.user_id, () => {
+      const freshQueue = readWithdrawQueue();
+      const freshItem = freshQueue.find((q) => q.id === targetItem.id);
+      if (!freshItem || freshItem.status !== 'queued') {
+        throw createHttpError(409, 'Request withdraw sudah diproses.', 'WITHDRAW_ALREADY_PROCESSED');
+      }
+      const wallets = readAllWallets();
+      const targetWallet = wallets[freshItem.user_id];
+      const nowIso = new Date(nowFn()).toISOString();
+
+      freshItem.status = 'completed';
+      freshItem.completed_at = nowIso;
+      renumberQueuedItems(freshQueue);
+      writeWithdrawQueue(freshQueue);
+
+      if (targetWallet) {
+        if (targetWallet.activeWithdrawId === freshItem.id) {
+          targetWallet.activeWithdrawId = null;
+        }
+        targetWallet.updated_at = nowIso;
+        writeAllWallets(wallets);
+      }
+
+      return { withdraw: { ...freshItem }, wallet: targetWallet ? { ...targetWallet } : null };
+    });
+  }
+
+  function computePeriodEconomyMetrics(ledgerEntries, cfg, cutoffMs) {
+    const goldToCurrency = Number(cfg.rates.goldToCurrency);
+    const diamondToCurrency = Number(cfg.rates.diamondToCurrency);
+
+    const toEquivCurrency = (mataUang, val) => {
+      const num = Number(val || 0);
+      if (mataUang === 'diamond') return num * diamondToCurrency;
+      if (mataUang === 'gold') return num * goldToCurrency;
+      return num;
+    };
+
+    const byCurrency = {
+      currency: { masuk: 0, keluar: 0, net: 0 },
+      gold: { masuk: 0, keluar: 0, net: 0 },
+      diamond: { masuk: 0, keluar: 0, net: 0 }
+    };
+
+    const FAUCET_CATEGORIES = new Set(['match_reward', 'event_bonus_mingguan', 'transfer_jual']);
+    const SINK_CATEGORIES = new Set([
+      'weekly_sink_gaji_pemain',
+      'weekly_sink_gaji_staf',
+      'weekly_sink_stadion',
+      'weekly_sink_akademi',
+      'stadion_upgrade',
+      'kantor_upgrade',
+      'rekrut_staf',
+      'akademi_scout',
+      'akademi_upgrade',
+      'transfer_beli'
+    ]);
+
+    let faucetCurrency = 0;
+    let sinkCurrency = 0;
+    let conversionFeeSinkCurrency = 0;
+    let marketFeeSinkCurrency = 0;
+    let withdrawFeeSinkCurrency = 0;
+    let withdrawNetOutflowDiamond = 0;
+    let transactionCount = 0;
+
+    // Map withdrawId -> feeDiamond so rejected withdraws reverse any fee sink from that request
+    const feeByWithdrawId = new Map();
+    for (const e of ledgerEntries) {
+      if (e.kategori === 'withdraw_request' && e.ref_id) {
+        feeByWithdrawId.set(e.ref_id, Number(e.fee || 0));
+      }
+    }
+
+    for (const entry of ledgerEntries) {
+      if (cutoffMs !== null) {
+        const ts = new Date(entry.waktu).getTime();
+        if (!Number.isFinite(ts) || ts < cutoffMs) continue;
+      }
+      if (entry.kategori === 'admin_reset') continue;
+
+      transactionCount += 1;
+      const curr = entry.mata_uang;
+      const jumlah = Number(entry.jumlah || 0);
+      const fee = Number(entry.fee || 0);
+
+      if (byCurrency[curr]) {
+        if (entry.jenis_transaksi === 'masuk') {
+          byCurrency[curr].masuk = round4(byCurrency[curr].masuk + jumlah);
+        } else if (entry.jenis_transaksi === 'keluar') {
+          byCurrency[curr].keluar = round4(byCurrency[curr].keluar + jumlah);
+        }
+      }
+
+      if (FAUCET_CATEGORIES.has(entry.kategori) && entry.jenis_transaksi === 'masuk') {
+        faucetCurrency += toEquivCurrency(curr, jumlah);
+      }
+
+      if (SINK_CATEGORIES.has(entry.kategori) && entry.jenis_transaksi === 'keluar') {
+        sinkCurrency += toEquivCurrency(curr, jumlah);
+      }
+
+      if (entry.kategori === 'konversi_masuk' && fee > 0) {
+        const feeEq = toEquivCurrency(curr, fee);
+        sinkCurrency += feeEq;
+        conversionFeeSinkCurrency += feeEq;
+      }
+
+      if (entry.kategori === 'transfer_jual' && fee > 0) {
+        const feeEq = toEquivCurrency(curr, fee);
+        sinkCurrency += feeEq;
+        marketFeeSinkCurrency += feeEq;
+      }
+
+      if (entry.kategori === 'withdraw_request') {
+        const feeEq = toEquivCurrency('diamond', fee);
+        sinkCurrency += feeEq;
+        withdrawFeeSinkCurrency += feeEq;
+        withdrawNetOutflowDiamond += Math.max(0, jumlah - fee);
+      }
+
+      if (entry.kategori === 'withdraw_refund') {
+        const origFee = feeByWithdrawId.get(entry.ref_id) || 0;
+        const feeEq = toEquivCurrency('diamond', origFee);
+        sinkCurrency = Math.max(0, sinkCurrency - feeEq);
+        withdrawFeeSinkCurrency = Math.max(0, withdrawFeeSinkCurrency - feeEq);
+        withdrawNetOutflowDiamond = Math.max(0, withdrawNetOutflowDiamond - Math.max(0, jumlah - origFee));
+      }
+    }
+
+    for (const curr of Object.keys(byCurrency)) {
+      byCurrency[curr].net = round4(byCurrency[curr].masuk - byCurrency[curr].keluar);
+    }
+
+    const totalFaucetCurrency = round2(faucetCurrency);
+    const totalSinkCurrency = round2(sinkCurrency);
+    const netEmissionCurrency = round2(totalFaucetCurrency - totalSinkCurrency);
+    const sinkCoveragePercent = totalFaucetCurrency > 0
+      ? round2((totalSinkCurrency / totalFaucetCurrency) * 100)
+      : (totalSinkCurrency > 0 ? 100 : 0);
+
+    return {
+      transactionCount,
+      totalFaucetCurrency,
+      totalSinkCurrency,
+      netEmissionCurrency,
+      totalFaucetDiamond: round4(totalFaucetCurrency / diamondToCurrency),
+      totalSinkDiamond: round4(totalSinkCurrency / diamondToCurrency),
+      netEmissionDiamond: round4(netEmissionCurrency / diamondToCurrency),
+      sinkCoveragePercent,
+      sinkBreakdownCurrency: {
+        gameplayAndWeekly: round2(totalSinkCurrency - conversionFeeSinkCurrency - marketFeeSinkCurrency - withdrawFeeSinkCurrency),
+        conversionFees: round2(conversionFeeSinkCurrency),
+        marketFees: round2(marketFeeSinkCurrency),
+        withdrawFees: round2(withdrawFeeSinkCurrency)
+      },
+      withdrawNetOutflowDiamond: round4(withdrawNetOutflowDiamond),
+      byCurrency
+    };
+  }
+
+  async function getAdminEconomyDashboard(authUser) {
+    assertAdmin(authUser, 'Hanya Admin/Owner yang dapat melihat dashboard ekonomi.');
+
+    const cfg = loadConfig();
+    const walletsObj = readAllWallets();
+    const allWallets = Object.values(walletsObj);
+    const queue = readWithdrawQueue();
+    const ledgerEntries = readAllLedgerEntries();
+    const nowMs = nowFn();
+
+    const metrics = {
+      allTime: computePeriodEconomyMetrics(ledgerEntries, cfg, null),
+      daily: computePeriodEconomyMetrics(ledgerEntries, cfg, nowMs - DAY_MS),
+      weekly: computePeriodEconomyMetrics(ledgerEntries, cfg, nowMs - 7 * DAY_MS),
+      monthly: computePeriodEconomyMetrics(ledgerEntries, cfg, nowMs - 30 * DAY_MS)
+    };
+
+    const diamondToGold = Number(cfg.rates.diamondToGold);
+    const diamondToCurrency = Number(cfg.rates.diamondToCurrency);
+    const diamondToUsdt = Number(cfg.rates.diamondToUsdt);
+
+    const circulatingDiamonds = round4(allWallets.reduce((s, w) => s + Number(w.diamond || 0), 0));
+    const circulatingGold = round4(allWallets.reduce((s, w) => s + Number(w.gold || 0), 0));
+    const circulatingCurrency = round2(allWallets.reduce((s, w) => s + Number(w.currency || 0), 0));
+
+    const queuedItems = queue.filter((q) => q.status === 'queued');
+    const queuedWithdrawDiamonds = round4(queuedItems.reduce((s, q) => s + Number(q.grossDiamond || 0), 0));
+    const queuedWithdrawNetUsdt = round2(queuedItems.reduce((s, q) => s + Number(q.netUsdt || 0), 0));
+    const totalDiamondLiability = round4(circulatingDiamonds + queuedWithdrawDiamonds);
+    const totalUsdtLiability = round2(totalDiamondLiability * diamondToUsdt);
+
+    const rankedWallets = allWallets.map((w) => {
+      const diamond = round4(w.diamond || 0);
+      const gold = round4(w.gold || 0);
+      const currency = round2(w.currency || 0);
+      const equivalentDiamond = round4(
+        diamond + (gold / diamondToGold) + (currency / diamondToCurrency)
+      );
+      return {
+        user_id: w.user_id,
+        akun: w.akun || w.user_id,
+        diamond,
+        gold,
+        currency,
+        equivalentDiamond,
+        equivalentUsdt: round2(equivalentDiamond * diamondToUsdt),
+        kycStatus: w.kycStatus || (w.kycVerified ? 'verified' : 'unverified'),
+        activeWithdrawId: w.activeWithdrawId || null
+      };
+    }).sort((a, b) => {
+      if (b.equivalentDiamond !== a.equivalentDiamond) return b.equivalentDiamond - a.equivalentDiamond;
+      if (b.diamond !== a.diamond) return b.diamond - a.diamond;
+      if (b.gold !== a.gold) return b.gold - a.gold;
+      return b.currency - a.currency;
+    });
+
+    const totalSystemEquivDiamond = round4(rankedWallets.reduce((s, w) => s + w.equivalentDiamond, 0));
+    const top1Count = rankedWallets.length === 0 ? 0 : Math.max(1, Math.ceil(rankedWallets.length * 0.01));
+    const top1Users = rankedWallets.slice(0, top1Count).map((w, idx) => ({
+      rank: idx + 1,
+      ...w,
+      sharePercent: totalSystemEquivDiamond > 0
+        ? round2((w.equivalentDiamond / totalSystemEquivDiamond) * 100)
+        : 0
+    }));
+
+    const sortedQueue = [...queue].sort((a, b) => {
+      const aQueued = a.status === 'queued' ? 0 : 1;
+      const bQueued = b.status === 'queued' ? 0 : 1;
+      if (aQueued !== bQueued) return aQueued - bQueued;
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
+    return {
+      rates: cfg.rates,
+      metrics,
+      liability: {
+        totalUsers: allWallets.length,
+        circulatingDiamonds,
+        circulatingGold,
+        circulatingCurrency,
+        queuedCount: queuedItems.length,
+        queuedWithdrawDiamonds,
+        queuedWithdrawNetUsdt,
+        totalDiamondLiability,
+        totalUsdtLiability
+      },
+      withdrawQueue: sortedQueue,
+      top1Percent: {
+        topCount: top1Count,
+        totalUsers: rankedWallets.length,
+        thresholdPercent: 1,
+        totalSystemEquivDiamond,
+        users: top1Users
+      }
+    };
   }
 
   async function requestWithdraw(authUser, body = {}) {
@@ -859,7 +1257,6 @@ function createEconomyService(options = {}) {
       const afterDiamond = round4(beforeDiamond - requestedDiamond);
       wallet.diamond = afterDiamond;
       wallet.activeWithdrawId = wdId;
-      wallet.lastWithdrawAt = nowIso;
       wallet.updated_at = nowIso;
 
       const queuePosition = queue.filter((q) => q.status === 'queued').length + 1;
@@ -877,8 +1274,10 @@ function createEconomyService(options = {}) {
         queuePosition,
         processingMode: wd.processingMode,
         accountAgeDaysAtRequest: gate.accountAgeDays,
+        previousLastWithdrawAt: wallet.lastWithdrawAt || null,
         created_at: nowIso
       };
+      wallet.lastWithdrawAt = nowIso;
       queue.push(queueRecord);
       writeWithdrawQueue(queue);
 
@@ -1173,6 +1572,9 @@ function createEconomyService(options = {}) {
     submitKyc,
     adminVerifyKyc,
     adminCompleteWithdraw,
+    adminApproveWithdraw,
+    adminRejectWithdraw,
+    getAdminEconomyDashboard,
     claimMatchReward,
     executeConversion,
     settleWeeklySink,
@@ -1252,6 +1654,33 @@ function mountEconomyRoutes(app, service) {
   app.post('/api/economy/admin/kyc/approve', requireAuth, async (req, res) => {
     try {
       const data = await service.adminVerifyKyc(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.get('/api/economy/admin/dashboard', requireAuth, async (req, res) => {
+    try {
+      const data = await service.getAdminEconomyDashboard(req.authUser);
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/withdraw/approve', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminApproveWithdraw(req.authUser, req.body || {});
+      return res.json({ success: true, ...data });
+    } catch (err) {
+      return handleRouteError(res, err);
+    }
+  });
+
+  app.post('/api/economy/admin/withdraw/reject', requireAuth, async (req, res) => {
+    try {
+      const data = await service.adminRejectWithdraw(req.authUser, req.body || {});
       return res.json({ success: true, ...data });
     } catch (err) {
       return handleRouteError(res, err);

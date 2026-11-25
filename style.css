@@ -5160,3 +5160,201 @@ body {
   transform: scale(1.05);
   filter: brightness(1.3);
 }
+
+/* ===== ADMIN EKONOMI & WITHDRAW PANEL ===== */
+.admin-panel {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 20px;
+  color: #e2e8f0;
+  margin-top: 20px;
+}
+
+.admin-panel h3 {
+  color: #fbbf24;
+  margin: 0 0 6px 0;
+  font-size: 18px;
+}
+
+.econ-subtext {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 0;
+}
+
+.econ-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.econ-period-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.econ-period-btn {
+  background: #0f172a;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.econ-period-btn:hover {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.econ-period-btn.active {
+  background: #fbbf24;
+  color: #0f172a;
+  border-color: #fbbf24;
+}
+
+.econ-stat-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.econ-stat-value-green { color: #4ade80 !important; }
+.econ-stat-value-red { color: #f87171 !important; }
+.econ-stat-value-cyan { color: #38bdf8 !important; }
+.econ-stat-value-amber { color: #fbbf24 !important; }
+
+.econ-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.econ-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.econ-badge-queued {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+.econ-badge-approved,
+.econ-badge-completed {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.econ-badge-rejected {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.econ-action-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-approve {
+  padding: 7px 14px;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-approve:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.btn-reject {
+  padding: 7px 14px;
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-neutral {
+  padding: 7px 12px;
+  background: #334155;
+  color: #e2e8f0;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.econ-inline-box {
+  margin-top: 8px;
+  padding: 10px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.econ-inline-input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 12px;
+}
+
+.econ-feedback {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  display: none;
+}
+
+.econ-feedback.success {
+  display: block;
+  background: rgba(22, 163, 74, 0.2);
+  border: 1px solid #22c55e;
+  color: #bbf7d0;
+}
+
+.econ-feedback.error {
+  display: block;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid #ef4444;
+  color: #fecaca;
+}
+

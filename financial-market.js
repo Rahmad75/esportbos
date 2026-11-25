@@ -572,16 +572,21 @@ function renderWithdrawGateUI(statusData) {
       queueList.innerHTML = '<p style="color: #8da4cf; font-size: 13px; margin: 0;">Belum ada request withdraw.</p>';
     } else {
       queueList.innerHTML = queue.map(q => {
-        const isQueued = q.status === 'queued';
-        const statusColor = isQueued ? '#facc15' : '#4ade80';
+        const st = String(q.status || 'queued').toLowerCase();
+        const isQueued = st === 'queued';
+        const isRejected = st === 'rejected';
+        const statusColor = isQueued ? '#facc15' : (isRejected ? '#f87171' : '#4ade80');
         const date = new Date(q.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const detailMeta = isRejected
+          ? `${date} • Refund ${q.refundedDiamond ?? q.grossDiamond} Diamond (${q.reject_reason || 'Ditolak Admin'})`
+          : (isQueued ? `${date} • Antrean #${q.queuePosition || 1}` : `${date} • Diproses Admin`);
         return `
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#0b1733; border:1px solid #1d3566; border-radius:8px; font-size:13px;">
             <div>
               <strong style="color:#00d4ff;">${q.id}</strong> • ${q.grossDiamond} Diamond → <strong style="color:#4ade80;">${q.netUsdt} USDT</strong> (fee ${q.feePercent}%)
-              <div style="font-size:11px; color:#9db2d9;">${date} • Antrean #${q.queuePosition || 1}</div>
+              <div style="font-size:11px; color:#9db2d9;">${detailMeta}</div>
             </div>
-            <span style="background:${statusColor}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:800;">${String(q.status || 'queued').toUpperCase()}</span>
+            <span style="background:${statusColor}; color:#000; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:800;">${st.toUpperCase()}</span>
           </div>
         `;
       }).join('');
