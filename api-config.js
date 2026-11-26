@@ -1,13 +1,23 @@
-// Jika frontend dan backend berjalan di 1 domain yang sama (misal Vercel / AI Studio / Render fullstack),
-// biarkan API_BASE_URL kosong ('') agar otomatis memakai /api/... di domain yang sama.
-// Jika suatu saat backend dipisah ke domain lain (misal https://esportbos-api.onrender.com), isi URL-nya di sini.
-export const API_BASE_URL = '';
+// URL backend Vercel yang aktif untuk semua request /api/... saat diakses dari domain Cloudflare (esportbos.com).
+// Saat dijalankan di preview lokal / AI Studio (*.run.app, localhost), otomatis tetap memakai /api/... lokal.
+export const API_BASE_URL = 'https://esportbos-i2du.vercel.app';
+
+function isLocalPreviewHost() {
+  if (typeof window === 'undefined') return false;
+  const host = String(window.location?.hostname || '').toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.run.app') ||
+    host.endsWith('.aistudio.google.com')
+  );
+}
 
 export function getApiBase() {
   if (typeof window !== 'undefined' && typeof window.__ESPORTBOS_API_BASE__ === 'string') {
     return window.__ESPORTBOS_API_BASE__;
   }
-  return API_BASE_URL;
+  return isLocalPreviewHost() ? '' : API_BASE_URL;
 }
 
 export function resolveApiUrl(path) {

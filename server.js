@@ -38,6 +38,7 @@ function isTrustedCorsOrigin(origin, req) {
     if (
       hostname === 'esportbos.com' ||
       hostname.endsWith('.esportbos.com') ||
+      hostname.endsWith('.pages.dev') ||
       hostname.endsWith('.vercel.app') ||
       hostname.endsWith('.onrender.com') ||
       hostname.endsWith('.run.app') ||
