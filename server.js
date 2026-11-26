@@ -1,3 +1,4 @@
+const os = require('node:os');
 const express = require('express');
 const path = require('path');
 const { createEconomyService, mountEconomyRoutes, getLondonTimeInfo } = require('./economy-server');
@@ -5,7 +6,11 @@ const { createEconomyService, mountEconomyRoutes, getLondonTimeInfo } = require(
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
-const economyService = createEconomyService({ rootDir: __dirname });
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const economyService = createEconomyService({
+  rootDir: __dirname,
+  dataDir: isServerless ? path.join(os.tmpdir(), 'esportbos-data') : path.join(__dirname, 'data')
+});
 
 function isTrustedCorsOrigin(origin, req) {
   if (!origin || typeof origin !== 'string') return false;
@@ -33,6 +38,8 @@ function isTrustedCorsOrigin(origin, req) {
     if (
       hostname === 'esportbos.com' ||
       hostname.endsWith('.esportbos.com') ||
+      hostname.endsWith('.vercel.app') ||
+      hostname.endsWith('.onrender.com') ||
       hostname.endsWith('.run.app') ||
       hostname.endsWith('.aistudio.google.com') ||
       hostname.endsWith('.googleusercontent.com') ||
@@ -72,9 +79,7 @@ app.use((req, res, next) => {
   if (
     reqPath === '/data' ||
     reqPath.startsWith('/data/') ||
-    reqPath === '/functions' ||
-    reqPath.startsWith('/functions/') ||
-    reqPath === '/firebase.json' ||
+    reqPath === '/vercel.json' ||
     reqPath === '/economy-server.js' ||
     reqPath === '/server.js' ||
     reqPath === '/package.json' ||
@@ -175,6 +180,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`EsportBos server running on http://0.0.0.0:${PORT}`);
-});
+if (!process.env.VERCEL && require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`EsportBos server running on http://0.0.0.0:${PORT}`);
+  });
+}
+
+module.exports = app;
