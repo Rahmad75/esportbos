@@ -9,6 +9,7 @@
           "src/**",
           "economy.config.json",
           "firebase-applet-config.json",
+          "tsconfig.json",
           "*.html",
           "*.js",
           "*.css",
@@ -22,6 +23,96 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "methods": ["OPTIONS"],
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos.com" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://esportbos.com",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Access-Control-Max-Age": "86400",
+        "Vary": "Origin"
+      },
+      "status": 204
+    },
+    {
+      "src": "/api/(.*)",
+      "methods": ["OPTIONS"],
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://www.esportbos.com" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://www.esportbos.com",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Access-Control-Max-Age": "86400",
+        "Vary": "Origin"
+      },
+      "status": 204
+    },
+    {
+      "src": "/api/(.*)",
+      "methods": ["OPTIONS"],
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos-i2du.vercel.app" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://esportbos-i2du.vercel.app",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Access-Control-Max-Age": "86400",
+        "Vary": "Origin"
+      },
+      "status": 204
+    },
+    {
+      "src": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos.com" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://esportbos.com",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Vary": "Origin"
+      },
+      "continue": true
+    },
+    {
+      "src": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://www.esportbos.com" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://www.esportbos.com",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Vary": "Origin"
+      },
+      "continue": true
+    },
+    {
+      "src": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos-i2du.vercel.app" }
+      ],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://esportbos-i2du.vercel.app",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
+        "Vary": "Origin"
+      },
+      "continue": true
+    },
     {
       "src": "/(.*)",
       "dest": "/server.ts"

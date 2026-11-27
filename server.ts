@@ -1,26 +1,29 @@
 import 'dotenv/config';
+import cors, { type CorsOptions } from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   createEconomyPgService,
   getLondonTimeInfo,
   mountEconomyRoutes
-} from './src/services/economy-pg.ts';
+} from './src/services/economy-pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const rootDir = process.cwd();
 
 const app = express();
 app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 3000);
 
-const economyService = createEconomyPgService({
-  rootDir: __dirname
-});
+const ALLOWED_CORS_ORIGINS = new Set([
+  'https://esportbos.com',
+  'https://www.esportbos.com',
+  'https://esportbos-i2du.vercel.app'
+]);
 
-function isTrustedCorsOrigin(origin: string, req: Request): boolean {
+function isTrustedCorsOrigin(origin: string, req?: Request): boolean {
   if (!origin || typeof origin !== 'string') return false;
+  if (ALLOWED_CORS_ORIGINS.has(origin)) return true;
+
   let parsed: URL;
   try {
     parsed = new URL(origin);
@@ -28,12 +31,14 @@ function isTrustedCorsOrigin(origin: string, req: Request): boolean {
     return false;
   }
 
-  const hostHeader = String(req.headers['x-forwarded-host'] || req.headers.host || '')
-    .split(',')[0]
-    .trim()
-    .toLowerCase();
-  if (hostHeader && parsed.host.toLowerCase() === hostHeader) {
-    return true;
+  if (req) {
+    const hostHeader = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+      .split(',')[0]
+      .trim()
+      .toLowerCase();
+    if (hostHeader && parsed.host.toLowerCase() === hostHeader) {
+      return true;
+    }
   }
 
   const hostname = parsed.hostname.toLowerCase();
@@ -61,24 +66,39 @@ function isTrustedCorsOrigin(origin: string, req: Request): boolean {
   return false;
 }
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin;
-  if (origin && isTrustedCorsOrigin(origin, req)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms'
-  );
-  res.setHeader('Access-Control-Max-Age', '86400');
+const buildCorsOptions = (req: Request): CorsOptions => ({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (isTrustedCorsOrigin(origin, req)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Device-Id',
+    'X-Requested-With',
+    'X-Server-Sync-Ms'
+  ],
+  maxAge: 86400,
+  optionsSuccessStatus: 204
+});
 
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  return next();
+// Middleware CORS dipasang paling atas (sebelum semua route) dan menangani preflight OPTIONS
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Vary', 'Origin');
+  return cors(buildCorsOptions(req))(req, res, next);
+});
+app.options('*', (req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Vary', 'Origin');
+  return cors(buildCorsOptions(req))(req, res, next);
+});
+
+const economyService = createEconomyPgService({
+  rootDir
 });
 
 app.use(express.json({ limit: '3mb' }));
@@ -187,15 +207,15 @@ app.use('/api', (req: Request, res: Response) => {
 });
 
 app.use(
-  express.static(__dirname, {
+  express.static(rootDir, {
     extensions: ['html']
   })
 );
 
-app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/firebase')));
+app.use('/firebase-sdk', express.static(path.join(rootDir, 'node_modules/firebase')));
 
 app.get('/', (_req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(rootDir, 'index.html'));
 });
 
 if (!process.env.VERCEL) {

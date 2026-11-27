@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import QRCode from 'qrcode';
-import { db } from '../db/index.ts';
+import { db } from '../db/index';
 import {
   ledger,
   matches,
@@ -12,8 +12,8 @@ import {
   securityEvents,
   topupRequests,
   withdrawQueue
-} from '../db/schema.ts';
-import { adminAuth } from '../lib/firebase-admin.ts';
+} from '../db/schema';
+import { adminAuth } from '../lib/firebase-admin';
 
 export const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
