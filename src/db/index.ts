@@ -1,43 +1,70 @@
+import dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
+dotenv.config();
+
 declare global {
   var _postgresPool: Pool | undefined;
+  var _postgresPoolUrl: string | undefined;
 }
 
-function shouldUseSsl(connectionString: string): boolean {
-  if (!connectionString) return false;
+function readCleanDatabaseUrl(): string {
+  const raw = process.env.DATABASE_URL || '';
+  return raw.trim().replace(/^["']|["']$/g, '');
+}
+
+function parseSupabaseConnection(rawUrl: string): {
+  connectionString?: string;
+  ssl: false | { rejectUnauthorized: false };
+} {
+  if (!rawUrl) {
+    return { connectionString: undefined, ssl: false };
+  }
+
   try {
-    const parsed = new URL(connectionString);
+    const parsed = new URL(rawUrl);
     const host = parsed.hostname.toLowerCase();
-    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
-      return false;
-    }
-    if (parsed.searchParams.get('sslmode') === 'disable') {
-      return false;
-    }
-    return true;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    const sslMode = (parsed.searchParams.get('sslmode') || '').toLowerCase();
+
+    // Hapus sslmode dari query string agar pg-connection-string tidak menimpa opsi ssl rejectUnauthorized: false
+    parsed.searchParams.delete('sslmode');
+
+    const useSsl = !isLocal && sslMode !== 'disable';
+    return {
+      connectionString: parsed.toString(),
+      ssl: useSsl ? { rejectUnauthorized: false } : false
+    };
   } catch {
-    return !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1');
+    const isLocal = rawUrl.includes('localhost') || rawUrl.includes('127.0.0.1');
+    return {
+      connectionString: rawUrl,
+      ssl: isLocal ? false : { rejectUnauthorized: false }
+    };
   }
 }
 
 export const createPool = () => {
-  if (!global._postgresPool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      console.warn('[Database] DATABASE_URL is not set. Configure your Supabase PostgreSQL connection string in environment variables.');
+  const cleanUrl = readCleanDatabaseUrl();
+  if (!global._postgresPool || (cleanUrl && global._postgresPoolUrl !== cleanUrl)) {
+    if (!cleanUrl) {
+      console.warn('[Database] DATABASE_URL belum diatur di Environment Variables.');
     }
 
-    const useSsl = shouldUseSsl(connectionString || '');
+    const { connectionString, ssl } = parseSupabaseConnection(cleanUrl);
+    const isVercel = Boolean(process.env.VERCEL);
+
     global._postgresPool = new Pool({
-      connectionString: connectionString || undefined,
-      ssl: useSsl ? { rejectUnauthorized: false } : false,
-      max: process.env.VERCEL ? 5 : 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 15000
+      connectionString,
+      ssl,
+      max: isVercel ? 1 : 10,
+      idleTimeoutMillis: isVercel ? 5000 : 30000,
+      connectionTimeoutMillis: isVercel ? 7000 : 15000,
+      allowExitOnIdle: isVercel
     });
+    global._postgresPoolUrl = cleanUrl;
 
     global._postgresPool.on('error', (err) => {
       console.error('Unexpected error on idle PostgreSQL pool client:', err);

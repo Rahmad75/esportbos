@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import cors, { type CorsOptions } from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import path from 'node:path';
@@ -7,6 +7,8 @@ import {
   getLondonTimeInfo,
   mountEconomyRoutes
 } from './src/services/economy-pg';
+
+dotenv.config();
 
 const rootDir = process.cwd();
 
@@ -216,6 +218,16 @@ app.use('/firebase-sdk', express.static(path.join(rootDir, 'node_modules/firebas
 
 app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(rootDir, 'index.html'));
+});
+
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[Server Error]', err);
+  if (res.headersSent) return;
+  return res.status(500).json({
+    success: false,
+    code: 'INTERNAL_SERVER_ERROR',
+    error: 'Terjadi kesalahan internal pada server.'
+  });
 });
 
 if (!process.env.VERCEL) {

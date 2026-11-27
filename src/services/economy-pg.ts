@@ -14,6 +14,7 @@ import {
   withdrawQueue
 } from '../db/schema';
 import { adminAuth } from '../lib/firebase-admin';
+import defaultEconomyConfig from '../../economy.config.json';
 
 export const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
@@ -468,8 +469,15 @@ export function createEconomyPgService(options: EconomyPgServiceOptions = {}) {
     : WEEKLY_COOLDOWN_MS;
 
   function loadConfig(): EconomyConfig {
-    const raw = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(raw) as EconomyConfig;
+    if (options.configPath && fs.existsSync(options.configPath)) {
+      const raw = fs.readFileSync(options.configPath, 'utf8');
+      return JSON.parse(raw) as EconomyConfig;
+    }
+    if (fs.existsSync(configPath)) {
+      const raw = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(raw) as EconomyConfig;
+    }
+    return defaultEconomyConfig as unknown as EconomyConfig;
   }
 
   async function verifyFirebaseIdToken(idToken: string): Promise<AuthUser> {
