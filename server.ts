@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import cors, { type CorsOptions } from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import path from 'node:path';
@@ -7,8 +6,6 @@ import {
   getLondonTimeInfo,
   mountEconomyRoutes
 } from './src/services/economy-pg.js';
-
-dotenv.config();
 
 const rootDir = process.cwd();
 

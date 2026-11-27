@@ -1,9 +1,8 @@
-import dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres, { type Sql } from 'postgres';
 import * as schema from './schema.js';
 
-dotenv.config();
+console.log('Cek URL:', process.env.DATABASE_URL ? 'Ada' : 'Kosong');
 
 declare global {
   var _postgresClient: Sql | undefined;
