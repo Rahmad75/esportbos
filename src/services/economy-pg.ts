@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import QRCode from 'qrcode';
-import { db } from '../db/index';
+import { db } from '../db/index.js';
 import {
   ledger,
   matches,
@@ -12,9 +12,9 @@ import {
   securityEvents,
   topupRequests,
   withdrawQueue
-} from '../db/schema';
-import { adminAuth } from '../lib/firebase-admin';
-import defaultEconomyConfig from '../../economy.config.json';
+} from '../db/schema.js';
+import { verifyFirebaseToken } from '../lib/firebase-admin.js';
+import defaultEconomyConfig from '../../economy.config.json' with { type: 'json' };
 
 export const ADMIN_EMAILS = [
   'muhammadgazali75@gmail.com',
@@ -488,7 +488,7 @@ export function createEconomyPgService(options: EconomyPgServiceOptions = {}) {
       throw createHttpError(401, 'Token autentikasi Firebase tidak ditemukan.', 'AUTH_MISSING');
     }
     try {
-      const decoded = await adminAuth.verifyIdToken(idToken.trim());
+      const decoded = await verifyFirebaseToken(idToken.trim());
       if (!decoded || !decoded.uid) {
         throw createHttpError(401, 'Akun pengguna tidak terverifikasi.', 'AUTH_USER_NOT_FOUND');
       }

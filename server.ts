@@ -6,7 +6,7 @@ import {
   createEconomyPgService,
   getLondonTimeInfo,
   mountEconomyRoutes
-} from './src/services/economy-pg';
+} from './src/services/economy-pg.js';
 
 dotenv.config();
 
