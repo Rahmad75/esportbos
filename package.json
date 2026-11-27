@@ -4,15 +4,22 @@
   "private": true,
   "description": "EsportBos - Jadilah Bos Esports Terkenal Dunia!",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
+    "dev": "tsx server.ts",
+    "start": "tsx server.ts",
     "build": "echo 'Build complete'",
     "lint": "echo 'Lint complete'"
   },
   "dependencies": {
+    "@types/pg": "^8.23.1",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
     "express": "^4.21.2",
     "firebase": "^11.0.0",
-    "qrcode": "^1.5.4"
+    "firebase-admin": "^14.5.1",
+    "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",

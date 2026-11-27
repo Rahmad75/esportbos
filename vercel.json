@@ -2,11 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "server.ts",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "economy-server.js",
+          "src/**",
           "economy.config.json",
           "firebase-applet-config.json",
           "*.html",
@@ -24,7 +24,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/server.js"
+      "dest": "/server.ts"
     }
   ]
 }

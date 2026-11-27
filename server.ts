@@ -1,23 +1,30 @@
-const os = require('node:os');
-const express = require('express');
-const path = require('path');
-const { createEconomyService, mountEconomyRoutes, getLondonTimeInfo } = require('./economy-server');
+import 'dotenv/config';
+import express, { type NextFunction, type Request, type Response } from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  createEconomyPgService,
+  getLondonTimeInfo,
+  mountEconomyRoutes
+} from './src/services/economy-pg.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 3000;
-const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-const economyService = createEconomyService({
-  rootDir: __dirname,
-  dataDir: isServerless ? path.join(os.tmpdir(), 'esportbos-data') : path.join(__dirname, 'data')
+const PORT = Number(process.env.PORT || 3000);
+
+const economyService = createEconomyPgService({
+  rootDir: __dirname
 });
 
-function isTrustedCorsOrigin(origin, req) {
+function isTrustedCorsOrigin(origin: string, req: Request): boolean {
   if (!origin || typeof origin !== 'string') return false;
-  let parsed;
+  let parsed: URL;
   try {
     parsed = new URL(origin);
-  } catch (_) {
+  } catch {
     return false;
   }
 
@@ -54,8 +61,7 @@ function isTrustedCorsOrigin(origin, req) {
   return false;
 }
 
-// Middleware CORS aman (validasi origin eksplisit + tangani preflight OPTIONS sebelum semua route/static)
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
   if (origin && isTrustedCorsOrigin(origin, req)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -63,7 +69,10 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms'
+  );
   res.setHeader('Access-Control-Max-Age', '86400');
 
   if (req.method === 'OPTIONS') {
@@ -74,17 +83,25 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '3mb' }));
 
-// Lindungi file internal server, ledger, dan aturan security dari akses static HTTP langsung
-app.use((req, res, next) => {
+// Lindungi file internal server, source TypeScript backend, dan aturan security dari akses HTTP langsung
+app.use((req: Request, res: Response, next: NextFunction) => {
   const reqPath = (req.path || '').toLowerCase();
   if (
+    reqPath === '/src' ||
+    reqPath.startsWith('/src/') ||
     reqPath === '/data' ||
     reqPath.startsWith('/data/') ||
+    reqPath === '/drizzle' ||
+    reqPath.startsWith('/drizzle/') ||
     reqPath === '/vercel.json' ||
     reqPath === '/economy-server.js' ||
     reqPath === '/server.js' ||
+    reqPath === '/server.ts' ||
     reqPath === '/package.json' ||
     reqPath === '/package-lock.json' ||
+    reqPath === '/bun.lock' ||
+    reqPath === '/tsconfig.json' ||
+    reqPath === '/eslint.config.mjs' ||
     reqPath === '/firestore.rules' ||
     reqPath === '/firebase-blueprint.json' ||
     reqPath === '/security_spec.md' ||
@@ -95,7 +112,7 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const reqPath = (req.path || '').toLowerCase();
   if (
     reqPath.startsWith('/api/') ||
@@ -111,8 +128,8 @@ app.use((req, res, next) => {
   return next();
 });
 
-// Endpoint waktu server resmi (Europe/London dengan penyesuaian otomatis GMT/BST + UTC)
-const handleGetServerTime = (req, res) => {
+// Endpoint waktu server resmi (Europe/London DST-aware GMT/BST + UTC)
+const handleGetServerTime = (_req: Request, res: Response) => {
   const info = getLondonTimeInfo(Date.now());
   return res.json({
     success: true,
@@ -122,11 +139,10 @@ const handleGetServerTime = (req, res) => {
 app.get('/api/server-time', handleGetServerTime);
 app.get('/api/economy/server-time', handleGetServerTime);
 
-// Mount semua API route SEBELUM static middleware agar request POST/OPTIONS tidak bentrok dengan static handler
+// Mount seluruh route ekonomi berbasis PostgreSQL Cloud SQL SEBELUM static middleware
 mountEconomyRoutes(app, economyService);
 
-// Endpoint pengganti Supabase Edge Function: verify-captcha-
-app.post('/api/verify-captcha', async (req, res) => {
+app.post('/api/verify-captcha', async (req: Request, res: Response) => {
   try {
     const { token } = req.body || {};
     if (typeof token !== 'string' || !token.trim() || token.length > 4096) {
@@ -146,7 +162,7 @@ app.post('/api/verify-captcha', async (req, res) => {
     if (!verifyRes.ok) {
       return res.status(502).json({ success: false, error: 'Captcha service unavailable' });
     }
-    const result = await verifyRes.json();
+    const result = (await verifyRes.json()) as { success?: boolean };
     return res.json({ success: Boolean(result.success) });
   } catch (err) {
     console.error('Captcha verify error:', err);
@@ -154,8 +170,7 @@ app.post('/api/verify-captcha', async (req, res) => {
   }
 });
 
-// Top-Up sekarang memakai verifikasi manual Admin (/api/economy/topup/request)
-app.post('/api/create-payment', (req, res) => {
+app.post('/api/create-payment', (_req: Request, res: Response) => {
   return res.status(410).json({
     success: false,
     code: 'MANUAL_TOPUP_REQUIRED',
@@ -163,7 +178,7 @@ app.post('/api/create-payment', (req, res) => {
   });
 });
 
-app.use('/api', (req, res) => {
+app.use('/api', (req: Request, res: Response) => {
   return res.status(404).json({
     success: false,
     code: 'API_ROUTE_NOT_FOUND',
@@ -171,20 +186,22 @@ app.use('/api', (req, res) => {
   });
 });
 
-app.use(express.static(__dirname, {
-  extensions: ['html']
-}));
+app.use(
+  express.static(__dirname, {
+    extensions: ['html']
+  })
+);
 
 app.use('/firebase-sdk', express.static(path.join(__dirname, 'node_modules/firebase')));
 
-app.get('/', (req, res) => {
+app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-if (!process.env.VERCEL && require.main === module) {
+if (!process.env.VERCEL) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`EsportBos server running on http://0.0.0.0:${PORT}`);
   });
 }
 
-module.exports = app;
+export default app;
