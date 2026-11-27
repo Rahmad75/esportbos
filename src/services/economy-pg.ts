@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import QRCode from 'qrcode';
-import { db } from '../db/index.js';
+import { db, isDatabaseConfigured } from '../db/index.js';
 import {
   ledger,
   matches,
@@ -202,12 +202,59 @@ function sanitizeDbError(err: unknown, contextMsg: string): never {
   if (isHttpError(err)) {
     throw err;
   }
-  console.error(`[CloudSQL] ${contextMsg}:`, err);
-  const wrapped = createHttpError(
-    500,
-    'Terjadi gangguan sementara pada layanan database. Silakan coba lagi beberapa saat.',
-    'DATABASE_ERROR'
-  );
+
+  console.error(`[Database] ${contextMsg}:`, err);
+
+  if (!isDatabaseConfigured()) {
+    const wrapped = createHttpError(
+      500,
+      'DATABASE_URL belum diatur di Environment Variables server.',
+      'DB_CONFIG_MISSING'
+    );
+    (wrapped as Error & { cause?: unknown }).cause = err;
+    throw wrapped;
+  }
+
+  const pgErr = (err && typeof err === 'object' ? err : {}) as {
+    code?: unknown;
+    message?: unknown;
+    cause?: { code?: unknown; message?: unknown };
+  };
+  const errCode = String(pgErr.code || pgErr.cause?.code || '').toUpperCase();
+  const errMsg = String(pgErr.message || pgErr.cause?.message || '').toUpperCase();
+
+  let userMessage = 'Terjadi gangguan sementara pada layanan database. Silakan coba lagi beberapa saat.';
+  let publicCode = 'DATABASE_ERROR';
+
+  if (errCode === '42P01' || errMsg.includes('DOES NOT EXIST')) {
+    publicCode = 'DB_TABLE_MISSING';
+    userMessage = 'Tabel database belum dibuat di Supabase. Jalankan script SQL pembuatan tabel di Supabase SQL Editor.';
+  } else if (errCode === '28P01' || errCode === '28000' || errMsg.includes('PASSWORD AUTHENTICATION FAILED')) {
+    publicCode = 'DB_AUTH_FAILED';
+    userMessage = 'Autentikasi ke database Supabase ditolak. Periksa kembali password di DATABASE_URL.';
+  } else if (
+    errCode === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    errCode === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
+    errCode === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    errCode.startsWith('ERR_TLS')
+  ) {
+    publicCode = 'DB_SSL_ERROR';
+    userMessage = 'Koneksi SSL ke database Supabase gagal diverifikasi.';
+  } else if (
+    errCode === 'ECONNREFUSED' ||
+    errCode === 'ENOTFOUND' ||
+    errCode === 'ENETUNREACH' ||
+    errCode === 'EAI_AGAIN' ||
+    errCode === 'CONNECT_TIMEOUT' ||
+    errCode === 'ETIMEDOUT' ||
+    errMsg.includes('CONNECT_TIMEOUT')
+  ) {
+    publicCode = 'DB_CONNECTION_ERROR';
+    userMessage =
+      'Server tidak dapat terhubung ke database Supabase. Pastikan DATABASE_URL memakai Transaction Pooler (port 6543).';
+  }
+
+  const wrapped = createHttpError(500, userMessage, publicCode);
   (wrapped as Error & { cause?: unknown }).cause = err;
   throw wrapped;
 }
