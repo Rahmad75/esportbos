@@ -9,5 +9,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["server.ts", "src/**/*.ts"]
+  "include": ["server.ts", "api/**/*.ts", "src/**/*.ts"]
 }

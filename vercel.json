@@ -1,122 +1,59 @@
 {
-  "version": 2,
-  "builds": [
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "{economy.config.json,firebase-applet-config.json,src/**,*.html,*.js,*.css,*.png,*.jpeg,*.ico,site.webmanifest}"
+    }
+  },
+  "headers": [
     {
-      "src": "server.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "package.json",
-          "src/**",
-          "economy.config.json",
-          "firebase-applet-config.json",
-          "tsconfig.json",
-          "*.html",
-          "*.js",
-          "*.css",
-          "*.png",
-          "*.jpeg",
-          "*.ico",
-          "site.webmanifest",
-          "public/**"
-        ]
-      }
+      "source": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos.com" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://esportbos.com" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms" },
+        { "key": "Vary", "value": "Origin" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://www.esportbos.com" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://www.esportbos.com" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms" },
+        { "key": "Vary", "value": "Origin" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "has": [
+        { "type": "header", "key": "origin", "value": "https://esportbos-i2du.vercel.app" }
+      ],
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://esportbos-i2du.vercel.app" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms" },
+        { "key": "Vary", "value": "Origin" }
+      ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "methods": ["OPTIONS"],
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://esportbos.com" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://esportbos.com",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Access-Control-Max-Age": "86400",
-        "Vary": "Origin"
-      },
-      "status": 204
+      "source": "/api/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/api/(.*)",
-      "methods": ["OPTIONS"],
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://www.esportbos.com" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://www.esportbos.com",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Access-Control-Max-Age": "86400",
-        "Vary": "Origin"
-      },
-      "status": 204
-    },
-    {
-      "src": "/api/(.*)",
-      "methods": ["OPTIONS"],
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://esportbos-i2du.vercel.app" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://esportbos-i2du.vercel.app",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Access-Control-Max-Age": "86400",
-        "Vary": "Origin"
-      },
-      "status": 204
-    },
-    {
-      "src": "/api/(.*)",
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://esportbos.com" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://esportbos.com",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Vary": "Origin"
-      },
-      "continue": true
-    },
-    {
-      "src": "/api/(.*)",
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://www.esportbos.com" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://www.esportbos.com",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Vary": "Origin"
-      },
-      "continue": true
-    },
-    {
-      "src": "/api/(.*)",
-      "has": [
-        { "type": "header", "key": "origin", "value": "https://esportbos-i2du.vercel.app" }
-      ],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://esportbos-i2du.vercel.app",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Id, X-Requested-With, X-Server-Sync-Ms",
-        "Vary": "Origin"
-      },
-      "continue": true
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/server.ts"
+      "source": "/(.*)",
+      "destination": "/api"
     }
   ]
 }
