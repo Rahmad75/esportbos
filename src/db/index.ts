@@ -67,8 +67,18 @@ function parseSupabaseConnection(rawUrl: string): {
     const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
     const sslMode = (parsed.searchParams.get('sslmode') || '').toLowerCase();
 
-    // Hapus sslmode dari query string agar opsi ssl: { rejectUnauthorized: false } dipakai konsisten
-    parsed.searchParams.delete('sslmode');
+    // Hapus parameter query khusus PgBouncer/Prisma/SSL agar postgres.js tidak mengirimkannya sebagai startup parameter Postgres
+    for (const param of [
+      'sslmode',
+      'pgbouncer',
+      'connection_limit',
+      'pool_timeout',
+      'connect_timeout',
+      'schema',
+      'supa'
+    ]) {
+      parsed.searchParams.delete(param);
+    }
 
     const useSsl = !isLocal && sslMode !== 'disable';
     return {
