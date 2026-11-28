@@ -2,7 +2,39 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres, { type Sql } from 'postgres';
 import * as schema from './schema.js';
 
-console.log('Cek URL:', process.env.DATABASE_URL ? 'Ada' : 'Kosong');
+function findDatabaseUrlEntry(): { key: string | null; value: string } {
+  const candidates = ['DATABASE_URL', 'POSTGRES_PRISMA_URL', 'POSTGRES_URL', 'SUPABASE_DB_URL'];
+  for (const name of candidates) {
+    const val = process.env[name];
+    if (typeof val === 'string' && val.trim()) {
+      return { key: name, value: val };
+    }
+  }
+
+  for (const [k, v] of Object.entries(process.env)) {
+    const norm = k.trim().toUpperCase();
+    if (candidates.includes(norm) && typeof v === 'string' && v.trim()) {
+      return { key: k, value: v };
+    }
+  }
+
+  return { key: null, value: '' };
+}
+
+const dbEnvKeys = Object.keys(process.env).filter((k) =>
+  /DATABASE|POSTGRES|SUPABASE|DB_/i.test(k)
+);
+const initialDbEntry = findDatabaseUrlEntry();
+console.log(
+  'Cek URL:',
+  initialDbEntry.value ? 'Ada' : 'Kosong',
+  '| KeyDipakai:',
+  initialDbEntry.key || '-',
+  '| VERCEL_ENV:',
+  process.env.VERCEL_ENV || 'non-vercel',
+  '| KeyTerkait:',
+  JSON.stringify(dbEnvKeys)
+);
 
 declare global {
   var _postgresClient: Sql | undefined;
@@ -10,8 +42,8 @@ declare global {
 }
 
 export function readCleanDatabaseUrl(): string {
-  const raw = process.env.DATABASE_URL || '';
-  return raw.trim().replace(/^["']|["']$/g, '');
+  const { value } = findDatabaseUrlEntry();
+  return value.trim().replace(/^["']|["']$/g, '');
 }
 
 export function isDatabaseConfigured(): boolean {
