@@ -1,7 +1,7 @@
 // URL backend Vercel yang aktif untuk semua request /api/... saat diakses dari domain Cloudflare (esportbos.com).
 // Saat dijalankan di preview lokal / AI Studio (*.run.app, localhost), otomatis tetap memakai /api/... lokal.
 export const API_BASE_URL = 'https://esportbos.vercel.app';
-
+ 
 function isLocalPreviewHost() {
   if (typeof window === 'undefined') return false;
   const host = String(window.location?.hostname || '').toLowerCase();
