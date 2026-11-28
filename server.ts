@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT || 3000);
 const ALLOWED_CORS_ORIGINS = new Set([
   'https://esportbos.com',
   'https://www.esportbos.com',
+  'https://esportbos.vercel.app',
   'https://esportbos-i2du.vercel.app'
 ]);
 

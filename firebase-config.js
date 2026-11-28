@@ -4,7 +4,6 @@ import {
   onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {
-  initializeFirestore,
   getFirestore,
   doc,
   getDoc,
@@ -33,17 +32,9 @@ export const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-let dbInstance;
-try {
-  dbInstance = firebaseConfig.firestoreDatabaseId
-    ? initializeFirestore(app, { experimentalForceLongPolling: true }, firebaseConfig.firestoreDatabaseId)
-    : initializeFirestore(app, { experimentalForceLongPolling: true });
-} catch (_) {
-  dbInstance = firebaseConfig.firestoreDatabaseId
-    ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-    : getFirestore(app);
-}
-export const db = dbInstance;
+export const db = firebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+  : getFirestore(app);
 export const storage = getStorage(app);
 
 export const OperationType = {
