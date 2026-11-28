@@ -240,6 +240,10 @@ function sanitizeDbError(err: unknown, contextMsg: string): never {
   ) {
     publicCode = 'DB_SSL_ERROR';
     userMessage = 'Koneksi SSL ke database Supabase gagal diverifikasi.';
+  } else if (errCode === '53300' || errMsg.includes('MAXCLIENTSINSESSIONMODE') || errMsg.includes('TOO MANY CLIENTS')) {
+    publicCode = 'DB_POOL_LIMIT';
+    userMessage =
+      'Batas koneksi aktif Session Pooler Supabase sedang penuh. Gunakan Transaction Pooler (port 6543) atau coba beberapa detik lagi.';
   } else if (
     errCode === 'ECONNREFUSED' ||
     errCode === 'ENOTFOUND' ||
@@ -251,7 +255,7 @@ function sanitizeDbError(err: unknown, contextMsg: string): never {
   ) {
     publicCode = 'DB_CONNECTION_ERROR';
     userMessage =
-      'Server tidak dapat terhubung ke database Supabase. Pastikan DATABASE_URL memakai Transaction Pooler (port 6543).';
+      'Server tidak dapat terhubung ke database Supabase. Pastikan DATABASE_URL memakai Pooler IPv4 (Session 5432 atau Transaction 6543).';
   }
 
   const wrapped = createHttpError(500, userMessage, publicCode);

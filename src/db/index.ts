@@ -105,10 +105,10 @@ export const createClient = (): Sql => {
     const isVercel = Boolean(process.env.VERCEL);
 
     global._postgresClient = postgres(connectionString, {
-      prepare: false, // Wajib false untuk Supabase Transaction Pooler (port 6543)
+      prepare: false, // Aman untuk Session Pooler (5432) dan wajib untuk Transaction Pooler (6543)
       ssl,
       max: isVercel ? 1 : 10,
-      idle_timeout: isVercel ? 20 : 30,
+      idle_timeout: isVercel ? 5 : 30,
       connect_timeout: isVercel ? 7 : 15
     });
     global._postgresClientUrl = cleanUrl;
